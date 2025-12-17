@@ -1,0 +1,36 @@
+﻿import re
+
+# EXACT fallback sentence (ASCII only)
+FALLBACK = "For accurate details, please contact us directly and we'll be happy to help."
+
+# Deterministic business-fact patterns
+
+    $pre = $matches[1]; $mid = $matches[2]; $post = $matches[3]
+    $extra = @"
+    r"\bsupplies?\b",
+    r"\bbring\b",
+    r"\bequipment\b",
+    r"\bproducts?\b",
+"@
+    $pre + $mid + "`r`n" + $extra + $post
+  # General-chat safety (LLM must not leak facts)
+_GENERAL_BLOCK_PATTERNS = [
+    r"\$",
+    r"\baud\b",
+    r"\d+\s*(min|mins|minutes|hour|hours)",
+    r"\bwe charge\b",
+    r"\bincludes?\b",
+    r"\btravel fee\b",
+]
+
+def is_fact_question(text: str) -> bool:
+    if not text:
+        return False
+    t = text.lower()
+    return any(re.search(p, t) for p in _FACT_PATTERNS)
+
+def violates_general_safety(text: str) -> bool:
+    if not text:
+        return False
+    t = text.lower()
+    return any(re.search(p, t) for p in _GENERAL_BLOCK_PATTERNS)

@@ -1,0 +1,42 @@
+from dataclasses import dataclass
+from .db import get_conn
+
+@dataclass
+class RetrievalResult:
+    hit: bool
+    answer: str | None
+    distance: float | None
+    delta: float | None
+
+def retrieve_faq_answer(tenant_id: str, qvec: list[float], theta: float, delta: float) -> RetrievalResult:
+    rows = []
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                '''
+                SELECT id, question, answer,
+                       (embedding <=> %(qvec)s) AS distance
+                FROM faq_items
+                WHERE tenant_id = %(tenant_id)s
+                  AND enabled = true
+                  AND embedding IS NOT NULL
+                ORDER BY embedding <=> %(qvec)s
+                LIMIT 3;
+                ''',
+                {'tenant_id': tenant_id, 'qvec': qvec},
+            )
+            rows = cur.fetchall()
+
+    if not rows:
+        return RetrievalResult(False, None, None, None)
+
+    top1 = rows[0]
+    top1_d = float(top1['distance'])
+    top2_d = float(rows[1]['distance']) if len(rows) > 1 else None
+    d_delta = (top2_d - top1_d) if top2_d is not None else None
+
+    accepted = (top1_d <= theta) and (d_delta is None or d_delta >= delta)
+    if accepted:
+        return RetrievalResult(True, str(top1['answer']), top1_d, d_delta)
+
+    return RetrievalResult(False, None, top1_d, d_delta)
