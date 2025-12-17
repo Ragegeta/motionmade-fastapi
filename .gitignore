@@ -1,1 +1,12 @@
-.env
+﻿.env
+.venv/
+__pycache__/
+*.pyc
+*.log
+body.json
+faqs.json
+backup_*/
+backup_fix_*/
+app/*.bak_*
+scripts_*.py
+tmp_*.py
