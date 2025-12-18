@@ -9,4 +9,8 @@ backup_*/
 backup_fix_*/
 app/*.bak_*
 scripts_*.py
-tmp_*.py
+tmp_*.py__pycache__/
+*.pyc
+apply_migration.py
+migrate_variants.sql
+faqs_variants.json
