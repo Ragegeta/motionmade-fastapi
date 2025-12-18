@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Header, HTTPException, Response
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 
@@ -10,6 +11,15 @@ from .db import get_conn
 from pgvector import Vector
 
 app = FastAPI()
+
+# CORS for browser-based frontend calls
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 SCHEMA_SQL = """
 CREATE EXTENSION IF NOT EXISTS vector;
