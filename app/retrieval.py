@@ -1,8 +1,8 @@
-﻿from pgvector import Vector
+from pgvector import Vector
 from .db import get_conn
 
-THETA = 0.78
-DELTA = 0.04
+THETA = 0.82
+DELTA = 0.08
 
 def retrieve_faq_answer(tenant_id: str, query_embedding):
     """
@@ -16,12 +16,13 @@ def retrieve_faq_answer(tenant_id: str, query_embedding):
     qv = Vector(query_embedding)
 
     sql = """
-    SELECT question, answer, (1 - (embedding <=> %s)) AS score
-    FROM faq_items
-    WHERE tenant_id = %s
-      AND enabled = true
-      AND embedding IS NOT NULL
-    ORDER BY embedding <=> %s
+    SELECT fi.answer, (1 - (fv.variant_embedding <=> %s)) AS score
+    FROM faq_variants fv
+    JOIN faq_items fi ON fi.id = fv.faq_id
+    WHERE fi.tenant_id = %s
+      AND fi.enabled = true
+      AND fv.enabled = true
+    ORDER BY fv.variant_embedding <=> %s
     LIMIT 3
     """
 
@@ -31,8 +32,8 @@ def retrieve_faq_answer(tenant_id: str, query_embedding):
     if not rows:
         return (False, None, None, None)
 
-    top_q, top_a, top_score = rows[0]
-    top2_score = rows[1][2] if len(rows) > 1 else 0.0
+    top_a, top_score = rows[0]
+    top2_score = rows[1][1] if len(rows) > 1 else 0.0
 
     top_score = float(top_score)
     top2_score = float(top2_score)

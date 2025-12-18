@@ -1,6 +1,6 @@
-﻿from fastapi import FastAPI, Header, HTTPException, Response
+from fastapi import FastAPI, Header, HTTPException, Response
 from pydantic import BaseModel, ConfigDict
-from typing import List
+from typing import List, Optional
 
 from .settings import settings
 from .guardrails import FALLBACK, is_fact_question, violates_general_safety
@@ -32,6 +32,21 @@ CREATE TABLE IF NOT EXISTS faq_items (
 );
 
 CREATE INDEX IF NOT EXISTS faq_tenant_enabled_idx ON faq_items(tenant_id, enabled);
+
+-- Variant questions for robust matching (answer remains in faq_items)
+CREATE TABLE IF NOT EXISTS faq_variants (
+  id BIGSERIAL PRIMARY KEY,
+  faq_id BIGINT NOT NULL REFERENCES faq_items(id) ON DELETE CASCADE,
+  variant_question TEXT NOT NULL,
+  variant_embedding vector(1536) NOT NULL,
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS faq_variants_faq_id_idx ON faq_variants(faq_id);
+CREATE INDEX IF NOT EXISTS faq_variants_embedding_idx
+ON faq_variants USING ivfflat (variant_embedding vector_cosine_ops)
+WITH (lists = 100);
 """
 
 def _set_common_headers(resp: Response, tenant_id: str):
@@ -65,6 +80,7 @@ def health(resp: Response):
 class FaqItem(BaseModel):
     question: str
     answer: str
+    variants: Optional[List[str]] = None
 
 class QuoteRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
@@ -90,6 +106,9 @@ def put_faqs(
                 "INSERT INTO tenants (id, name) VALUES (%s, %s) ON CONFLICT (id) DO NOTHING",
                 (tenantId, tenantId),
             )
+
+            # Replace-all semantics (simple + deterministic)
+            # Deleting faq_items cascades faq_variants.
             conn.execute("DELETE FROM faq_items WHERE tenant_id=%s", (tenantId,))
 
             for it in items:
@@ -97,11 +116,34 @@ def put_faqs(
                 a = (it.answer or "").strip()
                 if not q or not a:
                     continue
-                emb = embed_text(q)
-                conn.execute(
-                    "INSERT INTO faq_items (tenant_id, question, answer, embedding, enabled) VALUES (%s,%s,%s,%s,true)",
-                    (tenantId, q, a, Vector(emb)),
-                )
+
+                # Insert FAQ item (answer source of truth)
+                emb_q = embed_text(q)
+                row = conn.execute(
+                    "INSERT INTO faq_items (tenant_id, question, answer, embedding, enabled) "
+                    "VALUES (%s,%s,%s,%s,true) RETURNING id",
+                    (tenantId, q, a, Vector(emb_q)),
+                ).fetchone()
+                faq_id = row[0]
+
+                # Variants: always include the canonical question, plus any provided variants
+                raw_variants = (it.variants or [])
+                variants = []
+                seen = set()
+                for v in [q, *raw_variants]:
+                    vv = (v or "").strip().lower()
+                    if vv and vv not in seen:
+                        seen.add(vv)
+                        variants.append(vv)
+
+                for vq in variants:
+                    v_emb = embed_text(vq)
+                    conn.execute(
+                        "INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled) "
+                        "VALUES (%s,%s,%s,true)",
+                        (faq_id, vq, Vector(v_emb)),
+                    )
+
                 count += 1
 
             conn.commit()
@@ -110,7 +152,6 @@ def put_faqs(
         resp.headers["X-Faq-Hit"] = "false"
         return {"tenantId": tenantId, "count": count}
     except Exception as e:
-        # Admin-only endpoint, OK to show error
         raise HTTPException(status_code=500, detail=f"admin_upload_failed: {e!s}")
 
 @app.post("/api/v2/generate-quote-reply")
@@ -142,7 +183,6 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             payload["replyText"] = FALLBACK
             return payload
         except Exception:
-            # Never 500 for customers
             resp.headers["X-Debug-Branch"] = "fact_error_fallback"
             resp.headers["X-Faq-Hit"] = "false"
             payload["replyText"] = FALLBACK
