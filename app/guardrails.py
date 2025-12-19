@@ -1,11 +1,15 @@
-﻿import re
+import re
 
 # EXACT fallback sentence (ASCII only)
 FALLBACK = "For accurate details, please contact us directly and we'll be happy to help."
 
 # Deterministic business-fact patterns
 _FACT_PATTERNS = [
-    r"\bprice\b",
+    
+    r"\bwindows?\b", r"\bwindow cleaning\b", r"\bclean windows?\b",
+    r"\bfridge\b", r"\bfridge cleaning\b",
+    r"\bpets?\b", r"\bdog\b", r"\bcat\b",
+r"\bprice\b",
     r"\bcost\b",
     r"\bfee\b",
     r"\bcharge\b",
