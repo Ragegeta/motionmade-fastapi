@@ -13,9 +13,7 @@ def _extract_fact_tokens(text: str) -> set[str]:
     if not text:
         return set()
     t = text.lower()
-    # numbers like 89, 89.00, $89
     toks = set(re.findall(r"\$?\d+(?:\.\d{1,2})?", t))
-    # simple units/currency words
     toks |= set(re.findall(r"\b(aud|dollars?|hrs?|hours?|mins?|minutes?|days?)\b", t))
     return toks
 
@@ -24,7 +22,6 @@ def is_rewrite_safe(rewritten: str, fact_text: str) -> bool:
         return False
     rw = _extract_fact_tokens(rewritten)
     ft = _extract_fact_tokens(fact_text)
-    # reject if rewrite introduces new number/currency/unit tokens
     return len(rw - ft) == 0
 from .db import get_conn
 from pgvector import Vector
@@ -202,35 +199,30 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                 resp.headers["X-Faq-Hit"] = "true"
                 resp.headers["X-Retrieval-Score"] = str(score)
                 resp.headers["X-Retrieval-Delta"] = str(delta)
-                            # --- Option 2: AI rewrite using ONLY stored fact text ---
-                            fact_text = ans
+                fact_text = ans
+                rewritten = ""
+                try:
+                    system = (
+                        "Rewrite the customer reply using ONLY the provided fact text. "
+                        "Do not add, remove, or change any facts, numbers, prices, policies, inclusions, or conditions. "
+                        "Keep it short, clear, and professional."
+                    )
+                    rewritten = chat_once(
+                        system,
+                        f"Customer question: {msg}\n\nFact text: {fact_text}",
+                        temperature=0.2,
+                    )
+                    rewritten = (rewritten or "").strip()
+                except Exception:
+                    rewritten = ""
                 
-                            system = (
-                                "Rewrite a customer reply using ONLY the provided fact text. "
-                                "Do not add, remove, or change any facts, numbers, prices, policies, inclusions, or conditions. "
-                                "Keep it short, clear, and professional."
-                            )
-                
-                            rewritten = ""
-                            try:
-                                r = chat_once(
-                                    system,
-                                    f"Customer question: {msg}\n\nFact text: {fact_text}",
-                                    temperature=0.2,
-                                )
-                                rewritten = (r or "").strip()
-                            except Exception:
-                                rewritten = ""
-                
-                            if not is_rewrite_safe(rewritten, fact_text):
-                                payload["replyText"] = fact_text
-                                resp.headers["X-Debug-Branch"] = "fact_db_only"
-                            else:
-                                payload["replyText"] = rewritten
-                                resp.headers["X-Debug-Branch"] = "fact_ai_rewrite"
-                            # --- end Option 2 ---
+                if not is_rewrite_safe(rewritten, fact_text):
+                    payload["replyText"] = fact_text
+                    resp.headers["X-Debug-Branch"] = "fact_db_only"
+                else:
+                    payload["replyText"] = rewritten
+                    resp.headers["X-Debug-Branch"] = "fact_ai_rewrite"
                 return payload
-
             resp.headers["X-Debug-Branch"] = "fact_fallback"
             resp.headers["X-Faq-Hit"] = "false"
             if score is not None: resp.headers["X-Retrieval-Score"] = str(score)
