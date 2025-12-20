@@ -1,10 +1,11 @@
+from typing import Optional, Tuple
 from pgvector import Vector
 from .db import get_conn
 
 THETA = 0.82
 DELTA = 0.08
 
-def retrieve_faq_answer(tenant_id: str, query_embedding):
+def retrieve_faq_answer(tenant_id: str, query_embedding) -> Tuple[bool, Optional[str], Optional[float], Optional[float]]:
     """
     Returns: (hit: bool, answer: str|None, score: float|None, delta: float|None)
     score is cosine similarity ~= 1 - cosine_distance
@@ -23,7 +24,7 @@ def retrieve_faq_answer(tenant_id: str, query_embedding):
       AND fi.enabled = true
       AND fv.enabled = true
     ORDER BY fv.variant_embedding <=> %s
-    LIMIT 3
+    LIMIT 2
     """
 
     with get_conn() as conn:
@@ -32,12 +33,21 @@ def retrieve_faq_answer(tenant_id: str, query_embedding):
     if not rows:
         return (False, None, None, None)
 
-    top_a, top_score = rows[0]
-    top2_score = rows[1][1] if len(rows) > 1 else 0.0
+    ans1, score1 = rows[0]
+    ans1 = (ans1 or "").strip()
+    score1 = float(score1)
 
-    top_score = float(top_score)
-    top2_score = float(top2_score)
-    delta = top_score - top2_score
+    ans2 = ""
+    score2 = 0.0
+    if len(rows) > 1:
+        ans2, score2 = rows[1]
+        ans2 = (ans2 or "").strip()
+        score2 = float(score2)
 
-    hit = (top_score >= THETA) and (delta >= DELTA)
-    return (hit, str(top_a), top_score, float(delta))
+    delta = score1 - score2
+
+    # Fix A: if top two rows resolve to the same answer text, treat as unambiguous.
+    same_answer = bool(ans1) and bool(ans2) and (ans1 == ans2)
+
+    hit = (score1 >= THETA) and ((delta >= DELTA) or same_answer)
+    return (hit, ans1 if ans1 else None, score1, float(delta))
