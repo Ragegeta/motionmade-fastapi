@@ -1,14 +1,18 @@
-from typing import Optional, Tuple
+from collections import defaultdict
+from typing import Any, Dict, List, Tuple, Optional
+
 from pgvector import Vector
 from .db import get_conn
 
 THETA = 0.82
 DELTA = 0.08
 
-def retrieve_faq_answer(tenant_id: str, query_embedding) -> Tuple[bool, Optional[str], Optional[float], Optional[float]]:
+def retrieve_faq_answer(tenant_id: str, query_embedding):
     """
     Returns: (hit: bool, answer: str|None, score: float|None, delta: float|None)
-    score is cosine similarity ~= 1 - cosine_distance
+
+    Key change: we de-duplicate by FAQ (faq_id), so "top2 tie" caused by multiple variants
+    of the SAME FAQ no longer kills the hit.
     """
     tenant_id = (tenant_id or "").strip()
     if not tenant_id or query_embedding is None:
@@ -16,15 +20,19 @@ def retrieve_faq_answer(tenant_id: str, query_embedding) -> Tuple[bool, Optional
 
     qv = Vector(query_embedding)
 
+    # Pull more rows, because we will collapse them down to unique faq_id
     sql = """
-    SELECT fi.answer, (1 - (fv.variant_embedding <=> %s)) AS score
+    SELECT
+      fi.id AS faq_id,
+      fi.answer AS answer,
+      (1 - (fv.variant_embedding <=> %s)) AS score
     FROM faq_variants fv
     JOIN faq_items fi ON fi.id = fv.faq_id
     WHERE fi.tenant_id = %s
       AND fi.enabled = true
       AND fv.enabled = true
     ORDER BY fv.variant_embedding <=> %s
-    LIMIT 2
+    LIMIT 12
     """
 
     with get_conn() as conn:
@@ -33,21 +41,26 @@ def retrieve_faq_answer(tenant_id: str, query_embedding) -> Tuple[bool, Optional
     if not rows:
         return (False, None, None, None)
 
-    ans1, score1 = rows[0]
-    ans1 = (ans1 or "").strip()
-    score1 = float(score1)
+    # Best score per FAQ id (not per variant row)
+    best_by_faq: Dict[int, Tuple[str, float]] = {}
+    for faq_id, ans, score in rows:
+        s = float(score)
+        fid = int(faq_id)
+        if fid not in best_by_faq or s > best_by_faq[fid][1]:
+            best_by_faq[fid] = (str(ans), s)
 
-    ans2 = ""
-    score2 = 0.0
-    if len(rows) > 1:
-        ans2, score2 = rows[1]
-        ans2 = (ans2 or "").strip()
-        score2 = float(score2)
+    # Sort unique FAQs by their best score
+    ranked: List[Tuple[str, float]] = sorted(best_by_faq.values(), key=lambda x: x[1], reverse=True)
 
-    delta = score1 - score2
+    top_ans, top_score = ranked[0]
+    if len(ranked) == 1:
+        # Only one unique FAQ is present in the candidates -> accept if score is strong
+        hit = top_score >= THETA
+        delta = 1.0
+        return (hit, top_ans if hit else None, top_score, delta)
 
-    # Fix A: if top two rows resolve to the same answer text, treat as unambiguous.
-    same_answer = bool(ans1) and bool(ans2) and (ans1 == ans2)
+    second_score = ranked[1][1]
+    delta = float(top_score - second_score)
 
-    hit = (score1 >= THETA) and ((delta >= DELTA) or same_answer)
-    return (hit, ans1 if ans1 else None, score1, float(delta))
+    hit = (top_score >= THETA) and (delta >= DELTA)
+    return (hit, top_ans if hit else None, top_score, delta)
