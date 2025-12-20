@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 
 from .settings import settings
-from .guardrails import FALLBACK, is_fact_question, violates_general_safety
+from .guardrails import FALLBACK, is_fact_question, violates_general_safety, fact_domain
 from .openai_client import embed_text, chat_once
 from .retrieval import retrieve_faq_answer
 
@@ -185,8 +185,90 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
     tenant_id = (req.tenantId or "").strip()
     msg = (req.customerMessage or "").strip()
 
+    # Always set base headers first
     _set_common_headers(resp, tenant_id)
+
+    # Deterministic fact gate headers (always present)
+    domain = fact_domain(msg)
+    resp.headers["X-Fact-Gate-Hit"] = "true" if domain != "none" else "false"
+    resp.headers["X-Fact-Domain"] = domain
+
     payload = _base_payload()
+
+    # Fact branch
+    if domain != "none":
+        try:
+            q_emb = embed_text(msg)
+            hit, ans, score, delta = retrieve_faq_answer(tenant_id, q_emb)
+
+            # If retrieval ran, always expose these (even on miss)
+            if score is not None:
+                resp.headers["X-Retrieval-Score"] = str(score)
+            if delta is not None:
+                resp.headers["X-Retrieval-Delta"] = str(delta)
+
+            if hit and ans:
+                resp.headers["X-Debug-Branch"] = "fact_hit"
+                resp.headers["X-Faq-Hit"] = "true"
+
+                fact_text = str(ans)
+                rewritten = ""
+                try:
+                    system = (
+                        "Rewrite the customer reply using ONLY the provided fact text. "
+                        "Do not add, remove, or change any facts, numbers, prices, policies, inclusions, or conditions. "
+                        "Keep it short, clear, and professional."
+                    )
+                    rewritten = chat_once(
+                        system,
+                        f"Customer question: {msg}\n\nFact text: {fact_text}",
+                        temperature=0.2,
+                    )
+                    rewritten = (rewritten or "").strip()
+                except Exception:
+                    rewritten = ""
+
+                # Safety: if rewrite looks unsafe, return DB fact text
+                payload["replyText"] = rewritten if is_rewrite_safe(rewritten, fact_text) else fact_text
+                return payload
+
+            # Fact gate hit, retrieval did not accept => miss + fallback
+            resp.headers["X-Debug-Branch"] = "fact_miss"
+            resp.headers["X-Faq-Hit"] = "false"
+            payload["replyText"] = FALLBACK
+            return payload
+
+        except Exception:
+            # Never 500 for fact questions; always fallback + error header
+            resp.headers["X-Debug-Branch"] = "error"
+            resp.headers["X-Faq-Hit"] = "false"
+            payload["replyText"] = FALLBACK
+            return payload
+
+    # General branch (only for non-fact)
+    try:
+        system = (
+            "Reply in one short paragraph. Do not ask follow-up questions. "
+            "Do not state or imply any business facts like prices, durations, policies, inclusions, or fees. "
+            f"If the user asks anything that sounds like business specifics, reply exactly: {FALLBACK}"
+        )
+        reply = chat_once(system, msg, temperature=0.6)
+    except Exception:
+        resp.headers["X-Debug-Branch"] = "error"
+        resp.headers["X-Faq-Hit"] = "false"
+        payload["replyText"] = FALLBACK
+        return payload
+
+    if violates_general_safety(reply):
+        resp.headers["X-Debug-Branch"] = "general_fallback"
+        resp.headers["X-Faq-Hit"] = "false"
+        payload["replyText"] = FALLBACK
+        return payload
+
+    resp.headers["X-Debug-Branch"] = "general_ok"
+    resp.headers["X-Faq-Hit"] = "false"
+    payload["replyText"] = reply
+    return payload
 
     # Fact gate
     if is_fact_question(msg):
