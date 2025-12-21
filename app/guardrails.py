@@ -22,7 +22,18 @@ _DOMAINS: list[tuple[str, list[str]]] = [
         r"\btravel\b", r"\bdistance\b", r"\bkm\b", r"\bsurcharge\b",
     ]),
     ("policy", [
-        r"\bcancel\b", r"\bcancellation\b", r"\brefund\b", r"\breschedule\b", r"\bavailability\b", r"\bbook\b", r"\bbooking\b",
+        r"\bcancel\b", r"\bcancellation\b", r"\brefund\b", r"\breschedule\b",
+        r"\bavailability\b", r"\bbook\b", r"\bbooking\b",
+    ]),
+
+    # NEW: bond / vacate / end-of-lease routing (so these enter fact branch + retrieval)
+    ("clean_type", [
+        r"\bbond\b",
+        r"\bbond clean\b", r"\bbond cleans\b", r"\bbond cleaning\b",
+        r"\bvacate\b", r"\bvacate clean\b", r"\bvacate cleans\b",
+        r"\bend of lease\b", r"\bend-of-lease\b",
+        r"\bend of tenancy\b", r"\bmove(?:ing)? out\b",
+        r"\bexit clean\b", r"\blease clean\b",
     ]),
 
     # service area routing
