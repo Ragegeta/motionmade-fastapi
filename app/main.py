@@ -81,6 +81,7 @@ def is_fact_question(text: str) -> bool:
 
 # -----------------------------
 # Rewrite safety (numbers/units must not be invented)
+# (Note: kept here but only used for debugging future changes, not for reply text.)
 # -----------------------------
 
 def _extract_fact_tokens(text: str) -> Set[str]:
@@ -297,47 +298,71 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
     # -----------------------------
     if domain != "none":
         try:
+            # 1) Original retrieval on raw message
             q_emb = embed_text(msg)
             hit, ans, score, delta = retrieve_faq_answer(tenant_id, q_emb)
 
-            # If retrieval ran: expose score/delta even on miss
+            # Expose retrieval metrics (original attempt)
             if score is not None:
                 resp.headers["X-Retrieval-Score"] = str(score)
             if delta is not None:
                 resp.headers["X-Retrieval-Delta"] = str(delta)
 
             if hit and ans:
+                # Original question was good enough; no rewrite needed
                 resp.headers["X-Debug-Branch"] = "fact_hit"
                 resp.headers["X-Faq-Hit"] = "true"
 
-                fact_text = str(ans).strip()
-
-                # Optional AI rewrite, but must be provably safe
-                rewritten = ""
-                try:
-                    system = (
-                        "Rewrite the customer reply using ONLY the provided fact text. "
-                        "Do not add, remove, or change any facts, numbers, prices, policies, inclusions, or conditions. "
-                        "Keep it short, clear, and professional."
-                    )
-                    rewritten = chat_once(
-                        system,
-                        f"Customer question: {msg}\n\nFact text: {fact_text}",
-                        temperature=0.2,
-                    ).strip()
-                except Exception:
-                    rewritten = ""
-
-                payload["replyText"] = rewritten if is_rewrite_safe(rewritten, fact_text) else fact_text
+                payload["replyText"] = str(ans).strip()
                 return payload
 
-            # Fact gate hit but retrieval didn't accept
+            # 2) Original miss → try AI rewrite for retrieval only
+            resp.headers["X-Debug-Branch"] = "fact_rewrite_try"
+
+            rewrite = ""
+            try:
+                system = (
+                    "Rewrite the user message into a short FAQ-style query (max 12 words). "
+                    "Preserve the meaning. Do not add or change any facts. "
+                    "Do NOT invent numbers, prices, times, policies, or inclusions. "
+                    "Output only the rewritten query text with no quotes or explanation."
+                )
+                rewrite = chat_once(
+                    system,
+                    f"Original customer message: {msg}",
+                    temperature=0.0,
+                ).strip()
+            except Exception:
+                rewrite = ""
+
+            if rewrite:
+                # For debugging only – what was actually used for retrieval
+                resp.headers["X-Fact-Rewrite"] = rewrite[:80]
+
+                rw_emb = embed_text(rewrite)
+                rw_hit, rw_ans, rw_score, rw_delta = retrieve_faq_answer(tenant_id, rw_emb)
+
+                # Overwrite retrieval metrics with the rewrite attempt (since that's what we used last)
+                if rw_score is not None:
+                    resp.headers["X-Retrieval-Score"] = str(rw_score)
+                if rw_delta is not None:
+                    resp.headers["X-Retrieval-Delta"] = str(rw_delta)
+
+                if rw_hit and rw_ans:
+                    resp.headers["X-Debug-Branch"] = "fact_rewrite_hit"
+                    resp.headers["X-Faq-Hit"] = "true"
+
+                    payload["replyText"] = str(rw_ans).strip()
+                    return payload
+
+            # 3) Still no acceptable match → safe fallback
             resp.headers["X-Debug-Branch"] = "fact_miss"
             resp.headers["X-Faq-Hit"] = "false"
             payload["replyText"] = FALLBACK
             return payload
 
         except Exception:
+            # Never 500 from fact branch – always fallback
             resp.headers["X-Debug-Branch"] = "error"
             resp.headers["X-Faq-Hit"] = "false"
             payload["replyText"] = FALLBACK

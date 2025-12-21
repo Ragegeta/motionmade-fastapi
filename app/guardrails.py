@@ -25,7 +25,7 @@ _DOMAINS: list[tuple[str, list[str]]] = [
         r"\bcancel\b", r"\bcancellation\b", r"\brefund\b", r"\breschedule\b", r"\bavailability\b", r"\bbook\b", r"\bbooking\b",
     ]),
 
-    # NEW: service area routing
+    # service area routing
     ("service_area", [
         r"\bservice area\b", r"\bservice areas\b", r"\bcoverage\b",
         r"\barea\b", r"\bareas\b",
@@ -38,7 +38,7 @@ _DOMAINS: list[tuple[str, list[str]]] = [
         r"\bnorthside\b", r"\bsouthside\b", r"\bcbd\b",
     ]),
 
-    # NEW: service capability questions (so “Do you polish marble benchtops?” routes to fact branch)
+    # service capability questions (e.g. "Do you polish marble benchtops?")
     ("other", [
         r"\bdo you (?:clean|offer|provide|handle|polish|wash|service)\b",
         r"\bcan you (?:clean|do|handle|polish|wash|service)\b",
@@ -66,6 +66,11 @@ def classify_fact_domain(text: str) -> str:
     if not text:
         return "none"
     t = text.lower()
+
+    # Hard guarantees for supplies / equipment / products questions
+    if "supplies" in t or "equipment" in t or "cleaning products" in t or "products" in t:
+        return "other"
+
     for domain, pats in _DOMAINS:
         for p in pats:
             if re.search(p, t):
