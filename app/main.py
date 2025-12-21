@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict
 from pgvector import Vector
 
 from .settings import settings
-from .guardrails import FALLBACK, violates_general_safety
+from .guardrails import FALLBACK, violates_general_safety, classify_fact_domain
 from .openai_client import embed_text, chat_once
 from .retrieval import retrieve_faq_answer
 from .db import get_conn
@@ -18,6 +18,7 @@ from .db import get_conn
 
 # -----------------------------
 # Deterministic fact gate
+# (single source of truth = guardrails.classify_fact_domain)
 # -----------------------------
 
 def fact_domain(text: str) -> str:
@@ -25,54 +26,7 @@ def fact_domain(text: str) -> str:
     Returns one of:
       pricing|time|inclusions|policy|payment|travel|service_area|other|none
     """
-    if not text:
-        return "none"
-
-    t = text.lower().strip()
-
-    # service_area (explicit keywords only; not generic "do you")
-    if re.search(r"\b(service area|service areas|coverage)\b", t):
-        return "service_area"
-    if re.search(r"\b(area|areas|suburb|suburbs|location|locations|radius|within)\b", t):
-        return "service_area"
-    if re.search(r"\b(where do you(?:\s+\w+){0,2})\b", t) or re.search(r"\b(do you service|where do you service)\b", t):
-        return "service_area"
-    if re.search(r"\b(northside|southside|cbd)\b", t):
-        return "service_area"
-
-    # pricing
-    if re.search(r"\b(price|pricing|cost|quote|how much|\$|dollars?|aud)\b", t):
-        return "pricing"
-
-    # time
-    if re.search(r"\b(time|duration|how long|hours?|hrs?|minutes?|mins?|days?)\b", t):
-        return "time"
-
-    # inclusions
-    if re.search(r"\b(included|inclusions|include|what(?:'s| is) included|checklist)\b", t):
-        return "inclusions"
-
-    # policy
-    if re.search(r"\b(cancel|cancellation|resched|refund|policy|policies|late fee|fee)\b", t):
-        return "policy"
-
-    # payment
-    if re.search(r"\b(pay|payment|card|invoice|bank transfer|eft|cash)\b", t):
-        return "payment"
-
-    # travel
-    if re.search(r"\b(travel|parking|toll|distance|surcharge)\b", t):
-        return "travel"
-
-    # “Do you / can you …” service capability questions -> treat as business fact (unknown => fallback)
-    # (Not triggered by “do you” alone; requires an action/service keyword.)
-    if re.search(r"\b(do you|can you)\b", t) and re.search(
-        r"\b(clean|cleaning|bond|end of lease|vacate|deep|standard|oven|fridge|windows?|laundry|linen|ironing|polish|steam|wash|remove|stain|grout|carpet|upholstery|blinds?|balcony|mould|mold|pressure)\b",
-        t,
-    ):
-        return "other"
-
-    return "none"
+    return classify_fact_domain(text or "")
 
 
 def is_fact_question(text: str) -> bool:
