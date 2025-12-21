@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import re
-from typing import List, Optional, Set, Tuple
+from typing import List, Optional, Set
 
 from fastapi import FastAPI, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
-
 from pgvector import Vector
 
 from .settings import settings
@@ -24,18 +23,13 @@ from .db import get_conn
 def fact_domain(text: str) -> str:
     """
     Returns one of:
-      pricing|time|inclusions|policy|payment|travel|service_area|other|none
+      pricing|time|inclusions|policy|payment|travel|clean_type|service_area|parking|linen|insurance|other|none
     """
     return classify_fact_domain(text or "")
 
 
-def is_fact_question(text: str) -> bool:
-    return fact_domain(text) != "none"
-
-
 # -----------------------------
 # Rewrite safety (numbers/units must not be invented)
-# (Note: kept here but only used for debugging future changes, not for reply text.)
 # -----------------------------
 
 def _extract_fact_tokens(text: str) -> Set[str]:
@@ -52,7 +46,6 @@ def is_rewrite_safe(rewritten: str, fact_text: str) -> bool:
         return False
     rw = _extract_fact_tokens(rewritten)
     ft = _extract_fact_tokens(fact_text)
-    # If rewrite introduced any new number/unit tokens => unsafe
     return len(rw - ft) == 0
 
 
@@ -134,9 +127,8 @@ def _init_debug_headers(resp: Response, tenant_id: str, msg: str):
     resp.headers["X-Fact-Gate-Hit"] = "true" if domain != "none" else "false"
     resp.headers["X-Fact-Domain"] = domain
 
-    # always present
     resp.headers["X-Faq-Hit"] = "false"
-    resp.headers["X-Debug-Branch"] = "error"  # overwritten on success paths
+    resp.headers["X-Debug-Branch"] = "error"
     return domain
 
 
@@ -189,7 +181,6 @@ def put_faqs(
                 (tenantId, tenantId),
             )
 
-            # Replace-all semantics (deterministic)
             conn.execute("DELETE FROM faq_items WHERE tenant_id=%s", (tenantId,))
 
             for it in items:
@@ -206,7 +197,6 @@ def put_faqs(
                 ).fetchone()
                 faq_id = row[0]
 
-                # Always include canonical question + any variants (dedup, normalized)
                 raw_variants = it.variants or []
                 seen = set()
                 variants: List[str] = []
@@ -256,21 +246,18 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             q_emb = embed_text(msg)
             hit, ans, score, delta = retrieve_faq_answer(tenant_id, q_emb)
 
-            # Expose retrieval metrics (original attempt)
             if score is not None:
                 resp.headers["X-Retrieval-Score"] = str(score)
             if delta is not None:
                 resp.headers["X-Retrieval-Delta"] = str(delta)
 
             if hit and ans:
-                # Original question was good enough; no rewrite needed
                 resp.headers["X-Debug-Branch"] = "fact_hit"
                 resp.headers["X-Faq-Hit"] = "true"
-
                 payload["replyText"] = str(ans).strip()
                 return payload
 
-            # 2) Original miss → try AI rewrite for retrieval only
+            # 2) Miss → try rewrite for retrieval only
             resp.headers["X-Debug-Branch"] = "fact_rewrite_try"
 
             rewrite = ""
@@ -290,13 +277,11 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                 rewrite = ""
 
             if rewrite:
-                # For debugging only – what was actually used for retrieval
                 resp.headers["X-Fact-Rewrite"] = rewrite[:80]
 
                 rw_emb = embed_text(rewrite)
                 rw_hit, rw_ans, rw_score, rw_delta = retrieve_faq_answer(tenant_id, rw_emb)
 
-                # Overwrite retrieval metrics with the rewrite attempt (since that's what we used last)
                 if rw_score is not None:
                     resp.headers["X-Retrieval-Score"] = str(rw_score)
                 if rw_delta is not None:
@@ -305,18 +290,16 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                 if rw_hit and rw_ans:
                     resp.headers["X-Debug-Branch"] = "fact_rewrite_hit"
                     resp.headers["X-Faq-Hit"] = "true"
-
                     payload["replyText"] = str(rw_ans).strip()
                     return payload
 
-            # 3) Still no acceptable match → safe fallback
+            # 3) Still no acceptable match → fallback
             resp.headers["X-Debug-Branch"] = "fact_miss"
             resp.headers["X-Faq-Hit"] = "false"
             payload["replyText"] = FALLBACK
             return payload
 
         except Exception:
-            # Never 500 from fact branch – always fallback
             resp.headers["X-Debug-Branch"] = "error"
             resp.headers["X-Faq-Hit"] = "false"
             payload["replyText"] = FALLBACK
