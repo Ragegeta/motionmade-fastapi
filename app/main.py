@@ -16,79 +16,6 @@ from .db import get_conn
 
 
 # -----------------------------
-# Deterministic fact gate
-# (single source of truth = guardrails.classify_fact_domain)
-# -----------------------------
-
-def fact_domain(text: str) -> str:
-    """
-    Returns one of:
-      pricing|time|inclusions|policy|payment|travel|service_area|clean_type|other|none
-    """
-    if not text:
-        return "none"
-
-    t = text.lower().strip()
-
-    # normalize common slang
-    t = re.sub(r"\bur\b", "your", t)
-    t = re.sub(r"\bu\b", "you", t)
-
-    # clean type (bond/vacate/end-of-lease) — explicit routing
-    if re.search(r"\b(bond|vacate|end of lease|end-of-lease|end of tenancy|move(?:ing)? out|exit clean|lease clean)\b", t):
-        return "clean_type"
-
-    # supplies/equipment questions even when phrased like "do i need to..."
-    if re.search(r"\b(supply|supplies|provide|bring)\b", t) and re.search(r"\b(anything|stuff|products?|equipment|vacuum|materials?)\b", t):
-        return "other"
-    if re.search(r"\b(do i|do we|do you)\b", t) and re.search(r"\b(need to|have to|gotta)\b", t) and re.search(r"\b(supply|provide|bring)\b", t):
-        return "other"
-
-    # service_area
-    if re.search(r"\b(service area|service areas|coverage)\b", t):
-        return "service_area"
-    if re.search(r"\b(area|areas|suburb|suburbs|location|locations|radius|within)\b", t):
-        return "service_area"
-    if re.search(r"\b(where do you(?:\s+\w+){0,2})\b", t) or re.search(r"\b(do you service|where do you service)\b", t):
-        return "service_area"
-    if re.search(r"\b(northside|southside|cbd)\b", t):
-        return "service_area"
-
-    # pricing
-    if re.search(r"\b(price|pricing|cost|quote|how much|\$|dollars?|aud)\b", t):
-        return "pricing"
-
-    # time
-    if re.search(r"\b(time|duration|how long|hours?|hrs?|minutes?|mins?|days?)\b", t):
-        return "time"
-
-    # inclusions
-    if re.search(r"\b(included|inclusions|include|what(?:'s| is) included|checklist)\b", t):
-        return "inclusions"
-
-    # policy
-    if re.search(r"\b(cancel|cancellation|resched|refund|policy|policies|late fee)\b", t):
-        return "policy"
-
-    # payment (plural-safe)
-    if re.search(r"\b(pay|payment|card|invoices?|bank transfer|eft|cash)\b", t):
-        return "payment"
-
-    # travel / access costs
-    if re.search(r"\b(travel|parking|toll|distance|surcharge)\b", t):
-        return "travel"
-
-    # “Do you / can you …” capability questions
-    if re.search(r"\b(do you|do you|can you|can you)\b", t) and re.search(
-        r"\b(clean|cleaning|bond|end of lease|vacate|deep|standard|oven|fridge|windows?|laundry|linen|ironing|polish|steam|wash|remove|stain|grout|carpet|upholstery|blinds?|balcony|mould|mold|pressure)\b",
-        t,
-    ):
-        return "other"
-
-    return "none"
-
-
-# -----------------------------
 # Rewrite safety (numbers/units must not be invented)
 # -----------------------------
 
@@ -101,12 +28,12 @@ def _extract_fact_tokens(text: str) -> Set[str]:
     return toks
 
 
-def is_rewrite_safe(rewritten: str, fact_text: str) -> bool:
+def is_rewrite_safe(rewritten: str, original: str) -> bool:
     if not rewritten:
         return False
     rw = _extract_fact_tokens(rewritten)
-    ft = _extract_fact_tokens(fact_text)
-    return len(rw - ft) == 0
+    ot = _extract_fact_tokens(original)
+    return len(rw - ot) == 0
 
 
 # -----------------------------
@@ -180,10 +107,10 @@ def _base_payload():
     }
 
 
-def _init_debug_headers(resp: Response, tenant_id: str, msg: str):
+def _init_debug_headers(resp: Response, tenant_id: str, msg: str) -> str:
     _set_common_headers(resp, tenant_id)
 
-    domain = fact_domain(msg)
+    domain = classify_fact_domain(msg)
     resp.headers["X-Fact-Gate-Hit"] = "true" if domain != "none" else "false"
     resp.headers["X-Fact-Domain"] = domain
 
@@ -302,7 +229,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
     # -----------------------------
     if domain != "none":
         try:
-            # 1) Original retrieval on raw message
+            # 1) Original retrieval
             q_emb = embed_text(msg)
             hit, ans, score, delta = retrieve_faq_answer(tenant_id, q_emb)
 
@@ -317,7 +244,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                 payload["replyText"] = str(ans).strip()
                 return payload
 
-            # 2) Miss → try rewrite for retrieval only
+            # 2) Miss -> rewrite for retrieval only
             resp.headers["X-Debug-Branch"] = "fact_rewrite_try"
 
             rewrite = ""
@@ -328,17 +255,18 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                     "Do NOT invent numbers, prices, times, policies, or inclusions. "
                     "Output only the rewritten query text with no quotes or explanation."
                 )
-                rewrite = chat_once(
-                    system,
-                    f"Original customer message: {msg}",
-                    temperature=0.0,
-                ).strip()
+                rewrite = chat_once(system, f"Original customer message: {msg}", temperature=0.0).strip()
             except Exception:
                 rewrite = ""
 
             if rewrite:
                 resp.headers["X-Fact-Rewrite"] = rewrite[:80]
 
+                # hard safety: if rewrite invents numbers/units, ignore it
+                if not is_rewrite_safe(rewrite, msg):
+                    rewrite = ""
+
+            if rewrite:
                 rw_emb = embed_text(rewrite)
                 rw_hit, rw_ans, rw_score, rw_delta = retrieve_faq_answer(tenant_id, rw_emb)
 
@@ -353,7 +281,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                     payload["replyText"] = str(rw_ans).strip()
                     return payload
 
-            # 3) Still no acceptable match → fallback
+            # 3) Still no acceptable match -> fallback
             resp.headers["X-Debug-Branch"] = "fact_miss"
             resp.headers["X-Faq-Hit"] = "false"
             payload["replyText"] = FALLBACK
