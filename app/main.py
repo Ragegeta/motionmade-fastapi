@@ -23,9 +23,69 @@ from .db import get_conn
 def fact_domain(text: str) -> str:
     """
     Returns one of:
-      pricing|time|inclusions|policy|payment|travel|clean_type|service_area|parking|linen|insurance|other|none
+      pricing|time|inclusions|policy|payment|travel|service_area|clean_type|other|none
     """
-    return classify_fact_domain(text or "")
+    if not text:
+        return "none"
+
+    t = text.lower().strip()
+
+    # normalize common slang
+    t = re.sub(r"\bur\b", "your", t)
+    t = re.sub(r"\bu\b", "you", t)
+
+    # clean type (bond/vacate/end-of-lease) — explicit routing
+    if re.search(r"\b(bond|vacate|end of lease|end-of-lease|end of tenancy|move(?:ing)? out|exit clean|lease clean)\b", t):
+        return "clean_type"
+
+    # supplies/equipment questions even when phrased like "do i need to..."
+    if re.search(r"\b(supply|supplies|provide|bring)\b", t) and re.search(r"\b(anything|stuff|products?|equipment|vacuum|materials?)\b", t):
+        return "other"
+    if re.search(r"\b(do i|do we|do you)\b", t) and re.search(r"\b(need to|have to|gotta)\b", t) and re.search(r"\b(supply|provide|bring)\b", t):
+        return "other"
+
+    # service_area
+    if re.search(r"\b(service area|service areas|coverage)\b", t):
+        return "service_area"
+    if re.search(r"\b(area|areas|suburb|suburbs|location|locations|radius|within)\b", t):
+        return "service_area"
+    if re.search(r"\b(where do you(?:\s+\w+){0,2})\b", t) or re.search(r"\b(do you service|where do you service)\b", t):
+        return "service_area"
+    if re.search(r"\b(northside|southside|cbd)\b", t):
+        return "service_area"
+
+    # pricing
+    if re.search(r"\b(price|pricing|cost|quote|how much|\$|dollars?|aud)\b", t):
+        return "pricing"
+
+    # time
+    if re.search(r"\b(time|duration|how long|hours?|hrs?|minutes?|mins?|days?)\b", t):
+        return "time"
+
+    # inclusions
+    if re.search(r"\b(included|inclusions|include|what(?:'s| is) included|checklist)\b", t):
+        return "inclusions"
+
+    # policy
+    if re.search(r"\b(cancel|cancellation|resched|refund|policy|policies|late fee)\b", t):
+        return "policy"
+
+    # payment (plural-safe)
+    if re.search(r"\b(pay|payment|card|invoices?|bank transfer|eft|cash)\b", t):
+        return "payment"
+
+    # travel / access costs
+    if re.search(r"\b(travel|parking|toll|distance|surcharge)\b", t):
+        return "travel"
+
+    # “Do you / can you …” capability questions
+    if re.search(r"\b(do you|do you|can you|can you)\b", t) and re.search(
+        r"\b(clean|cleaning|bond|end of lease|vacate|deep|standard|oven|fridge|windows?|laundry|linen|ironing|polish|steam|wash|remove|stain|grout|carpet|upholstery|blinds?|balcony|mould|mold|pressure)\b",
+        t,
+    ):
+        return "other"
+
+    return "none"
 
 
 # -----------------------------
