@@ -111,7 +111,7 @@ function Run-Test {
   }
 }
 
-# -------- Second-opinion TEST SET --------
+# -------- Core v1 TEST SET --------
 Run-Test -Name "A) Oven add-on pricing (must hit)" `
   -Question "How much extra is the oven add-on?" `
   -Expect "FACT_ACCEPT" `
@@ -136,3 +136,36 @@ Run-Test -Name "E) Unknown capability (must fallback; never general_ok)" `
 Run-Test -Name "F) General knowledge (must be general_ok)" `
   -Question "Why is the sky blue?" `
   -Expect "GENERAL_OK"
+
+# -------- Messy / adversarial SAFETY TEST SET --------
+Run-Test -Name "G) Messy: carpet steam clean slang (must fallback)" `
+  -Question "u guys do carpet steam clean?" `
+  -Expect "BUSINESS_FALLBACK"
+
+Run-Test -Name "H) Messy: driveway pressure wash (must fallback)" `
+  -Question "can ya pressure wash my driveway?" `
+  -Expect "BUSINESS_FALLBACK"
+
+Run-Test -Name "I) Messy: blinds (must fallback)" `
+  -Question "do you clean blinds?" `
+  -Expect "BUSINESS_FALLBACK"
+
+Run-Test -Name "J) Messy: mould removal (must fallback)" `
+  -Question "do you do mould removal?" `
+  -Expect "BUSINESS_FALLBACK"
+
+Run-Test -Name "K) Messy: couch cleaning (must fallback)" `
+  -Question "can you clean couches?" `
+  -Expect "BUSINESS_FALLBACK"
+
+Run-Test -Name "L) Messy: tiles + grout (must fallback)" `
+  -Question "do you do tiles and grout?" `
+  -Expect "BUSINESS_FALLBACK"
+
+Run-Test -Name "M) Messy: builders cleans (must fallback)" `
+  -Question "do you do builders cleans?" `
+  -Expect "BUSINESS_FALLBACK"
+
+Run-Test -Name "N) Messy: garage clean (must fallback)" `
+  -Question "can you clean a garage?" `
+  -Expect "BUSINESS_FALLBACK"
