@@ -8,7 +8,7 @@ def _normalize(text: str) -> str:
     t = (text or "").lower().strip()
     if not t:
         return ""
-    # quick slang normalizer (keeps it deterministic)
+    # small deterministic slang normalizer
     t = re.sub(r"\bur\b", "your", t)
     t = re.sub(r"\bu\b", "you", t)
     t = re.sub(r"[^a-z0-9\s\$\?]", " ", t)
@@ -18,46 +18,62 @@ def _normalize(text: str) -> str:
 
 # ---- Capability gating (MUST route to fact branch) ----
 # Rule: ability/offer phrase + service-ish noun, in same message.
+# IMPORTANT: include slang forms ("can ya", "u guys do", etc.)
 _CAP_VERBS = [
     r"\bcan you\b",
+    r"\bcan u\b",
+    r"\bcan ya\b",
     r"\bdo you\b",
-    r"\bdo you offer\b",
+    r"\bdo u\b",
+    r"\bdo ya\b",
+    r"\byou guys do\b",
+    r"\byou guys\b.*\bdo\b",
+    r"\bu guys do\b",
+    r"\bu guys\b.*\bdo\b",
     r"\bare you able to\b",
+    r"\bable to\b",
     r"\bprovide\b",
     r"\boffer\b",
     r"\bservice\b",
     r"\bhandle\b",
 ]
+
+# nouns/phrases that indicate "service capability"
 _CAP_NOUNS = [
     r"\bclean\b", r"\bcleaning\b",
-    r"\bsteam\b", r"\bcarpet\b", r"\bcarpets\b",
-    r"\bcouch\b", r"\bsofa\b", r"\bupholstery\b",
+    r"\bsteam\b", r"\bsteaming\b",
+    r"\bcarpet\b", r"\bcarpets\b",
+    r"\bcouch\b", r"\bcouches\b", r"\bsofa\b", r"\bupholstery\b",
     r"\boven\b", r"\bfridge\b",
     r"\bwindow\b", r"\bwindows\b",
     r"\bbathroom\b", r"\bbathrooms\b",
     r"\bbond\b", r"\bvacate\b", r"\bend of lease\b", r"\bend-of-lease\b",
     r"\bdeep clean\b", r"\bstandard clean\b",
     r"\bmop\b", r"\bvacuum\b",
-    r"\bpest\b", r"\bpest control\b",
-    # NEW: pressure/power washing capability (was leaking into general_ok)
+    # pressure/power washing slang + contexts
     r"\bpressure wash\b", r"\bpressure washing\b", r"\bpressure-washing\b",
     r"\bpower wash\b", r"\bpower washing\b", r"\bpower-washing\b",
+    r"\bdriveway\b",
+    # common “do you do X?” service traps
+    r"\bmould\b", r"\bmold\b", r"\bmould removal\b", r"\bmold removal\b",
+    r"\btiles?\b", r"\bgrout\b", r"\btiles and grout\b",
+    r"\bbuilder'?s\b", r"\bbuilders\b", r"\bbuilder'?s clean\b", r"\bbuilders clean\b", r"\bpost construction\b",
+    r"\bblinds\b",
+    r"\bgarage\b",
 ]
 
 
 def _is_capability_question(t: str) -> bool:
     if not t:
         return False
-    has_verb = any(re.search(p, t) for p in _CAP_VERBS)
-    if not has_verb:
+    if not any(re.search(p, t) for p in _CAP_VERBS):
         return False
-    has_noun = any(re.search(p, t) for p in _CAP_NOUNS)
-    if not has_noun:
+    if not any(re.search(p, t) for p in _CAP_NOUNS):
         return False
     return True
 
 
-# Domain patterns (case-insensitive). Order matters.
+# Domain patterns. Order matters.
 _DOMAINS: list[tuple[str, list[str]]] = [
     ("pricing", [
         r"\bprice\b", r"\bcost\b", r"\bfee\b", r"\bcharge\b", r"\bhow much\b",
@@ -102,13 +118,10 @@ _DOMAINS: list[tuple[str, list[str]]] = [
         r"\bbrisbane\b", r"\bbris\b",
     ]),
     ("other", [
-        # supplies intent
         r"\bsupply\b", r"\bsupplying\b", r"\bneed to supply\b", r"\bgotta supply\b",
         r"\bsupplies\b", r"\bcleaning supplies\b", r"\bequipment\b", r"\bproducts?\b", r"\bvacuum\b",
-        r"\bbring\b", r"\bown products\b", r"\bgear\b",
-        # insurance / admin-ish
+        r"\bbring\b", r"\bown products\b",
         r"\binsurance\b", r"\binsured\b", r"\bpublic liability\b",
-        # pets / access
         r"\bpets?\b", r"\bdog\b", r"\bcat\b",
     ]),
 ]
@@ -131,12 +144,11 @@ def classify_fact_domain(text: str) -> str:
     if not t:
         return "none"
 
-    # First: capability (safety-first). If it looks like "do/can you X service?",
-    # route to fact branch even if we can't classify a specific domain.
+    # capability first (safety-first): prevents any "yes we do X" leaks
     if _is_capability_question(t):
         return "capability"
 
-    # Then: specific domains
+    # then specific domains
     for domain, pats in _DOMAINS:
         for p in pats:
             if re.search(p, t):
