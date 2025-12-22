@@ -231,12 +231,14 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         try:
             # 1) Original retrieval
             q_emb = embed_text(msg)
-            hit, ans, score, delta = retrieve_faq_answer(tenant_id, q_emb)
+            hit, ans, score, delta, faq_id = retrieve_faq_answer(tenant_id, q_emb)
 
             if score is not None:
                 resp.headers["X-Retrieval-Score"] = str(score)
             if delta is not None:
                 resp.headers["X-Retrieval-Delta"] = str(delta)
+            if faq_id is not None:
+                resp.headers["X-Top-Faq-Id"] = str(faq_id)
 
             if hit and ans:
                 resp.headers["X-Debug-Branch"] = "fact_hit"
@@ -246,6 +248,14 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
 
             # 2) Miss -> rewrite for retrieval only
             resp.headers["X-Debug-Branch"] = "fact_rewrite_try"
+
+            # preserve raw attempt headers if we run rewrite
+            if "X-Retrieval-Score" in resp.headers:
+                resp.headers["X-Retrieval-Score-Raw"] = resp.headers["X-Retrieval-Score"]
+            if "X-Retrieval-Delta" in resp.headers:
+                resp.headers["X-Retrieval-Delta-Raw"] = resp.headers["X-Retrieval-Delta"]
+            if "X-Top-Faq-Id" in resp.headers:
+                resp.headers["X-Top-Faq-Id-Raw"] = resp.headers["X-Top-Faq-Id"]
 
             rewrite = ""
             try:
@@ -268,12 +278,14 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
 
             if rewrite:
                 rw_emb = embed_text(rewrite)
-                rw_hit, rw_ans, rw_score, rw_delta = retrieve_faq_answer(tenant_id, rw_emb)
+                rw_hit, rw_ans, rw_score, rw_delta, rw_faq_id = retrieve_faq_answer(tenant_id, rw_emb)
 
                 if rw_score is not None:
                     resp.headers["X-Retrieval-Score"] = str(rw_score)
                 if rw_delta is not None:
                     resp.headers["X-Retrieval-Delta"] = str(rw_delta)
+                if rw_faq_id is not None:
+                    resp.headers["X-Top-Faq-Id"] = str(rw_faq_id)
 
                 if rw_hit and rw_ans:
                     resp.headers["X-Debug-Branch"] = "fact_rewrite_hit"

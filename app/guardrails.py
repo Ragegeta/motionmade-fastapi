@@ -4,14 +4,65 @@ import re
 FALLBACK = "For accurate details, please contact us directly and we'll be happy to help."
 
 
+def _normalize(text: str) -> str:
+    t = (text or "").lower().strip()
+    if not t:
+        return ""
+    # quick slang normalizer (keeps it deterministic)
+    t = re.sub(r"\bur\b", "your", t)
+    t = re.sub(r"\bu\b", "you", t)
+    t = re.sub(r"[^a-z0-9\s\$\?]", " ", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    return t
+
+
+# ---- Capability gating (MUST route to fact branch) ----
+# Rule: ability/offer phrase + service-ish noun, in same message.
+_CAP_VERBS = [
+    r"\bcan you\b",
+    r"\bdo you\b",
+    r"\bdo you offer\b",
+    r"\bare you able to\b",
+    r"\bprovide\b",
+    r"\boffer\b",
+    r"\bservice\b",
+    r"\bhandle\b",
+]
+_CAP_NOUNS = [
+    r"\bclean\b", r"\bcleaning\b",
+    r"\bsteam\b", r"\bcarpet\b", r"\bcarpets\b",
+    r"\bcouch\b", r"\bsofa\b", r"\bupholstery\b",
+    r"\boven\b", r"\bfridge\b",
+    r"\bwindow\b", r"\bwindows\b",
+    r"\bbathroom\b", r"\bbathrooms\b",
+    r"\bbond\b", r"\bvacate\b", r"\bend of lease\b", r"\bend-of-lease\b",
+    r"\bdeep clean\b", r"\bstandard clean\b",
+    r"\bmop\b", r"\bvacuum\b",
+    r"\bpest\b", r"\bpest control\b",
+]
+
+
+def _is_capability_question(t: str) -> bool:
+    if not t:
+        return False
+    has_verb = any(re.search(p, t) for p in _CAP_VERBS)
+    if not has_verb:
+        return False
+    has_noun = any(re.search(p, t) for p in _CAP_NOUNS)
+    if not has_noun:
+        return False
+    return True
+
+
 # Domain patterns (case-insensitive). Order matters.
 _DOMAINS: list[tuple[str, list[str]]] = [
     ("pricing", [
-        r"\bprice\b", r"\bcost\b", r"\bfee\b", r"\bcharge\b", r"\bhow much\b", r"\$", r"\baud\b", r"\bdollars?\b",
-        r"\bquote\b",
+        r"\bprice\b", r"\bcost\b", r"\bfee\b", r"\bcharge\b", r"\bhow much\b",
+        r"\$", r"\baud\b", r"\bdollars?\b", r"\bquote\b",
     ]),
     ("time", [
-        r"\bhow long\b", r"\bduration\b", r"\bminutes?\b", r"\bmins?\b", r"\bhours?\b", r"\bhrs?\b", r"\bdays?\b",
+        r"\bhow long\b", r"\bduration\b", r"\bminutes?\b", r"\bmins?\b",
+        r"\bhours?\b", r"\bhrs?\b", r"\bdays?\b",
         r"\barrival\b", r"\btime window\b", r"\bwindow\b",
     ]),
     ("inclusions", [
@@ -29,19 +80,15 @@ _DOMAINS: list[tuple[str, list[str]]] = [
         r"\bcancel\b", r"\bcancellation\b", r"\brefund\b", r"\breschedule\b",
         r"\bavailability\b", r"\bbook\b", r"\bbooking\b", r"\blate cancellation\b", r"\blate fee\b",
     ]),
-
-    # bond / vacate / end-of-lease routing
     ("clean_type", [
         r"\bbond\b",
         r"\bbond clean\b", r"\bbond cleans\b", r"\bbond cleaning\b",
         r"\bvacate\b", r"\bvacate clean\b", r"\bvacate cleans\b", r"\bvacate cleaning\b",
         r"\bend of lease\b", r"\bend-of-lease\b",
         r"\bend of tenancy\b", r"\bmove(?:ing)? out\b",
-        r"\bexit clean\b", r"\blease clean\b", r"\bvacate service\b", r"\bvacate services\b",
+        r"\bexit clean\b", r"\blease clean\b",
         r"\bend of lease clean\b", r"\bvacate clean(?:ing)? service\b",
     ]),
-
-    # service area routing
     ("service_area", [
         r"\bservice area\b", r"\bservice areas\b", r"\bcoverage\b",
         r"\bsuburb\b", r"\bsuburbs\b",
@@ -51,23 +98,15 @@ _DOMAINS: list[tuple[str, list[str]]] = [
         r"\bnorthside\b", r"\bsouthside\b", r"\bcbd\b",
         r"\bbrisbane\b", r"\bbris\b",
     ]),
-
-    # operational / capability / “do you…” questions (these must NOT be answered by general chat)
     ("other", [
-        # supplies intent (messy slang)
+        # supplies intent
         r"\bsupply\b", r"\bsupplying\b", r"\bneed to supply\b", r"\bgotta supply\b",
         r"\bsupplies\b", r"\bcleaning supplies\b", r"\bequipment\b", r"\bproducts?\b", r"\bvacuum\b",
         r"\bbring\b", r"\bown products\b",
-
-        # generic capability phrasing
-        r"\bdo you (?:clean|offer|provide|handle|polish|wash|service|bring)\b",
-        r"\bcan you (?:clean|do|handle|polish|wash|service|bring)\b",
-
-        # common add-ons / services keywords
-        r"\boven\b", r"\bfridge\b", r"\bwindows?\b", r"\bwindow cleaning\b",
-        r"\blaundry\b", r"\blinen\b", r"\bbeds?\b",
-        r"\bpets?\b", r"\bdog\b", r"\bcat\b",
+        # insurance / admin-ish
         r"\binsurance\b", r"\binsured\b", r"\bpublic liability\b",
+        # pets / access
+        r"\bpets?\b", r"\bdog\b", r"\bcat\b",
     ]),
 ]
 
@@ -84,27 +123,21 @@ _GENERAL_BLOCK_PATTERNS = [
 ]
 
 
-def _normalize(text: str) -> str:
-    t = (text or "").lower().strip()
-    if not t:
-        return ""
-    # quick slang normalizer (keeps it deterministic)
-    t = re.sub(r"\bur\b", "your", t)
-    t = re.sub(r"\bu\b", "you", t)
-    t = re.sub(r"[^a-z0-9\s\$\?]", " ", t)
-    t = re.sub(r"\s+", " ", t).strip()
-    return t
-
-
 def classify_fact_domain(text: str) -> str:
     t = _normalize(text)
     if not t:
         return "none"
 
+    # First: specific domains
     for domain, pats in _DOMAINS:
         for p in pats:
             if re.search(p, t):
                 return domain
+
+    # Then: capability (broad, safety-first)
+    if _is_capability_question(t):
+        return "capability"
+
     return "none"
 
 

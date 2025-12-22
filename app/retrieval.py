@@ -1,22 +1,22 @@
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple
 from pgvector import Vector
 from .db import get_conn
 
 THETA = 0.82
 DELTA = 0.08
 
+
 def retrieve_faq_answer(tenant_id: str, query_embedding):
     """
-    Returns: (hit: bool, answer: str|None, score: float|None, delta: float|None)
+    Returns: (hit: bool, answer: str|None, score: float|None, delta: float|None, top_faq_id: int|None)
 
-    Fix A (real):
     - Pull more than 3 rows
     - Compute the "second best" score from a *different FAQ (or different answer)*
     - If only one distinct FAQ/answer exists, delta should not block a hit
     """
     tenant_id = (tenant_id or "").strip()
     if not tenant_id or query_embedding is None:
-        return (False, None, None, None)
+        return (False, None, None, None, None)
 
     qv = Vector(query_embedding)
 
@@ -35,14 +35,13 @@ def retrieve_faq_answer(tenant_id: str, query_embedding):
         rows = conn.execute(sql, (qv, tenant_id, qv)).fetchall()
 
     if not rows:
-        return (False, None, None, None)
+        return (False, None, None, None, None)
 
     top_faq_id, top_answer, top_score = rows[0]
     top_faq_id = int(top_faq_id)
     top_answer = str(top_answer)
     top_score = float(top_score)
 
-    # Find the best competing score from a *different* FAQ or at least different answer
     second_score = None
     for faq_id, ans, score in rows[1:]:
         faq_id = int(faq_id)
@@ -52,11 +51,10 @@ def retrieve_faq_answer(tenant_id: str, query_embedding):
             second_score = s
             break
 
-    # If there is no meaningful "second" competitor, don't let delta block the hit
     if second_score is None:
         delta = top_score
     else:
         delta = top_score - float(second_score)
 
     hit = (top_score >= THETA) and (delta >= DELTA)
-    return (hit, top_answer, top_score, float(delta))
+    return (hit, top_answer, top_score, float(delta), top_faq_id)
