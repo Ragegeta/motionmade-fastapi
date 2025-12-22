@@ -1,4 +1,3 @@
-from typing import Optional, Tuple
 from pgvector import Vector
 from .db import get_conn
 
@@ -10,9 +9,11 @@ def retrieve_faq_answer(tenant_id: str, query_embedding):
     """
     Returns: (hit: bool, answer: str|None, score: float|None, delta: float|None, top_faq_id: int|None)
 
-    - Pull more than 3 rows
-    - Compute the "second best" score from a *different FAQ (or different answer)*
-    - If only one distinct FAQ/answer exists, delta should not block a hit
+    Acceptance logic:
+      - If top_score < THETA => miss
+      - If top_score >= THETA:
+          * If runner-up is same faq_id => accept (not ambiguous)
+          * Else require (top_score - runner_up_score) >= DELTA
     """
     tenant_id = (tenant_id or "").strip()
     if not tenant_id or query_embedding is None:
@@ -42,19 +43,28 @@ def retrieve_faq_answer(tenant_id: str, query_embedding):
     top_answer = str(top_answer)
     top_score = float(top_score)
 
-    second_score = None
-    for faq_id, ans, score in rows[1:]:
-        faq_id = int(faq_id)
-        ans = str(ans)
-        s = float(score)
-        if faq_id != top_faq_id and ans.strip() != top_answer.strip():
-            second_score = s
-            break
+    # Find runner-up row (the second row), if it exists
+    runner_up_score = None
+    runner_up_faq_id = None
+    if len(rows) >= 2:
+        runner_up_faq_id = int(rows[1][0])
+        runner_up_score = float(rows[1][2])
 
-    if second_score is None:
-        delta = top_score
-    else:
-        delta = top_score - float(second_score)
+    # Must clear THETA first
+    if top_score < THETA:
+        delta = None if runner_up_score is None else (top_score - runner_up_score)
+        return (False, None, top_score, delta, top_faq_id)
 
-    hit = (top_score >= THETA) and (delta >= DELTA)
-    return (hit, top_answer, top_score, float(delta), top_faq_id)
+    # If we don't even have a runner-up, accept
+    if runner_up_score is None:
+        return (True, top_answer, top_score, top_score, top_faq_id)
+
+    delta = top_score - runner_up_score
+
+    # If the tie is within the same FAQ, accept (not ambiguous)
+    if runner_up_faq_id == top_faq_id:
+        return (True, top_answer, top_score, delta, top_faq_id)
+
+    # Otherwise require separation
+    hit = delta >= DELTA
+    return (hit, top_answer if hit else None, top_score, delta, top_faq_id)
