@@ -39,6 +39,9 @@ _CAP_NOUNS = [
     r"\bdeep clean\b", r"\bstandard clean\b",
     r"\bmop\b", r"\bvacuum\b",
     r"\bpest\b", r"\bpest control\b",
+    # NEW: pressure/power washing capability (was leaking into general_ok)
+    r"\bpressure wash\b", r"\bpressure washing\b", r"\bpressure-washing\b",
+    r"\bpower wash\b", r"\bpower washing\b", r"\bpower-washing\b",
 ]
 
 
@@ -102,7 +105,7 @@ _DOMAINS: list[tuple[str, list[str]]] = [
         # supplies intent
         r"\bsupply\b", r"\bsupplying\b", r"\bneed to supply\b", r"\bgotta supply\b",
         r"\bsupplies\b", r"\bcleaning supplies\b", r"\bequipment\b", r"\bproducts?\b", r"\bvacuum\b",
-        r"\bbring\b", r"\bown products\b",
+        r"\bbring\b", r"\bown products\b", r"\bgear\b",
         # insurance / admin-ish
         r"\binsurance\b", r"\binsured\b", r"\bpublic liability\b",
         # pets / access
@@ -128,15 +131,16 @@ def classify_fact_domain(text: str) -> str:
     if not t:
         return "none"
 
-    # First: specific domains
+    # First: capability (safety-first). If it looks like "do/can you X service?",
+    # route to fact branch even if we can't classify a specific domain.
+    if _is_capability_question(t):
+        return "capability"
+
+    # Then: specific domains
     for domain, pats in _DOMAINS:
         for p in pats:
             if re.search(p, t):
                 return domain
-
-    # Then: capability (broad, safety-first)
-    if _is_capability_question(t):
-        return "capability"
 
     return "none"
 
