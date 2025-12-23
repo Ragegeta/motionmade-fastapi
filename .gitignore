@@ -28,3 +28,17 @@ upload_body.txt
 faqs_variants.json.bak*
 server.*.log
 uvicorn.*.log
+# Generated tenant artifacts
+tenants/*/backups/
+tenants/*/last_good_faqs_variants.json
+
+# Local scratch
+*_dump_for_chat.txt
+PASTE_THE_PATH_YOU_JUST_GOT_HERE.txt
+admin_upload_headers.txt
+upload_headers.txt
+upload_body.txt
+*.bak_*
+faqs_variants.json.bak*
+server.*.log
+uvicorn.*.log
