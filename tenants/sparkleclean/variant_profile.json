@@ -1,0 +1,55 @@
+{
+    "max_variants_per_faq":  60,
+    "aliases":  {
+                    "you":  [
+                                "you",
+                                "u",
+                                "ya"
+                            ],
+                    "your":  [
+                                 "your",
+                                 "ur"
+                             ],
+                    "are":  [
+                                "are",
+                                "r"
+                            ],
+                    "and":  [
+                                "and",
+                                "n",
+                                "\u0026"
+                            ],
+                    "for":  [
+                                "for",
+                                "4"
+                            ],
+                    "to":  [
+                               "to",
+                               "2"
+                           ]
+                },
+    "service_area_places":  [
+                                "Melbourne",
+                                "Melbourne cbd",
+                                "Melbourne inner north",
+                                "Melbourne inner south",
+                                "northside",
+                                "southside"
+                            ],
+    "pricing_things":  null,
+    "must_variants":  {
+                          "service_area":  [
+                                               "do you cover Melbourne what areas do you service do u do Melbourne"
+                                           ],
+                          "supplies":  [
+                                           "do you bring your own supplies",
+                                           "do i need to supply anything",
+                                           "u bring vacuum n products?"
+                                       ],
+                          "pricing_oven":  [
+                                               "how much extra is the oven add-on",
+                                               "oven add on price",
+                                               "oven cleaning cost"
+                                           ]
+                      }
+}

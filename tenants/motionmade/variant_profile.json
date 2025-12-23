@@ -1,0 +1,77 @@
+﻿{
+  "max_variants_per_faq": 60,
+  "aliases": {
+    "you": ["u","ya"],
+    "your": ["ur"],
+    "are": ["r"],
+    "and": ["n","&"],
+    "for": ["4"],
+    "to": ["2"],
+    "brisbane": ["bris","brisb"],
+    "north": ["nth","n"],
+    "south": ["sth","s"]
+  },
+  "service_area_places": [
+    "Brisbane",
+    "Brisbane cbd",
+    "Brisbane inner north",
+    "Brisbane inner south",
+    "inner north",
+    "inner south",
+    "northside",
+    "southside",
+    "bris",
+    "brisb",
+    "bris north",
+    "brisb north"
+  ],
+  "pricing_things": [
+    "oven",
+    "oven cleaning",
+    "oven add on",
+    "oven add-on",
+    "oven addon",
+    "add on",
+    "add-on",
+    "addon",
+    "$89",
+    "89"
+  ],
+  "must_variants": {
+    "service_area": [
+      "Do you cover Brisbane inner north?",
+      "do u do brisb north",
+      "do u do bris north",
+      "do you cover bris north",
+      "do you cover brisbane inner north",
+      "do you cover brisbane inner south",
+      "what suburbs do you cover",
+      "what areas do you service"
+    ],
+    "supplies": [
+      "Do I need to supply anything or do you bring gear?",
+      "do i need to supply anything",
+      "do i need to supply anything or do you bring gear",
+      "do you bring your own supplies",
+      "do you bring cleaning supplies",
+      "do you bring cleaning products",
+      "do you bring a vacuum",
+      "do i need to provide anything",
+      "do i need to provide products",
+      "u bring vacuum n products",
+      "u bring vacuum n products?"
+    ],
+    "pricing_oven": [
+      "How much extra is the oven add-on?",
+      "how much extra is the oven add on",
+      "how much extra is the oven add-on",
+      "how much is oven cleaning",
+      "how much extra for oven cleaning",
+      "oven add on price",
+      "oven add-on price",
+      "oven addon price",
+      "oven cost",
+      "oven cleaning cost"
+    ]
+  }
+}

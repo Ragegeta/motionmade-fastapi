@@ -1,0 +1,18 @@
+﻿{
+  "max_variants_per_faq": 60,
+
+  "aliases": {
+    "you": ["you", "u", "ya"],
+    "your": ["your", "ur"],
+    "and": ["and", "n", "&"]
+  },
+
+  "service_area_places": [],
+  "pricing_things": [],
+
+  "must": {
+    "service_area": [],
+    "supplies": [],
+    "pricing": []
+  }
+}

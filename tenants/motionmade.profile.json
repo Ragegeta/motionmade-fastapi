@@ -1,0 +1,42 @@
+﻿{
+  "tenant_id": "motionmade",
+  "aliases": {
+    "brisbane": ["brisbane", "bris", "brisb", "bne"],
+    "north": ["north", "nth", "n"],
+    "south": ["south", "sth", "s"]
+  },
+  "places": [
+    "brisbane",
+    "brisbane north",
+    "brisbane inner north",
+    "brisbane south",
+    "brisbane inner south",
+    "northside",
+    "southside",
+    "cbd"
+  ],
+  "pricing_things": [
+    "oven",
+    "oven cleaning",
+    "oven add on",
+    "oven add-on",
+    "oven addon"
+  ],
+  "must_variants": {
+    "pricing_oven": [
+      "How much extra is the oven add-on?",
+      "how much is oven cleaning",
+      "oven add on price",
+      "oven cleaning cost"
+    ],
+    "supplies": [
+      "Do I need to supply anything or do you bring gear?",
+      "do you bring your own supplies",
+      "u bring vacuum n products?"
+    ],
+    "service_area": [
+      "Do you cover Brisbane inner north?",
+      "do u do brisb north"
+    ]
+  }
+}

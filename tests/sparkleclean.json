@@ -1,0 +1,11 @@
+﻿{
+  "base": "https://motionmade-fastapi.onrender.com",
+  "endpoint": "/api/v2/generate-quote-reply",
+  "tests": [
+    {
+      "name": "General knowledge (must be general_ok)",
+      "question": "Why is the sky blue?",
+      "expect_debug_branch_any": ["general_ok"]
+    }
+  ]
+}

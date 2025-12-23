@@ -1,0 +1,72 @@
+﻿{
+  "max_variants_per_faq": 60,
+
+  "aliases": {
+    "you": ["you", "u", "ya"],
+    "your": ["your", "ur"],
+    "and": ["and", "n", "&"],
+    "do": ["do", "does"],
+    "bring": ["bring", "bring ya", "have"],
+    "vacuum": ["vacuum", "vac", "hoover"]
+  },
+
+  "templates": {
+    "service_area": [
+      "what suburbs do you cover",
+      "what areas do you service",
+      "where do you service",
+      "do you service {place}",
+      "do you cover {place}",
+      "do you do {place}"
+    ],
+    "supplies": [
+      "do you bring cleaning supplies",
+      "do you bring cleaning products",
+      "do you bring your own supplies",
+      "do you bring equipment",
+      "do you bring a vacuum",
+      "do i need to supply anything",
+      "do i need to provide anything",
+      "do i need to provide products"
+    ],
+    "pricing": [
+      "how much is {thing}",
+      "how much extra is {thing}",
+      "cost of {thing}",
+      "{thing} price",
+      "{thing} cost"
+    ]
+  },
+
+  "wipe_non_targets": false,
+  "targets": [
+    {
+      "name": "service_area",
+      "match": {
+        "question_contains_any": ["suburb", "suburbs", "areas", "service area", "cover", "where do you service"],
+        "answer_contains_any": ["service", "suburbs", "areas", "cover"]
+      },
+      "templates": [],
+      "must": [],
+      "block_tokens": []
+    },
+    {
+      "name": "supplies",
+      "match": {
+        "answer_contains_any": ["bring", "supplies", "equipment"]
+      },
+      "templates": [],
+      "must": [],
+      "block_tokens": []
+    },
+    {
+      "name": "pricing",
+      "match": {
+        "answer_contains_any": ["$", "cost", "price", "add-on", "addon"]
+      },
+      "templates": [],
+      "must": [],
+      "block_tokens": []
+    }
+  ]
+}
