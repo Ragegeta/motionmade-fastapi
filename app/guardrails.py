@@ -20,79 +20,91 @@ def _normalize(text: str) -> str:
     t = re.sub(r"\bbrisb\b", "brisbane", t)
     t = re.sub(r"\bbris\b", "brisbane", t)
 
+    # keep $, ? for “how much?” / pricing-ish signals
     t = re.sub(r"[^a-z0-9\s\$\?]", " ", t)
     t = re.sub(r"\s+", " ", t).strip()
     return t
 
 
-# ---- Capability gating (MUST route to fact branch) ----
-# Rule: ability/offer phrase + service-ish noun, in same message.
-_CAP_VERBS = [
-    r"\bcan (you|u|ya)\b",
-    r"\bcan ya\b",
-    r"\bdo (you|u|ya)\b",
-    r"\bdo you do\b",
-    r"\bdo you offer\b",
-    r"\bdo u offer\b",
-    r"\bdo ya offer\b",
-    r"\byou guys (do|offer|provide|service|handle)\b",
-    r"\bu guys (do|offer|provide|service|handle)\b",
-    r"\bare you able to\b",
-    r"\bable to\b",
-    r"\bprovide\b",
-    r"\boffer\b",
-    r"\bservice\b",
-    r"\bhandle\b",
-    r"\\b(can|could)\\s+(you|u)\\s+fix\\b",
-    r"\\b(can|could)\\s+(you|u)\\s+install\\b",
-    r"\\b(can|could)\\s+(you|u)\\s+repair\\b",
-    r"\\bdo\\s+(you|u)\\s+fix\\b",
-    r"\\bdo\\s+(you|u)\\s+install\\b",
-    r"\\bdo\\s+(you|u)\\s+repair\\b",
-    r"\\bdo\\s+(you|u)\\s+offer\\b",
-    r"\\boffer\\s+\\w+\\b",
-]
-
-_CAP_NOUNS = [
-    # generic cleaning/service language
-    r"\bclean\b", r"\bcleaning\b", r"\bdeep clean\b", r"\bstandard clean\b",
-    r"\bvacc?uum\b", r"\bmop\b",
-
-    # carpets / upholstery
-    r"\bsteam\b", r"\bsteam clean\b", r"\bcarpet\b", r"\bcarpets\b",
-    r"\bcouch\b", r"\bcouches\b", r"\bsofa\b", r"\bupholstery\b",
-
-    # add-ons / areas people ask about
-    r"\boven\b", r"\bfridge\b", r"\bwindow\b", r"\bwindows\b",
-    r"\bblind\b", r"\bblinds\b",
-    r"\bgarage\b", r"\bdriveway\b",
-
-    # end-of-lease language
-    r"\bbond\b", r"\bvacate\b", r"\bend of lease\b", r"\bend-of-lease\b",
-
-    # pressure / power washing
-    r"\bpressure wash\b", r"\bpressure washing\b", r"\bpressure-washing\b",
-    r"\bpower wash\b", r"\bpower washing\b", r"\bpower-washing\b",
-
-    # other common “do you do X” services people ask cleaners about
-    r"\bmould\b", r"\bmold\b", r"\bmould removal\b", r"\bmold removal\b", r"\bremoval\b",
-    r"\btiles?\b", r"\bgrout\b", r"\btiles and grout\b",
-    r"\bbuilder\b", r"\bbuilders\b", r"\bbuilder'?s\b", r"\bbuilders clean\b", r"\bbuilders cleans\b",
-    r"\bpest\b", r"\bpest control\b",
+# -----------------------------
+# Capability detection (universal)
+# -----------------------------
+_CAPABILITY_PATTERNS = [
+    r"\bcan\s+(you|u)\b",
+    r"\bcould\s+(you|u)\b",
+    r"\bdo\s+(you|u)\b",
+    r"\bdo\s+you\s+do\b",
+    r"\bdo\s+you\s+offer\b",
+    r"\bare\s+you\s+able\s+to\b",
+    r"\bable\s+to\b",
+    r"\bdo\s+you\s+provide\b",
+    r"\bcan\s+you\s+fix\b",
+    r"\bdo\s+you\s+fix\b",
+    r"\bcan\s+you\s+repair\b",
+    r"\bdo\s+you\s+repair\b",
+    r"\bcan\s+you\s+install\b",
+    r"\bdo\s+you\s+install\b",
 ]
 
 
-def _is_capability_question(text: str) -> bool:
+def is_capability_question(text: str) -> bool:
     t = _normalize(text)
     if not t:
         return False
 
-    # Exclusions: user asking for an explanation (general knowledge)
+    # Exclusions: general knowledge phrasing
     if re.search(r"\b(why|explain|what is|what's|how does|define)\b", t):
         return False
 
-    # Safety-first: any "can you / do you / do u / are you able to / do you offer" style capability question
-    return any(re.search(p, t) for p in _CAP_VERBS)
+    return any(re.search(p, t) for p in _CAPABILITY_PATTERNS)
+
+
+# -----------------------------
+# Logistics / ops detection (universal)
+# -----------------------------
+_LOGISTICS_KEYWORDS = [
+    # water/power
+    "water", "power", "electricity", "power point", "powerpoint",
+    # mobile / travel
+    "mobile", "come to me", "come to my", "do you come", "can you come", "do you travel", "travel to",
+    # access / keys / parking
+    "parking", "visitor spot", "keys", "key", "access", "gate code", "lockbox",
+]
+
+
+def is_logistics_question(text: str) -> bool:
+    t = _normalize(text)
+    if not t:
+        return False
+
+    # make water/power require both signals, to reduce false positives
+    if ("water" in t) and ("power" in t or "electricity" in t or "power point" in t or "powerpoint" in t):
+        return True
+
+    if any(k in t for k in [
+        "are you mobile", "do you come", "come to me", "come to my", "do you travel", "travel to"
+    ]):
+        return True
+
+    if any(k in t for k in ["parking", "visitor spot", "keys", "key", "access", "gate code", "lockbox"]):
+        return True
+
+    return False
+
+
+# -----------------------------
+# General-response safety check
+# (blocks business specifics leaking into general chat)
+# -----------------------------
+_GENERAL_BLOCK_PATTERNS = [
+    r"\$\s*\d",                         # $149
+    r"\b\d+\s*(aud|dollars?)\b",        # 149 dollars
+    r"\bstarts?\s+at\b",
+    r"\bfrom\s+\$\s*\d",
+    r"\b(price|pricing|cost|fee|deposit|invoice|callout)\b",
+    r"\b(hours?|hrs?|minutes?|mins?|days?)\b",
+]
+
 
 def violates_general_safety(text: str) -> bool:
     t = _normalize(text)
@@ -100,4 +112,30 @@ def violates_general_safety(text: str) -> bool:
         return False
     return any(re.search(p, t) for p in _GENERAL_BLOCK_PATTERNS)
 
-# REPLICA_PATCH_V1
+
+# -----------------------------
+# Legacy “fact gate” domain classification
+# (used for headers + fallback decisions, NOT to decide retrieval)
+# -----------------------------
+def classify_fact_domain(text: str) -> str:
+    t = _normalize(text)
+    if not t:
+        return "none"
+
+    # hard universal business signals
+    if is_capability_question(t):
+        return "capability"
+    if is_logistics_question(t):
+        return "other"
+
+    # existing stable domains
+    if re.search(r"\b(\$|price|pricing|cost|how much|quote|starts at|from)\b", t):
+        return "pricing"
+    if re.search(r"\b(brisbane|suburb|service area|do you cover|cover.*suburb|travel fee)\b", t):
+        return "service_area"
+    if re.search(r"\b(pay|payment|card|bank transfer|invoice)\b", t):
+        return "payment"
+    if re.search(r"\b(supplies|equipment|bring.*vacuum|bring.*supplies|do i provide)\b", t):
+        return "supplies"
+
+    return "none"

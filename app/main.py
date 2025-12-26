@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict
 from pgvector import Vector
 
 from .settings import settings
-from .guardrails import FALLBACK, violates_general_safety, classify_fact_domain
+from .guardrails import FALLBACK, violates_general_safety, classify_fact_domain, is_capability_question, is_logistics_question
 from .openai_client import embed_text, chat_once
 from .retrieval import retrieve_faq_answer
 from .db import get_conn
@@ -18,7 +18,6 @@ from .db import get_conn
 # -----------------------------
 # Rewrite safety (numbers/units must not be invented)
 # -----------------------------
-
 def _extract_fact_tokens(text: str) -> Set[str]:
     if not text:
         return set()
@@ -39,7 +38,6 @@ def is_rewrite_safe(rewritten: str, original: str) -> bool:
 # -----------------------------
 # FastAPI setup + DB schema
 # -----------------------------
-
 app = FastAPI()
 
 app.add_middleware(
@@ -107,33 +105,12 @@ def _base_payload():
     }
 
 
-
-# REPLICA_CALLSITE_GATE_PATCH_V2
-def _replica_fact_domain(msg: str) -> str:
-    t = (msg or "").lower()
-
-    # Capability phrasing => business (prevents hallucinated 'yes' from general chat)
-    if re.search(r"\b(can|could|do)\s+(you|u|ya)\b", t) or "do you offer" in t or "are you able to" in t:
-        return "capability"
-
-    # Universal logistics/ops => business (lets retrieval answer tenant FAQs)
-    if ("water and power" in t) or (("water" in t) and (("power" in t) or ("electricity" in t))):
-        return "other"
-
-    if any(p in t for p in ["are you mobile", "do you come", "come to me", "do you travel", "travel to my", "travel to"]):
-        return "other"
-
-    if any(p in t for p in ["parking", "visitor spot", "lockbox", "gate code", "keys", "key pickup", "access code"]):
-        return "other"
-
-    # Otherwise keep existing behaviour (pricing/service_area/payment/etc)
-    return _replica_fact_domain(msg)
 def _init_debug_headers(resp: Response, tenant_id: str, msg: str) -> str:
     _set_common_headers(resp, tenant_id)
 
-    domain = _replica_fact_domain(msg)
-    resp.headers["X-Fact-Gate-Hit"] = "true" if domain != "none" else "false"
+    domain = classify_fact_domain(msg)
     resp.headers["X-Fact-Domain"] = domain
+    resp.headers["X-Fact-Gate-Hit"] = "true" if domain != "none" else "false"
 
     resp.headers["X-Faq-Hit"] = "false"
     resp.headers["X-Debug-Branch"] = "error"
@@ -237,6 +214,31 @@ def put_faqs(
         raise HTTPException(status_code=500, detail=f"admin_upload_failed: {e!s}")
 
 
+def _should_fallback_after_miss(msg: str, domain: str) -> bool:
+    t = (msg or "").strip()
+    if not t:
+        return True
+
+    # Hard rule: capability phrasing must NEVER go to general chat
+    if is_capability_question(t):
+        return True
+
+    # Logistics questions should not be answered by general chat either
+    if is_logistics_question(t):
+        return True
+
+    # If the legacy gate thinks it's business, keep it safe
+    if domain != "none":
+        return True
+
+    # Extra cheap business signals (universal)
+    low = t.lower()
+    if any(k in low for k in ["price", "pricing", "cost", "how much", "quote", "availability", "book", "booking", "pay", "payment"]):
+        return True
+
+    return False
+
+
 @app.post("/api/v2/generate-quote-reply")
 def generate_quote_reply(req: QuoteRequest, resp: Response):
     tenant_id = (req.tenantId or "").strip()
@@ -246,88 +248,88 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
     payload = _base_payload()
 
     # -----------------------------
-    # Fact branch
+    # Retrieval-first (ALWAYS runs)
     # -----------------------------
-    if domain != "none":
+    try:
+        # 1) Original retrieval
+        q_emb = embed_text(msg)
+        hit, ans, score, delta, faq_id = retrieve_faq_answer(tenant_id, q_emb)
+
+        if score is not None:
+            resp.headers["X-Retrieval-Score"] = str(score)
+        if delta is not None:
+            resp.headers["X-Retrieval-Delta"] = str(delta)
+        if faq_id is not None:
+            resp.headers["X-Top-Faq-Id"] = str(faq_id)
+
+        if hit and ans:
+            resp.headers["X-Debug-Branch"] = "fact_hit"
+            resp.headers["X-Faq-Hit"] = "true"
+            payload["replyText"] = str(ans).strip()
+            return payload
+
+        # 2) Miss -> rewrite for retrieval only
+        resp.headers["X-Debug-Branch"] = "fact_rewrite_try"
+
+        if "X-Retrieval-Score" in resp.headers:
+            resp.headers["X-Retrieval-Score-Raw"] = resp.headers["X-Retrieval-Score"]
+        if "X-Retrieval-Delta" in resp.headers:
+            resp.headers["X-Retrieval-Delta-Raw"] = resp.headers["X-Retrieval-Delta"]
+        if "X-Top-Faq-Id" in resp.headers:
+            resp.headers["X-Top-Faq-Id-Raw"] = resp.headers["X-Top-Faq-Id"]
+
+        rewrite = ""
         try:
-            # 1) Original retrieval
-            q_emb = embed_text(msg)
-            hit, ans, score, delta, faq_id = retrieve_faq_answer(tenant_id, q_emb)
-
-            if score is not None:
-                resp.headers["X-Retrieval-Score"] = str(score)
-            if delta is not None:
-                resp.headers["X-Retrieval-Delta"] = str(delta)
-            if faq_id is not None:
-                resp.headers["X-Top-Faq-Id"] = str(faq_id)
-
-            if hit and ans:
-                resp.headers["X-Debug-Branch"] = "fact_hit"
-                resp.headers["X-Faq-Hit"] = "true"
-                payload["replyText"] = str(ans).strip()
-                return payload
-
-            # 2) Miss -> rewrite for retrieval only
-            resp.headers["X-Debug-Branch"] = "fact_rewrite_try"
-
-            # preserve raw attempt headers if we run rewrite
-            if "X-Retrieval-Score" in resp.headers:
-                resp.headers["X-Retrieval-Score-Raw"] = resp.headers["X-Retrieval-Score"]
-            if "X-Retrieval-Delta" in resp.headers:
-                resp.headers["X-Retrieval-Delta-Raw"] = resp.headers["X-Retrieval-Delta"]
-            if "X-Top-Faq-Id" in resp.headers:
-                resp.headers["X-Top-Faq-Id-Raw"] = resp.headers["X-Top-Faq-Id"]
-
+            system = (
+                "Rewrite the user message into a short FAQ-style query (max 12 words). "
+                "Preserve the meaning. Do not add or change any facts. "
+                "Do NOT invent numbers, prices, times, policies, or inclusions. "
+                "Output only the rewritten query text with no quotes or explanation."
+            )
+            rewrite = chat_once(system, f"Original customer message: {msg}", temperature=0.0).strip()
+        except Exception:
             rewrite = ""
-            try:
-                system = (
-                    "Rewrite the user message into a short FAQ-style query (max 12 words). "
-                    "Preserve the meaning. Do not add or change any facts. "
-                    "Do NOT invent numbers, prices, times, policies, or inclusions. "
-                    "Output only the rewritten query text with no quotes or explanation."
-                )
-                rewrite = chat_once(system, f"Original customer message: {msg}", temperature=0.0).strip()
-            except Exception:
+
+        if rewrite:
+            resp.headers["X-Fact-Rewrite"] = rewrite[:80]
+            if not is_rewrite_safe(rewrite, msg):
                 rewrite = ""
 
-            if rewrite:
-                resp.headers["X-Fact-Rewrite"] = rewrite[:80]
+        if rewrite:
+            rw_emb = embed_text(rewrite)
+            rw_hit, rw_ans, rw_score, rw_delta, rw_faq_id = retrieve_faq_answer(tenant_id, rw_emb)
 
-                # hard safety: if rewrite invents numbers/units, ignore it
-                if not is_rewrite_safe(rewrite, msg):
-                    rewrite = ""
+            if rw_score is not None:
+                resp.headers["X-Retrieval-Score"] = str(rw_score)
+            if rw_delta is not None:
+                resp.headers["X-Retrieval-Delta"] = str(rw_delta)
+            if rw_faq_id is not None:
+                resp.headers["X-Top-Faq-Id"] = str(rw_faq_id)
 
-            if rewrite:
-                rw_emb = embed_text(rewrite)
-                rw_hit, rw_ans, rw_score, rw_delta, rw_faq_id = retrieve_faq_answer(tenant_id, rw_emb)
+            if rw_hit and rw_ans:
+                resp.headers["X-Debug-Branch"] = "fact_rewrite_hit"
+                resp.headers["X-Faq-Hit"] = "true"
+                payload["replyText"] = str(rw_ans).strip()
+                return payload
 
-                if rw_score is not None:
-                    resp.headers["X-Retrieval-Score"] = str(rw_score)
-                if rw_delta is not None:
-                    resp.headers["X-Retrieval-Delta"] = str(rw_delta)
-                if rw_faq_id is not None:
-                    resp.headers["X-Top-Faq-Id"] = str(rw_faq_id)
-
-                if rw_hit and rw_ans:
-                    resp.headers["X-Debug-Branch"] = "fact_rewrite_hit"
-                    resp.headers["X-Faq-Hit"] = "true"
-                    payload["replyText"] = str(rw_ans).strip()
-                    return payload
-
-            # 3) Still no acceptable match -> fallback
-            resp.headers["X-Debug-Branch"] = "fact_miss"
-            resp.headers["X-Faq-Hit"] = "false"
-            payload["replyText"] = FALLBACK
-            return payload
-
-        except Exception:
-            resp.headers["X-Debug-Branch"] = "error"
-            resp.headers["X-Faq-Hit"] = "false"
-            payload["replyText"] = FALLBACK
-            return payload
+    except Exception:
+        # If retrieval pipeline errors, fail safe
+        resp.headers["X-Debug-Branch"] = "error"
+        resp.headers["X-Faq-Hit"] = "false"
+        payload["replyText"] = FALLBACK
+        return payload
 
     # -----------------------------
-    # General branch (ONLY non-fact)
+    # Retrieval miss -> decide fallback vs general
+    # -----------------------------
+    if _should_fallback_after_miss(msg, domain):
+        resp.headers["X-Debug-Branch"] = "fact_miss"
+        resp.headers["X-Faq-Hit"] = "false"
+        payload["replyText"] = FALLBACK
+        return payload
+
+    # -----------------------------
+    # General chat (only truly non-business)
     # -----------------------------
     try:
         system = (
