@@ -107,10 +107,31 @@ def _base_payload():
     }
 
 
+
+# REPLICA_CALLSITE_GATE_PATCH_V2
+def _replica_fact_domain(msg: str) -> str:
+    t = (msg or "").lower()
+
+    # Capability phrasing => business (prevents hallucinated 'yes' from general chat)
+    if re.search(r"\b(can|could|do)\s+(you|u|ya)\b", t) or "do you offer" in t or "are you able to" in t:
+        return "capability"
+
+    # Universal logistics/ops => business (lets retrieval answer tenant FAQs)
+    if ("water and power" in t) or (("water" in t) and (("power" in t) or ("electricity" in t))):
+        return "other"
+
+    if any(p in t for p in ["are you mobile", "do you come", "come to me", "do you travel", "travel to my", "travel to"]):
+        return "other"
+
+    if any(p in t for p in ["parking", "visitor spot", "lockbox", "gate code", "keys", "key pickup", "access code"]):
+        return "other"
+
+    # Otherwise keep existing behaviour (pricing/service_area/payment/etc)
+    return _replica_fact_domain(msg)
 def _init_debug_headers(resp: Response, tenant_id: str, msg: str) -> str:
     _set_common_headers(resp, tenant_id)
 
-    domain = classify_fact_domain(msg)
+    domain = _replica_fact_domain(msg)
     resp.headers["X-Fact-Gate-Hit"] = "true" if domain != "none" else "false"
     resp.headers["X-Fact-Domain"] = domain
 
