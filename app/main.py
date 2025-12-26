@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import os
 from typing import List, Optional, Set
 
 from fastapi import FastAPI, Header, HTTPException, Response
@@ -90,6 +91,8 @@ def _set_common_headers(resp: Response, tenant_id: str):
     resp.headers["X-Build"] = settings.BUILD_ID
     resp.headers["X-Served-By"] = "fastapi"
     resp.headers["X-TenantId"] = tenant_id or ""
+    resp.headers["X-Git-Sha"] = os.getenv("RENDER_GIT_COMMIT","")
+    resp.headers["X-Entrypoint"] = "app.main"
 
 
 def _base_payload():
@@ -108,7 +111,7 @@ def _base_payload():
 def _init_debug_headers(resp: Response, tenant_id: str, msg: str) -> str:
     _set_common_headers(resp, tenant_id)
 
-    domain = classify_fact_domain(msg)
+    domain = _replica_fact_domain(msg)
     resp.headers["X-Fact-Domain"] = domain
     resp.headers["X-Fact-Gate-Hit"] = "true" if domain != "none" else "false"
 
