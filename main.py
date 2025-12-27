@@ -18,12 +18,12 @@ class ProofAndCrashShield(BaseHTTPMiddleware):
         try:
             resp = await call_next(request)
         except Exception as e:
-            # Ensure the exception is visible in Render logs
             traceback.print_exc()
 
-            # Still return a response so we can attach proof headers
             resp = PlainTextResponse("Internal Server Error", status_code=500)
             resp.headers["X-Exception"] = type(e).__name__
+            # THIS is the missing piece:
+            resp.headers["X-Exception-Message"] = (str(e) or "")[:180]
 
         resp.headers["X-Git-Sha"] = os.getenv("RENDER_GIT_COMMIT", "")
         resp.headers["X-Entrypoint"] = "root.main"
