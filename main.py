@@ -18,12 +18,23 @@ class ProofAndCrashShield(BaseHTTPMiddleware):
         try:
             resp = await call_next(request)
         except Exception as e:
+            # Print full traceback into Render logs
             traceback.print_exc()
+
+            # Build a minimal "where" without dumping full stack to users
+            last = ""
+            try:
+                tb = traceback.extract_tb(e.__traceback__)
+                if tb:
+                    fr = tb[-1]
+                    last = f"{fr.filename}:{fr.lineno}:{fr.name}"
+            except Exception:
+                pass
 
             resp = PlainTextResponse("Internal Server Error", status_code=500)
             resp.headers["X-Exception"] = type(e).__name__
-            # THIS is the missing piece:
-            resp.headers["X-Exception-Message"] = (str(e) or "")[:180]
+            resp.headers["X-Exception-Repr"] = (repr(e) or "")[:220]
+            resp.headers["X-Trace-Last"] = last[:220]
 
         resp.headers["X-Git-Sha"] = os.getenv("RENDER_GIT_COMMIT", "")
         resp.headers["X-Entrypoint"] = "root.main"
