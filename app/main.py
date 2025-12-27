@@ -108,6 +108,38 @@ def _base_payload():
     }
 
 
+def _replica_fact_domain(msg: str) -> str:
+    """
+    Tenant-agnostic routing helper (platform invariant).
+    - Never answer capability questions from general chat.
+    - Treat logistics/ops questions as business so retrieval/FAQ can answer.
+    - Otherwise, defer to existing business domain classification.
+    """
+    t = (msg or "").lower()
+
+    # Let obvious general-knowledge prompts stay general.
+    if re.search(r"\b(why|explain|what is|what's|how does|define)\b", t):
+        return "none"
+
+    # Universal capability phrasing -> business
+    if re.search(r"\b(can|could)\s+(you|u|ya)\b", t) or re.search(r"\bdo\s+(you|u|ya)\b", t) or "do you offer" in t or "are you able to" in t:
+        return "capability"
+
+    # Universal logistics/ops -> business
+    if any(k in t for k in [
+        "water and power", "need water", "need power", "water", "power", "electricity", "power point", "powerpoint",
+        "are you mobile", "mobile", "come to me", "come to my", "do you come", "can you come", "do you travel", "travel to",
+        "parking", "visitor parking", "keys", "key", "access", "gate code", "lockbox"
+    ]):
+        return "other"
+
+    # Otherwise defer to existing classifier if present
+    try:
+        return classify_fact_domain(msg)  # noqa: F821
+    except Exception:
+        return "none"
+
+
 def _init_debug_headers(resp: Response, tenant_id: str, msg: str) -> str:
     _set_common_headers(resp, tenant_id)
 
