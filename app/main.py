@@ -171,16 +171,6 @@ def _startup():
         conn.commit()
 
 
-@app.get("/api/health")
-def health(resp: Response):
-    _set_common_headers(resp, "")
-    resp.headers["X-Debug-Branch"] = "general_ok"
-    resp.headers["X-Fact-Gate-Hit"] = "false"
-    resp.headers["X-Fact-Domain"] = "none"
-    resp.headers["X-Faq-Hit"] = "false"
-    return "ok"
-
-
 class FaqItem(BaseModel):
     question: str
     answer: str
@@ -401,3 +391,10 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
     resp.headers["X-Faq-Hit"] = "false"
     payload["replyText"] = reply
     return payload
+
+@app.get("/api/health")
+def health():
+    git_sha = os.getenv("RENDER_GIT_COMMIT") or os.getenv("GIT_SHA") or "unknown"
+    release = os.getenv("RENDER_GIT_BRANCH") or os.getenv("RELEASE") or "unknown"
+    return {"ok": True, "gitSha": git_sha, "release": release}
+
