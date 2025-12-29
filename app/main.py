@@ -4,7 +4,8 @@ import re
 import os
 from typing import List, Optional, Set
 
-from fastapi import FastAPI, Header, HTTPException, Response
+from fastapi import FastAPI, Header, HTTPException, Response, Request
+
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
 from pgvector import Vector
@@ -40,6 +41,17 @@ def is_rewrite_safe(rewritten: str, original: str) -> bool:
 # FastAPI setup + DB schema
 # -----------------------------
 app = FastAPI()
+
+
+@app.middleware("http")
+async def add_release_headers(request: Request, call_next):
+    resp = await call_next(request)
+    git_sha = os.getenv("RENDER_GIT_COMMIT") or os.getenv("GIT_SHA") or "unknown"
+    release = os.getenv("RENDER_GIT_BRANCH") or os.getenv("RELEASE") or "unknown"
+    resp.headers["x-git-sha"] = git_sha
+    resp.headers["x-release"] = release
+    return resp
+
 
 app.add_middleware(
     CORSMiddleware,
