@@ -55,3 +55,13 @@ _handoff_dump.txt
 
 # Test backups
 tests/*.bak*
+# One-off patch scripts / local helpers (do not commit)
+scripts/patch_*.py
+patch_variants.py
+prune_supplies_dupes.py
+test-questions.ps1
+generate_profile_prompt.txt
+tenant_profile_prompt.md
+variant_library.json
+variant_profile_*.json
+new_tenant_profile.ps1
