@@ -1,110 +1,107 @@
-﻿import json, re, argparse
+import argparse
+import json
+import re
 from pathlib import Path
 
 
-def read_json(path: Path):
-    return json.loads(path.read_text(encoding="utf-8-sig"))
-
-
-def write_json(path: Path, obj):
-    path.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
 def norm(s: str) -> str:
-    s = (s or "").strip().lower()
+    if s is None:
+        return ""
+    s = str(s).lower()
+    s = re.sub(r"[_\-]+", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
     return s
 
 
-def dedupe(items):
+def load_json(path: Path):
+    return json.loads(path.read_text(encoding="utf-8-sig"))
+
+
+def save_json(path: Path, data):
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def dedupe_preserve_order(items):
     seen = set()
     out = []
-    for x in items or []:
-        if not x:
+    for x in items:
+        nx = norm(x)
+        if not nx:
             continue
-        k = norm(str(x))
-        if not k or k in seen:
+        if nx in seen:
             continue
-        seen.add(k)
-        out.append(str(x).strip())
+        seen.add(nx)
+        out.append(x)
     return out
 
 
-def force_front(item, must_list, cap=60):
-    base = list(must_list or []) + list(item.get("variants") or [])
-    item["variants"] = dedupe(base)[:cap]
+def find_target_faq(faqs, key: str):
+    nk = norm(key)
 
+    for it in faqs:
+        if norm(it.get("question", "")) == nk:
+            return it, "exact"
 
-def find_by_question(items, qname: str):
-    nq = norm(qname)
-    for it in items:
-        if norm(it.get("question", "")) == nq:
-            return it
-    return None
+    matches = []
+    for it in faqs:
+        nq = norm(it.get("question", ""))
+        if nk and (nk in nq):
+            matches.append(it)
 
+    if len(matches) == 1:
+        return matches[0], "partial"
 
-def find_by_answer(items, any_needles):
-    for it in items:
-        a = (it.get("answer") or "").lower()
-        for needles in any_needles:
-            if all(n.lower() in a for n in needles):
-                return it
-    return None
+    return None, "none"
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--faqfile", required=True)
-    ap.add_argument("--profile", required=True)
+    ap.add_argument("--faqfile", required=True, help="Path to faqs_variants.json (in-place patched).")
+    ap.add_argument("--profile", required=True, help="Path to tenant variant_profile.json.")
     args = ap.parse_args()
 
     faq_path = Path(args.faqfile)
-    data = read_json(faq_path)
+    prof_path = Path(args.profile)
 
-    profile_path = Path(args.profile)
-    prof = read_json(profile_path) if profile_path.exists() else {}
+    faqs = load_json(faq_path)
+    prof = load_json(prof_path)
 
-    must = (prof.get("must") or prof.get("must_variants") or {}) or {}
-
-    # normalize profile key variants
-    if "pricing" not in must and "pricing_oven" in must:
-        must["pricing"] = must["pricing_oven"]
+    must = prof.get("must_variants") or {}
+    if not isinstance(must, dict):
+        raise SystemExit("must_variants must be an object/dict in variant_profile.json")
 
     patched = []
+    skipped = []
 
-    # PRICING (prefer exact question name if present)
-    if must.get("pricing"):
-        it = find_by_question(data, "Oven clean add-on")
-        if not it:
-            it = find_by_answer(data, [["oven", "$"], ["oven", "add-on"], ["oven", "optional"]])
-        if it:
-            force_front(it, must["pricing"], cap=60)
-            patched.append(f"pricing -> {it.get('question')}")
+    for key, variants in must.items():
+        if not isinstance(variants, list) or len(variants) == 0:
+            skipped.append((key, "empty_or_not_list"))
+            continue
 
-    # SUPPLIES (prefer exact question name)
-    if must.get("supplies"):
-        it = find_by_question(data, "Supplies and equipment")
-        if not it:
-            it = find_by_answer(data, [["bring", "supplies"], ["cleaning supplies"], ["bring", "vacuum"]])
-        if it:
-            force_front(it, must["supplies"], cap=60)
-            patched.append(f"supplies -> {it.get('question')}")
+        target, how = find_target_faq(faqs, key)
+        if target is None:
+            skipped.append((key, "no_matching_faq_question"))
+            continue
 
-    # SERVICE AREA (prefer exact question name)
-    if must.get("service_area"):
-        it = find_by_question(data, "Service area")
-        if not it:
-            it = find_by_answer(data, [["service", "brisbane"], ["service", "suburb"], ["cover", "suburb"]])
-        if it:
-            force_front(it, must["service_area"], cap=60)
-            patched.append(f"service_area -> {it.get('question')}")
+        existing = target.get("variants") or []
+        if not isinstance(existing, list):
+            existing = []
 
-    write_json(faq_path, data)
+        combined = [target.get("question", "")] + existing + variants
+        target["variants"] = dedupe_preserve_order(combined)
+
+        patched.append((key, target.get("question", ""), how, len(existing), len(target["variants"])))
+
+    save_json(faq_path, faqs)
+
     print("patch_must_variants.py: OK")
-    if patched:
-        print("patched:", "; ".join(patched))
-    else:
-        print("patched: NONE (check profile must_variants keys)")
+    for key, q, how, before, after in patched:
+        print(f"patched: {key} -> {q} ({how})  variants: {before} -> {after}")
+
+    if skipped:
+        print("skipped:")
+        for key, reason in skipped:
+            print(f"  - {key}: {reason}")
 
 
 if __name__ == "__main__":
