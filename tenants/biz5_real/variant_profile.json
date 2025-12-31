@@ -1,0 +1,88 @@
+{
+    "service_area_places":  [
+                                "Brisbane",
+                                "Brisbane cbd",
+                                "northside",
+                                "southside",
+                                "bris",
+                                "brisb",
+                                "bris north",
+                                "brisb north"
+                            ],
+    "max_variants_per_faq":  60,
+    "must_variants":  {
+                          "Pricing - basic":  [
+                                                  "What is your call-out price?",
+                                                  "what\u0027s your minimum charge",
+                                                  "minimum charge?",
+                                                  "base fee",
+                                                  "how much to come out",
+                                                  "rough starting price",
+                                                  "price to attend?"
+                                              ],
+                          "Service area":  [
+                                               "Do you service Caloundra?",
+                                               "do you cover Maroochydore?",
+                                               "sunshine coast suburbs?",
+                                               "what areas do you cover?",
+                                               "do you work in Caloundra"
+                                           ],
+                          "Water and power":  [
+                                                  "Do I need to provide power?",
+                                                  "need electricity on site?",
+                                                  "power required?",
+                                                  "do you need water access?",
+                                                  "need water hookup?"
+                                              ],
+                          "Mobile service":  [
+                                                 "Do you travel to customers?",
+                                                 "are you mobile?",
+                                                 "do you come to me?",
+                                                 "can you come onsite?",
+                                                 "mobile service?"
+                                             ],
+                          "Payments":  [
+                                           "Can I pay with PayID?",
+                                           "bank transfer ok?",
+                                           "do you take card?",
+                                           "can you invoice me?",
+                                           "card payment?"
+                                       ],
+                          "Supplies":  [
+                                           "Do you bring your own tools?",
+                                           "do you bring equipment?",
+                                           "do i need to supply anything?",
+                                           "you bring your own gear?"
+                                       ]
+                      },
+    "aliases":  {
+                    "north":  [
+                                  "nth",
+                                  "n"
+                              ],
+                    "brisbane":  [
+                                     "bris",
+                                     "brisb"
+                                 ],
+                    "your":  "ur",
+                    "are":  "r",
+                    "south":  [
+                                  "sth",
+                                  "s"
+                              ],
+                    "you":  [
+                                "u",
+                                "ya"
+                            ],
+                    "and":  [
+                                "n",
+                                "\u0026"
+                            ]
+                },
+    "capability_deny":  [
+                            "transmission",
+                            "mechanical repair",
+                            "engine repair",
+                            "window tint"
+                        ]
+}

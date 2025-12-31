@@ -1,0 +1,83 @@
+{
+    "must_variants":  {
+                          "Pricing - basic":  [
+                                                  "What is your call-out price?",
+                                                  "starting price for a job?",
+                                                  "how much do you charge to come out",
+                                                  "base price / minimum charge"
+                                              ],
+                          "Service area":  [
+                                               "Do you service Beenleigh?",
+                                               "what areas do you cover?",
+                                               "do you work in Logan?"
+                                           ],
+                          "Water and power":  [
+                                                  "Do I need to provide power?",
+                                                  "do i supply power",
+                                                  "do you need electricity on site",
+                                                  "do you need hose + power",
+                                                  "do you need hose and power",
+                                                  "do you need water access",
+                                                  "need electricity",
+                                                  "need electricity?",
+                                                  "need water hookup",
+                                                  "need water hookup?",
+                                                  "power required on site",
+                                                  "power required on site?"
+                                              ],
+                          "Mobile service":  [
+                                                 "are you mobile",
+                                                 "can you come on site",
+                                                 "can you come onsite",
+                                                 "come to my location",
+                                                 "do you come out to me",
+                                                 "do you come to me",
+                                                 "Do you travel to customers?",
+                                                 "travel to my place",
+                                                 "travel to my place?",
+                                                 "mobile service?"
+                                             ],
+                          "Payments":  [
+                                           "bank transfer ok",
+                                           "bank transfer ok?",
+                                           "Can I pay with PayID?",
+                                           "card payment",
+                                           "card payment?",
+                                           "do you take bank transfer",
+                                           "do you take card",
+                                           "invoice me please"
+                                       ],
+                          "Supplies":  [
+                                           "bring equipment",
+                                           "bring equipment?",
+                                           "bring tools",
+                                           "bring tools?",
+                                           "do i need to supply anything",
+                                           "do you bring equipment",
+                                           "Do you bring your own tools?",
+                                           "need me to provide tools",
+                                           "you bring your own gear"
+                                       ],
+                          "service_area":  [
+                                               "do you come to me in logan central",
+                                               "do you service logan",
+                                               "do you work around logan",
+                                               "logan central",
+                                               "service logan",
+                                               "work around logan",
+                                               "work around logan?"
+                                           ],
+                          "pricing":  [
+                                          "base fee",
+                                          "base fee pls",
+                                          "callout fee",
+                                          "how much do you charge to come out",
+                                          "how much to come out",
+                                          "minimum call out",
+                                          "minimum charge",
+                                          "price to attend",
+                                          "rough starting price",
+                                          "what\u0027s your minimum charge"
+                                      ]
+                      }
+}

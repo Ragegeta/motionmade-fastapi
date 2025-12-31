@@ -1,0 +1,14 @@
+[
+  { "question": "Pricing - basic",      "answer": "Our call-out starts at $220. Final price depends on scope and condition.", "variants": [] },
+  { "question": "Service area",         "answer": "We cover Logan, Beenleigh and surrounding suburbs. Ask us to confirm your address.", "variants": [] },
+  { "question": "Water and power",      "answer": "Yes — we need access to both water and power on site.", "variants": [] },
+  { "question": "Mobile service",       "answer": "Yes — we travel to customers and work on-site.", "variants": [] },
+  { "question": "Payments",             "answer": "PayID and bank transfer are accepted. Card is available on request. Invoice available.", "variants": [] },
+  { "question": "Booking lead time",    "answer": "Typical availability is within 2–5 days, depending on demand.", "variants": [] },
+  { "question": "Cancellations",        "answer": "Same-day cancellations may incur a fee.", "variants": [] },
+  { "question": "Insurance",            "answer": "Yes — we hold appropriate insurance for our work.", "variants": [] },
+  { "question": "Supplies",             "answer": "We bring our own tools and equipment. You don’t need to supply anything.", "variants": [] },
+  { "question": "Warranty/guarantee",   "answer": "If something is missed, contact us within 24 hours and we’ll fix it.", "variants": [] },
+  { "question": "Hours",                "answer": "We operate Monday–Saturday. Times depend on booking.", "variants": [] },
+  { "question": "What we don't do",     "answer": "We don’t do engine rebuilds or mechanical repairs. For anything else, contact us to confirm.", "variants": [] }
+]

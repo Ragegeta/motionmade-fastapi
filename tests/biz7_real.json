@@ -1,0 +1,34 @@
+{
+  "base": "https://api.motionmadebne.com.au",
+  "endpoint": "/api/v2/generate-quote-reply",
+  "tests": [
+    {
+      "name": "A) Oven add-on pricing (must hit)",
+      "question": "How much extra is the oven add-on?",
+      "expect_debug_branch_any": ["fact_hit"],
+      "must_contain": ["$89"]
+    },
+    {
+      "name": "B) Service area (must hit)",
+      "question": "Do you cover Brisbane inner north?",
+      "expect_debug_branch_any": ["fact_hit"],
+      "must_contain": ["Brisbane"]
+    },
+    {
+      "name": "C) Supplies/equipment (must hit)",
+      "question": "Do I need to supply anything or do you bring gear?",
+      "expect_debug_branch_any": ["fact_hit"],
+      "must_contain": ["bring"]
+    },
+    {
+      "name": "D) Unknown capability (must fallback; never general_ok)",
+      "question": "Do you do carpet steam cleaning?",
+      "expect_debug_branch_any": ["fact_miss", "general_fallback"]
+    },
+    {
+      "name": "E) General knowledge (must be general_ok)",
+      "question": "Why is the sky blue?",
+      "expect_debug_branch_any": ["general_ok"]
+    }
+  ]
+}

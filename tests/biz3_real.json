@@ -1,0 +1,116 @@
+﻿{
+    "endpoint":  "/api/v2/generate-quote-reply",
+    "tests":  [
+                  {
+                      "name":  "A) Pricing (must hit) (biz3_real)",
+                      "question":  "How much is a basic detail?",
+                      "expect_debug_branch_any":  [
+                                                      "fact_hit",
+                                                      "fact_rewrite_hit"
+                                                  ]
+                  },
+                  {
+                      "name":  "B) Service area (must hit) (biz3_real)",
+                      "question":  "Do you cover Brisbane north?",
+                      "expect_debug_branch_any":  [
+                                                      "fact_hit",
+                                                      "fact_rewrite_hit"
+                                                  ]
+                  },
+                  {
+                      "name":  "C) Water/power (must hit) (biz3_real)",
+                      "question":  "Do you need water and power?",
+                      "expect_debug_branch_any":  [
+                                                      "fact_hit",
+                                                      "fact_rewrite_hit"
+                                                  ]
+                  },
+                  {
+                      "name":  "D) Mobile (must hit) (biz3_real)",
+                      "question":  "Are you mobile / do you come to me?",
+                      "expect_debug_branch_any":  [
+                                                      "fact_hit",
+                                                      "fact_rewrite_hit"
+                                                  ]
+                  },
+                  {
+                      "name":  "E) Payments (must hit) (biz3_real)",
+                      "question":  "Do you take card or bank transfer?",
+                      "expect_debug_branch_any":  [
+                                                      "fact_hit",
+                                                      "fact_rewrite_hit"
+                                                  ]
+                  },
+                  {
+                      "name":  "F) Unknown capability (miss) (biz3_real)",
+                      "question":  "can you fix my transmission?",
+                      "expect_debug_branch_any":  [
+                                                      "fact_miss"
+                                                  ]
+                  },
+                  {
+                      "name":  "G) Unknown capability (miss) (biz3_real)",
+                      "question":  "can you do ceramic coating?",
+                      "expect_debug_branch_any":  [
+                                                      "fact_miss"
+                                                  ]
+                  },
+                  {
+                      "name":  "H) General knowledge (biz3_real)",
+                      "question":  "Why is the sky blue?",
+                      "expect_debug_branch_any":  [
+                                                      "general_ok"
+                                                  ]
+                  },
+                  {
+                      "name":  "I) General knowledge (biz3_real)",
+                      "question":  "What causes rainbows?",
+                      "expect_debug_branch_any":  [
+                                                      "general_ok"
+                                                  ]
+                  },
+                  {
+                      "name":  "J) General knowledge (biz3_real)",
+                      "question":  "How does a microwave heat food?",
+                      "expect_debug_branch_any":  [
+                                                      "general_ok"
+                                                  ]
+                  },
+                  {
+                      "name":  "K) General knowledge (biz3_real)",
+                      "question":  "Explain photosynthesis in simple terms.",
+                      "expect_debug_branch_any":  [
+                                                      "general_ok"
+                                                  ]
+                  },
+                  {
+                      "name":  "L) General knowledge (biz3_real)",
+                      "question":  "Why do we have seasons on Earth?",
+                      "expect_debug_branch_any":  [
+                                                      "general_ok"
+                                                  ]
+                  },
+                  {
+                      "name":  "M) General knowledge (biz3_real)",
+                      "question":  "What is gravity?",
+                      "expect_debug_branch_any":  [
+                                                      "general_ok"
+                                                  ]
+                  },
+                  {
+                      "name":  "N) General knowledge (biz3_real)",
+                      "question":  "Why is the ocean salty?",
+                      "expect_debug_branch_any":  [
+                                                      "general_ok"
+                                                  ]
+                  },
+                  {
+                      "name":  "O) General knowledge (biz3_real)",
+                      "question":  "What is a black hole?",
+                      "expect_debug_branch_any":  [
+                                                      "general_ok"
+                                                  ]
+                  }
+              ],
+    "base":  "https://motionmade-fastapi.onrender.com"
+}

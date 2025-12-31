@@ -1,0 +1,82 @@
+﻿{
+  "endpoint": "/api/v2/generate-quote-reply",
+  "tests": [
+    {
+      "name": "A) Pricing (must hit) (tenant2)",
+      "question": "How much is a basic detail?",
+      "expect_debug_branch_any": ["fact_hit", "fact_rewrite_hit"]
+    },
+    {
+      "name": "B) Service area (must hit) (tenant2)",
+      "question": "Do you cover Brisbane north?",
+      "expect_debug_branch_any": ["fact_hit", "fact_rewrite_hit"]
+    },
+    {
+      "name": "C) Water/power (must hit) (tenant2)",
+      "question": "Do you need water and power?",
+      "expect_debug_branch_any": ["fact_hit", "fact_rewrite_hit"]
+    },
+    {
+      "name": "D) Mobile (must hit) (tenant2)",
+      "question": "Are you mobile / do you come to me?",
+      "expect_debug_branch_any": ["fact_hit", "fact_rewrite_hit"]
+    },
+    {
+      "name": "E) Payments (must hit) (tenant2)",
+      "question": "Do you take card or bank transfer?",
+      "expect_debug_branch_any": ["fact_hit", "fact_rewrite_hit"]
+    },
+    {
+      "name": "F) Unknown capability (miss) (tenant2)",
+      "question": "can you fix my transmission?",
+      "expect_debug_branch_any": ["fact_miss"]
+    },
+    {
+      "name": "G) Unknown capability (miss) (tenant2)",
+      "question": "can you do ceramic coating?",
+      "expect_debug_branch_any": ["fact_miss"]
+    },
+    {
+      "name": "H) General knowledge (tenant2)",
+      "question": "Why is the sky blue?",
+      "expect_debug_branch_any": ["general_ok"]
+    },
+    {
+      "name": "I) General knowledge (tenant2)",
+      "question": "What causes rainbows?",
+      "expect_debug_branch_any": ["general_ok"]
+    },
+    {
+      "name": "J) General knowledge (tenant2)",
+      "question": "How does a microwave heat food?",
+      "expect_debug_branch_any": ["general_ok"]
+    },
+    {
+      "name": "K) General knowledge (tenant2)",
+      "question": "Explain photosynthesis in simple terms.",
+      "expect_debug_branch_any": ["general_ok"]
+    },
+    {
+      "name": "L) General knowledge (tenant2)",
+      "question": "Why do we have seasons on Earth?",
+      "expect_debug_branch_any": ["general_ok"]
+    },
+    {
+      "name": "M) General knowledge (tenant2)",
+      "question": "What is gravity?",
+      "expect_debug_branch_any": ["general_ok"]
+    },
+    {
+      "name": "N) General knowledge (tenant2)",
+      "question": "Why is the ocean salty?",
+      "expect_debug_branch_any": ["general_ok"]
+    },
+    {
+      "name": "O) General knowledge (tenant2)",
+      "question": "What is a black hole?",
+      "expect_debug_branch_any": ["general_ok"]
+    }
+  ],
+  "base": "https://motionmade-fastapi.onrender.com"
+}
+

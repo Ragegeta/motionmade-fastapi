@@ -1,0 +1,14 @@
+{
+  "endpoint": "/api/v2/generate-quote-reply",
+  "tests": [
+    { "name": "A) Pricing (must hit) (biz4)",      "question": "What is your call-out price?",          "expect_debug_branch_any": ["fact_hit","fact_rewrite_hit"] },
+    { "name": "B) Service area (must hit) (biz4)", "question": "Do you service Beenleigh?",            "expect_debug_branch_any": ["fact_hit","fact_rewrite_hit"] },
+    { "name": "C) Water/power (must hit) (biz4)",  "question": "Do I need to provide power?",          "expect_debug_branch_any": ["fact_hit","fact_rewrite_hit"] },
+    { "name": "D) Mobile (must hit) (biz4)",       "question": "Do you travel to customers?",          "expect_debug_branch_any": ["fact_hit","fact_rewrite_hit"] },
+    { "name": "E) Payments (must hit) (biz4)",     "question": "Can I pay with PayID?",                "expect_debug_branch_any": ["fact_hit","fact_rewrite_hit"] },
+    { "name": "F) Supplies (must hit) (biz4)",     "question": "Do you bring your own tools?",         "expect_debug_branch_any": ["fact_hit","fact_rewrite_hit"] },
+    { "name": "G) Unknown capability (miss) (biz4)","question": "can you rebuild my engine?",          "expect_debug_branch_any": ["fact_miss"] },
+    { "name": "H) General knowledge (biz4)",       "question": "Why do leaves change colour?",         "expect_debug_branch_any": ["general_ok"] }
+  ],
+  "base": "https://motionmade-fastapi.onrender.com"
+}

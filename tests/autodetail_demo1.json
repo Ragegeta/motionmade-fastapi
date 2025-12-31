@@ -1,0 +1,46 @@
+﻿{
+    "base":  "https://motionmade-fastapi.onrender.com",
+    "endpoint":  "/api/v2/generate-quote-reply",
+    "tests":  [
+                  {
+                      "name":  "Basic price (must hit)",
+                      "question":  "How much is a basic detail?",
+                      "expect_debug_branch_any":  "fact_hit"
+                  },
+                  {
+                      "name":  "Service area (must hit)",
+                      "question":  "What areas do you service?",
+                      "expect_debug_branch_any":  "fact_hit"
+                  },
+                  {
+                      "name":  "Supplies/equipment (must hit)",
+                      "question":  "Do you bring your own products and equipment?",
+                      "expect_debug_branch_any":  "fact_hit"
+                  },
+                  {
+                      "name":  "Ceramic coating (must hit)",
+                      "question":  "Do you offer ceramic coating?",
+                      "expect_debug_branch_any":  "fact_hit"
+                  },
+                  {
+                      "name":  "Payments (must hit)",
+                      "question":  "What payments do you accept?",
+                      "expect_debug_branch_any":  "fact_hit"
+                  },
+                  {
+                      "name":  "Unknown capability (must fallback)",
+                      "question":  "can you fix my transmission?",
+                      "expect_debug_branch_any":  "fact_miss"
+                  },
+                  {
+                      "name":  "Unknown capability (must fallback)",
+                      "question":  "can you install window tint?",
+                      "expect_debug_branch_any":  "fact_miss"
+                  },
+                  {
+                      "name":  "General knowledge (must be general)",
+                      "question":  "Why is the sky blue?",
+                      "expect_debug_branch_any":  "general_ok"
+                  }
+              ]
+}

@@ -1,0 +1,99 @@
+{
+    "service_area_places":  [
+                                "Brisbane",
+                                "Brisbane cbd",
+                                "northside",
+                                "southside",
+                                "bris",
+                                "brisb",
+                                "bris north",
+                                "brisb north"
+                            ],
+    "max_variants_per_faq":  60,
+    "must_variants":  {
+                          "payments":  [
+                                           "Do you take card or bank transfer?",
+                                           "do you take card",
+                                           "do you accept card",
+                                           "bank transfer ok",
+                                           "can you invoice me",
+                                           "payment methods"
+                                       ],
+                          "service_area":  [
+                                               "Do you cover Brisbane north?",
+                                               "do u do brisb north",
+                                               "what suburbs do you cover",
+                                               "what areas do you service"
+                                           ],
+                          "Water and power":  [
+                                                  "Do you need water and power?",
+                                                  "do i need to provide water",
+                                                  "do i need to provide power",
+                                                  "do you need access to water",
+                                                  "do you need electricity",
+                                                  "water and power requirements"
+                                              ],
+                          "Mobile service":  [
+                                                 "Are you mobile / do you come to me?",
+                                                 "are you mobile",
+                                                 "do you come to me",
+                                                 "do you travel to my location",
+                                                 "can you come to my house",
+                                                 "mobile service"
+                                             ],
+                          "pricing":  [
+                                          "How much is a basic detail?",
+                                          "basic detail price",
+                                          "basic detail cost",
+                                          "starting price",
+                                          "starts at 149",
+                                          "starts at "
+                                      ],
+                          "Pricing - basic":  [
+                                                  "How much is a basic detail?",
+                                                  "basic detail price",
+                                                  "starts at 149",
+                                                  "how much for basic service",
+                                                  "basic service cost"
+                                              ],
+                          "supplies":  [
+                                           "Do you bring your own supplies?",
+                                           "u bring gear n stuff?",
+                                           "do you bring equipment"
+                                       ]
+                      },
+    "aliases":  {
+                    "north":  [
+                                  "nth",
+                                  "n"
+                              ],
+                    "brisbane":  [
+                                     "bris",
+                                     "brisb"
+                                 ],
+                    "your":  [
+                                 "ur"
+                             ],
+                    "are":  [
+                                "r"
+                            ],
+                    "south":  [
+                                  "sth",
+                                  "s"
+                              ],
+                    "you":  [
+                                "u",
+                                "ya"
+                            ],
+                    "and":  [
+                                "n",
+                                "\u0026"
+                            ]
+                },
+    "capability_deny":  [
+                            "transmission",
+                            "mechanical repair",
+                            "engine repair",
+                            "window tint"
+                        ]
+}
