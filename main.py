@@ -37,6 +37,8 @@ class ProofAndCrashShield(BaseHTTPMiddleware):
             resp.headers["X-Trace-Last"] = last[:220]
 
         resp.headers["X-Git-Sha"] = os.getenv("RENDER_GIT_COMMIT", "")
+
+        resp.headers["X-Build"] = os.getenv("BUILD_ID","")
         resp.headers["X-Entrypoint"] = "root.main"
         return resp
 
