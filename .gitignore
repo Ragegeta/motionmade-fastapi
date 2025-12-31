@@ -42,3 +42,16 @@ upload_body.txt
 faqs_variants.json.bak*
 server.*.log
 uvicorn.*.log
+
+# Generated tenant artifacts (do not commit)
+tenants/*/faqs_variants.json
+tenants/*/last_good_faqs_variants.json
+tenants/*/backups/
+
+# Local scratch / dumps
+*_dump.txt
+_code_dump.txt
+_handoff_dump.txt
+
+# Test backups
+tests/*.bak*
