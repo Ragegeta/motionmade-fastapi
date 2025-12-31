@@ -1,4 +1,4 @@
-﻿{
+{
   "max_variants_per_faq": 60,
   "aliases": {
     "you": ["u","ya"],
@@ -61,7 +61,7 @@
       "u bring vacuum n products",
       "u bring vacuum n products?"
     ],
-    "pricing_oven": [
+    "Oven clean add-on": [
       "How much extra is the oven add-on?",
       "how much extra is the oven add on",
       "how much extra is the oven add-on",

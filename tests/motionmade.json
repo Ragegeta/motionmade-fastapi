@@ -1,46 +1,77 @@
 ﻿{
-  "base": "https://motionmade-fastapi.onrender.com",
-  "endpoint": "/api/v2/generate-quote-reply",
-  "tests": [
-    {
-      "name": "A) Oven add-on pricing (must hit)",
-      "question": "How much extra is the oven add-on?",
-      "expect_debug_branch_any": ["fact_hit", "fact_rewrite_hit"]
-    },
-    {
-      "name": "B) Service area (must hit)",
-      "question": "Do you cover Brisbane inner north?",
-      "expect_debug_branch_any": ["fact_hit", "fact_rewrite_hit"]
-    },
-    {
-      "name": "C) Supplies/equipment (must hit)",
-      "question": "Do I need to supply anything or do you bring gear?",
-      "expect_debug_branch_any": ["fact_hit", "fact_rewrite_hit"]
-    },
-    {
-      "name": "D) Slang service area (must hit)",
-      "question": "do u do brisb north",
-      "expect_debug_branch_any": ["fact_hit", "fact_rewrite_hit"]
-    },
-    {
-      "name": "E) Slang supplies (must hit)",
-      "question": "u bring vacuum n products?",
-      "expect_debug_branch_any": ["fact_hit", "fact_rewrite_hit"]
-    },
-    {
-      "name": "F) Unknown capability (must fallback; never general_ok)",
-      "question": "u guys do carpet steam clean?",
-      "expect_debug_branch_any": ["fact_miss"]
-    },
-    {
-      "name": "G) Unknown capability (must fallback; never general_ok)",
-      "question": "can ya pressure wash my driveway?",
-      "expect_debug_branch_any": ["fact_miss"]
-    },
-    {
-      "name": "H) General knowledge (must be general_ok)",
-      "question": "Why is the sky blue?",
-      "expect_debug_branch_any": ["general_ok"]
-    }
-  ]
+    "base":  "https://motionmade-fastapi.onrender.com",
+    "endpoint":  "/api/v2/generate-quote-reply",
+    "tests":  [
+                  {
+                      "name":  "A) Oven add-on pricing (must hit)",
+                      "question":  "How much extra is the oven add-on?",
+                      "expect_debug_branch_any":  [
+                                                      "fact_hit",
+                                                      "fact_rewrite_hit"
+                                                  ],
+                      "must_contain":  [
+                                           "$89"
+                                       ]
+                  },
+                  {
+                      "name":  "B) Service area (must hit)",
+                      "question":  "Do you cover Brisbane inner north?",
+                      "expect_debug_branch_any":  [
+                                                      "fact_hit",
+                                                      "fact_rewrite_hit"
+                                                  ],
+                      "must_contain":  [
+                                           "Brisbane"
+                                       ]
+                  },
+                  {
+                      "name":  "C) Supplies/equipment (must hit)",
+                      "question":  "Do I need to supply anything or do you bring gear?",
+                      "expect_debug_branch_any":  [
+                                                      "fact_hit",
+                                                      "fact_rewrite_hit"
+                                                  ],
+                      "must_contain":  [
+                                           "bring"
+                                       ]
+                  },
+                  {
+                      "name":  "D) Slang service area (must hit)",
+                      "question":  "do u do brisb north",
+                      "expect_debug_branch_any":  [
+                                                      "fact_hit",
+                                                      "fact_rewrite_hit"
+                                                  ]
+                  },
+                  {
+                      "name":  "E) Slang supplies (must hit)",
+                      "question":  "u bring vacuum n products?",
+                      "expect_debug_branch_any":  [
+                                                      "fact_hit",
+                                                      "fact_rewrite_hit"
+                                                  ]
+                  },
+                  {
+                      "name":  "F) Unknown capability (must fallback; never general_ok)",
+                      "question":  "u guys do carpet steam clean?",
+                      "expect_debug_branch_any":  [
+                                                      "fact_miss",
+                                                      "general_fallback"
+                                                  ]
+                  },
+                  {
+                      "name":  "G) Unknown capability (must fallback; never general_ok)",
+                      "question":  "can ya pressure wash my driveway?",
+                      "expect_debug_branch_any":  [
+                                                      "fact_miss"
+                                                  ]
+                  },
+                  {
+                      "name":  "H) General knowledge (must be general_ok)",
+                      "question":  "Why is the sky blue?",
+                      "expect_debug_branch_any":  [
+                                                      "general_ok"
+                                                  ]
+                  }
+              ]
 }
