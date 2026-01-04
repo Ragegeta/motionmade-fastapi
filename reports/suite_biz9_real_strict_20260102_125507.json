@@ -1,0 +1,2090 @@
+{
+    "tenantId":  "biz9_real",
+    "base":  "https://mm-client1-creator-backend-v1-0-0.abbedakbery14.workers.dev",
+    "endpoint":  "/api/v2/widget/chat",
+    "origin":  "https://motionmadebne.com.au",
+    "mode":  "strict",
+    "hardFailCount":  67,
+    "score":  {
+                  "error":  {
+                                "total":  0,
+                                "hit":  0
+                            },
+                  "fact_hit":  {
+                                   "hit":  36,
+                                   "total":  37
+                               },
+                  "general_fallback":  {
+                                           "hit":  0,
+                                           "total":  34
+                                       },
+                  "fact_rewrite_hit":  {
+                                           "hit":  4,
+                                           "total":  4
+                                       },
+                  "fact_miss":  {
+                                    "hit":  1,
+                                    "total":  18
+                                },
+                  "general_ok":  {
+                                     "hit":  1,
+                                     "total":  16
+                                 }
+              },
+    "results":  [
+                    {
+                        "name":  "SMOKE) General knowledge stays general_ok",
+                        "question":  "Why is the sky blue?",
+                        "answer":  "The sky appears blue due to a phenomenon called Rayleigh scattering. As sunlight passes through the Earth\u0027s atmosphere, it is scattered in all directions by the gases and particles in the air. Blue light has a shorter wavelength and is scattered more than other colors, making the sky look blue to our eyes, especially when the sun is high in the sky.",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3824",
+                        "retrieval_score":  "0.14687058329582636",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "SMOKE) Unknown capability must not become general_ok",
+                        "question":  "Do you do carpet steam cleaning?",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3828",
+                        "retrieval_score":  "0.472348781088068",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 1/19) Parking policy [v1]",
+                        "question":  "Parking policy",
+                        "answer":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3838",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 1/19) Parking policy [v2]",
+                        "question":  "what happens if there is paid parking",
+                        "answer":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3838",
+                        "retrieval_score":  "0.9999993145465651",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 1/19) Parking policy [v3]",
+                        "question":  "Do you charge for parking if it is metered?",
+                        "answer":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3838",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 1/19) Parking policy [v4]",
+                        "question":  "if parking is paid",
+                        "answer":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3838",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 1/19) Parking policy [v5]",
+                        "question":  "metered parking",
+                        "answer":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3838",
+                        "retrieval_score":  "0.9999996721744053",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 1/19) Parking policy [v6]",
+                        "question":  "Hey, quick one â€” Parking policy Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3838",
+                        "retrieval_score":  "0.784190009610955",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027billed at cost\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 1/19) Parking policy [v7]",
+                        "question":  "Parkin gpolicy",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3838",
+                        "retrieval_score":  "0.784190009610955",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027billed at cost\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 1/19) Parking policy [v8]",
+                        "question":  "Parking policy Also: Fridge clean add-on",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3821",
+                        "retrieval_score":  "0.6377576589584351",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027billed at cost\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 2/19) Fridge clean add-on [v1]",
+                        "question":  "Fridge clean add-on",
+                        "answer":  "Fridge cleaning is an optional add-on. Contact us for pricing based on size and condition.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3821",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 2/19) Fridge clean add-on [v2]",
+                        "question":  "F",
+                        "answer":  "It seems like your message might have been cut off. Could you please provide more details or clarify what you need?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3821",
+                        "retrieval_score":  "0.1932399455761945",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 2/19) Fridge clean add-on [v3]",
+                        "question":  "Hey, quick one â€” Fridge clean add-on Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3821",
+                        "retrieval_score":  "0.7899685502052307",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 2/19) Fridge clean add-on [v4]",
+                        "question":  "Fridg caln add-on",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3821",
+                        "retrieval_score":  "0.6059425346919896",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 2/19) Fridge clean add-on [v5]",
+                        "question":  "Fridge clean add-on Also: Pets policy",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3821",
+                        "retrieval_score":  "0.724182984953612",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 3/19) Pets policy [v1]",
+                        "question":  "Pets policy",
+                        "answer":  "Yes - we can clean homes with pets. Please let us know in advance so we can plan safely.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3827",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 3/19) Pets policy [v2]",
+                        "question":  "P",
+                        "answer":  "It seems like your message got cut off. Could you please provide more details or clarify what you need?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3838",
+                        "retrieval_score":  "0.21029481291770935",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 3/19) Pets policy [v3]",
+                        "question":  "Hey, quick one â€” Pets policy Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3827",
+                        "retrieval_score":  "0.7667509913444737",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 3/19) Pets policy [v4]",
+                        "question":  "Pts oplicy",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3838",
+                        "retrieval_score":  "0.3969547871405168",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 3/19) Pets policy [v5]",
+                        "question":  "Pets policy Also: Travel fee",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3827",
+                        "retrieval_score":  "0.6807022475359193",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 4/19) Travel fee [v1]",
+                        "question":  "Travel fee",
+                        "answer":  "There is no travel fee within our regular Brisbane service area. Outside areas may incur a travel fee - contact us to confirm.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3826",
+                        "retrieval_score":  "0.9999991357326254",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 4/19) Travel fee [v2]",
+                        "question":  "T",
+                        "answer":  "It seems like your message might be incomplete. If you have a question or topic in mind, feel free to share!",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3828",
+                        "retrieval_score":  "0.2646708646220488",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: missing token \u0027Brisbane\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 4/19) Travel fee [v3]",
+                        "question":  "Hey, quick one â€” Travel fee Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3826",
+                        "retrieval_score":  "0.5733839956979787",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Brisbane\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 4/19) Travel fee [v4]",
+                        "question":  "Trval f",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3826",
+                        "retrieval_score":  "0.23490140452099573",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027Brisbane\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 4/19) Travel fee [v5]",
+                        "question":  "Travel fee Also: Windows add-on",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3830",
+                        "retrieval_score":  "0.557325005531311",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Brisbane\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 5/19) Windows add-on [v1]",
+                        "question":  "Windows add-on",
+                        "answer":  "Internal windows can be added on request. Exterior or high windows depend on safe access.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3830",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 5/19) Windows add-on [v2]",
+                        "question":  "W",
+                        "answer":  "It seems your message is incomplete. Could you please provide more information or clarify your request?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3830",
+                        "retrieval_score":  "0.19792836594154672",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 5/19) Windows add-on [v3]",
+                        "question":  "Hey, quick one â€” Windows add-on Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3830",
+                        "retrieval_score":  "0.6200329065322876",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 5/19) Windows add-on [v4]",
+                        "question":  "Window sadd-on",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3830",
+                        "retrieval_score":  "0.34812928151313827",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 5/19) Windows add-on [v5]",
+                        "question":  "Windows add-on Also: Oven clean add-on",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3820",
+                        "retrieval_score":  "0.7674923767892238",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 6/19) Oven clean add-on [v1]",
+                        "question":  "Oven clean add-on",
+                        "answer":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3820",
+                        "retrieval_score":  "0.9999990761280997",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 6/19) Oven clean add-on [v2]",
+                        "question":  "how much extra for oven cleaning",
+                        "answer":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3820",
+                        "retrieval_score":  "0.9999996423721118",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 6/19) Oven clean add-on [v3]",
+                        "question":  "oven addon price",
+                        "answer":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3820",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 6/19) Oven clean add-on [v4]",
+                        "question":  "oven add on price",
+                        "answer":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3820",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 6/19) Oven clean add-on [v5]",
+                        "question":  "Hey, quick one â€” Oven clean add-on Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3820",
+                        "retrieval_score":  "0.6944427879320773",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027$89\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 6/19) Oven clean add-on [v6]",
+                        "question":  "Ovn clna add-on",
+                        "answer":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "http":  "200",
+                        "branch":  "fact_rewrite_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3820",
+                        "retrieval_score":  "0.8251716248639966",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 6/19) Oven clean add-on [v7]",
+                        "question":  "Oven clean add-on Also: Insurance",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3820",
+                        "retrieval_score":  "0.6914097872796594",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027$89\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 7/19) Insurance [v1]",
+                        "question":  "Insurance",
+                        "answer":  "Yes - we carry appropriate insurance for cleaning work.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3836",
+                        "retrieval_score":  "0.999999105930435",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 7/19) Insurance [v2]",
+                        "question":  "I",
+                        "answer":  "It seems like your message got cut off. How can I assist you today?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3828",
+                        "retrieval_score":  "0.26471680402755926",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: missing token \u0027insurance\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 7/19) Insurance [v3]",
+                        "question":  "Hey, quick one â€” Insurance Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3836",
+                        "retrieval_score":  "0.46627620063566044",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027insurance\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 7/19) Insurance [v4]",
+                        "question":  "Insruanc",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3836",
+                        "retrieval_score":  "0.5252594947814979",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027insurance\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 7/19) Insurance [v5]",
+                        "question":  "Insurance Also: Supplies and equipment",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3828",
+                        "retrieval_score":  "0.5944726467132568",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027insurance\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 8/19) Supplies and equipment [v1]",
+                        "question":  "Supplies and equipment",
+                        "answer":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3828",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 8/19) Supplies and equipment [v2]",
+                        "question":  "do you bring ya a vacuum",
+                        "answer":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3828",
+                        "retrieval_score":  "0.9999990463258044",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 8/19) Supplies and equipment [v3]",
+                        "question":  "do you have a vac",
+                        "answer":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3828",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 8/19) Supplies and equipment [v4]",
+                        "question":  "do i need to supply anything or do you bring gear",
+                        "answer":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3828",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 8/19) Supplies and equipment [v5]",
+                        "question":  "do i need to provide products",
+                        "answer":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3828",
+                        "retrieval_score":  "0.9999996423720887",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 8/19) Supplies and equipment [v6]",
+                        "question":  "Hey, quick one â€” Supplies and equipment Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3828",
+                        "retrieval_score":  "0.5384023991826832",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 8/19) Supplies and equipment [v7]",
+                        "question":  "Supplis nad quipmnt",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3828",
+                        "retrieval_score":  "0.7376075010778759",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 8/19) Supplies and equipment [v8]",
+                        "question":  "Supplies and equipment Also: Eco-friendly products",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3829",
+                        "retrieval_score":  "0.7144840189507031",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 9/19) Eco-friendly products [v1]",
+                        "question":  "Eco-friendly products",
+                        "answer":  "Eco-friendly or low-scent products can be used on request. Let us know your preference when booking.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3829",
+                        "retrieval_score":  "0.9999996423721687",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 9/19) Eco-friendly products [v2]",
+                        "question":  "E",
+                        "answer":  "It seems like your message might be incomplete. Could you please provide more details or clarify your request?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3829",
+                        "retrieval_score":  "0.15889737148928662",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 9/19) Eco-friendly products [v3]",
+                        "question":  "Hey, quick one â€” Eco-friendly products Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3829",
+                        "retrieval_score":  "0.5660578687259994",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 9/19) Eco-friendly products [v4]",
+                        "question":  "co-frindyl products",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3828",
+                        "retrieval_score":  "0.3038109476791768",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 9/19) Eco-friendly products [v5]",
+                        "question":  "Eco-friendly products Also: Laundry add-on",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3829",
+                        "retrieval_score":  "0.6351855018624466",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 10/19) Laundry add-on [v1]",
+                        "question":  "Laundry add-on",
+                        "answer":  "Laundry is available as an add-on (wash, dry, and fold). No ironing.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3831",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 10/19) Laundry add-on [v2]",
+                        "question":  "L",
+                        "answer":  "It seems like your message is incomplete. Could you please provide more details or clarify your question?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3836",
+                        "retrieval_score":  "0.19622173000043042",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 10/19) Laundry add-on [v3]",
+                        "question":  "Hey, quick one â€” Laundry add-on Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3831",
+                        "retrieval_score":  "0.6877937316894531",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 10/19) Laundry add-on [v4]",
+                        "question":  "Laundr yadd-on",
+                        "answer":  "Laundry is available as an add-on (wash, dry, and fold). No ironing.",
+                        "http":  "200",
+                        "branch":  "fact_rewrite_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3831",
+                        "retrieval_score":  "0.9170235023221561",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 10/19) Laundry add-on [v5]",
+                        "question":  "Laundry add-on Also: Bond clean availability",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3831",
+                        "retrieval_score":  "0.7525406108063645",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 11/19) Bond clean availability [v1]",
+                        "question":  "Bond clean availability",
+                        "answer":  "Yes - we do bond/end-of-lease cleans using a checklist-style clean focused on kitchens, bathrooms, floors, skirting, and surfaces.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3824",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 11/19) Bond clean availability [v2]",
+                        "question":  "B",
+                        "answer":  "It seems like your message was incomplete. Could you please provide more details or clarify your question?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3825",
+                        "retrieval_score":  "0.27501069903118824",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: missing token \u0027bond\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 11/19) Bond clean availability [v3]",
+                        "question":  "Hey, quick one â€” Bond clean availability Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3824",
+                        "retrieval_score":  "0.6732102242958861",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027bond\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 11/19) Bond clean availability [v4]",
+                        "question":  "Bond clan vaailability",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3824",
+                        "retrieval_score":  "0.4604816389658053",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027bond\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 11/19) Bond clean availability [v5]",
+                        "question":  "Bond clean availability Also: If the cleaner has to park in a paid spot, what happens?",
+                        "answer":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3837",
+                        "retrieval_score":  "0.8331473171378345",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: missing token \u0027bond\u0027 in replyText"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 12/19) If the cleaner has to park in a paid spot, what happens? [v1]",
+                        "question":  "If the cleaner has to park in a paid spot, what happens?",
+                        "answer":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3837",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 12/19) If the cleaner has to park in a paid spot, what happens? [v2]",
+                        "question":  "I",
+                        "answer":  "It seems like your message got cut off. How can I assist you today?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3828",
+                        "retrieval_score":  "0.26471680402755926",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: missing token \u0027billed at cost\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 12/19) If the cleaner has to park in a paid spot, what happens? [v3]",
+                        "question":  "If the cleaner has to park in a paid spo",
+                        "answer":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3837",
+                        "retrieval_score":  "0.8404822504951616",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 12/19) If the cleaner has to park in a paid spot, what happens? [v4]",
+                        "question":  "Hey, quick one â€” If the cleaner has to park in a paid spot, what happens? Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3837",
+                        "retrieval_score":  "0.8140862140861083",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027billed at cost\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 12/19) If the cleaner has to park in a paid spot, what happens? [v5]",
+                        "question":  "If th clanr has to park i na paid spot, what happns?",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3837",
+                        "retrieval_score":  "0.6911506630941882",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027billed at cost\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 12/19) If the cleaner has to park in a paid spot, what happens? [v6]",
+                        "question":  "If the cleaner has to park in a paid spot, what happens? Also: Payments accepted",
+                        "answer":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3837",
+                        "retrieval_score":  "0.9254425079157974",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 13/19) Payments accepted [v1]",
+                        "question":  "Payments accepted",
+                        "answer":  "We accept bank transfer and card payments. An invoice can be provided.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3835",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 13/19) Payments accepted [v2]",
+                        "question":  "P",
+                        "answer":  "It seems like your message might be incomplete. Could you please provide more details or clarify what you need?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3838",
+                        "retrieval_score":  "0.21029481291770935",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: missing token \u0027bank transfer\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 13/19) Payments accepted [v3]",
+                        "question":  "Hey, quick one â€” Payments accepted Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3835",
+                        "retrieval_score":  "0.5219265818595886",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027bank transfer\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 13/19) Payments accepted [v4]",
+                        "question":  "Paymnt saccptd",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3835",
+                        "retrieval_score":  "0.7789450156059884",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027bank transfer\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 13/19) Payments accepted [v5]",
+                        "question":  "Payments accepted Also: Arrival time window",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3833",
+                        "retrieval_score":  "0.6542812240142588",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027bank transfer\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 14/19) Arrival time window [v1]",
+                        "question":  "Arrival time window",
+                        "answer":  "We typically provide a 2-hour arrival window unless a fixed time is booked.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3833",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 14/19) Arrival time window [v2]",
+                        "question":  "A",
+                        "answer":  "It seems like your message may have been cut off. Could you please provide more details or clarify your question?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3825",
+                        "retrieval_score":  "0.17354897181835882",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 14/19) Arrival time window [v3]",
+                        "question":  "Hey, quick one â€” Arrival time window Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3833",
+                        "retrieval_score":  "0.8118868470192186",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 14/19) Arrival time window [v4]",
+                        "question":  "Arrival itm window",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3833",
+                        "retrieval_score":  "0.6805614804217565",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 14/19) Arrival time window [v5]",
+                        "question":  "Arrival time window Also: Linen change add-on",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3832",
+                        "retrieval_score":  "0.7026671590010931",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 15/19) Linen change add-on [v1]",
+                        "question":  "Linen change add-on",
+                        "answer":  "Yes - linen/beds can be changed as an add-on if clean sheets are left out.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3832",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 15/19) Linen change add-on [v2]",
+                        "question":  "L",
+                        "answer":  "It seems like your message might be incomplete. Could you please provide more details or clarify what you\u0027re looking for?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3836",
+                        "retrieval_score":  "0.19622173000043042",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 15/19) Linen change add-on [v3]",
+                        "question":  "Hey, quick one â€” Linen change add-on Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3832",
+                        "retrieval_score":  "0.7912791024113828",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 15/19) Linen change add-on [v4]",
+                        "question":  "Linn chnag add-on",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3832",
+                        "retrieval_score":  "0.6233593674469793",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 15/19) Linen change add-on [v5]",
+                        "question":  "Linen change add-on Also: Cancellations policy",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3832",
+                        "retrieval_score":  "0.7367603653501824",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 16/19) Cancellations policy [v1]",
+                        "question":  "Cancellations policy",
+                        "answer":  "Cancellations with less than 24 hours\u0027 notice may incur a late cancellation fee.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3834",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 16/19) Cancellations policy [v2]",
+                        "question":  "C",
+                        "answer":  "It seems like your message may have been cut off. Could you please provide more details or clarify your question?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3822",
+                        "retrieval_score":  "0.1829065353441477",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 16/19) Cancellations policy [v3]",
+                        "question":  "Hey, quick one â€” Cancellations policy Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "Cancellations with less than 24 hours\u0027 notice may incur a late cancellation fee.",
+                        "http":  "200",
+                        "branch":  "fact_rewrite_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3834",
+                        "retrieval_score":  "0.846781450893712",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 16/19) Cancellations policy [v4]",
+                        "question":  "Cancllatoins policy",
+                        "answer":  "Cancellations with less than 24 hours\u0027 notice may incur a late cancellation fee.",
+                        "http":  "200",
+                        "branch":  "fact_rewrite_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3834",
+                        "retrieval_score":  "0.9012597917008712",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 16/19) Cancellations policy [v5]",
+                        "question":  "Cancellations policy Also: Service area",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3834",
+                        "retrieval_score":  "0.6613190577841975",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 17/19) Service area [v1]",
+                        "question":  "Service area",
+                        "answer":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3825",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 17/19) Service area [v2]",
+                        "question":  "do you cover brisb north",
+                        "answer":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3825",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 17/19) Service area [v3]",
+                        "question":  "do you service brisb inner s",
+                        "answer":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3825",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 17/19) Service area [v4]",
+                        "question":  "do you service inner north",
+                        "answer":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3825",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 17/19) Service area [v5]",
+                        "question":  "do you service Brisbane",
+                        "answer":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3825",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 17/19) Service area [v6]",
+                        "question":  "Hey, quick one â€” Service area Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3825",
+                        "retrieval_score":  "0.5747567326120497",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Brisbane\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 17/19) Service area [v7]",
+                        "question":  "Srvci ara",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3825",
+                        "retrieval_score":  "0.5048202866530113",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027Brisbane\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 17/19) Service area [v8]",
+                        "question":  "Service area Also: Standard clean inclusions",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3822",
+                        "retrieval_score":  "0.6885344386100818",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Brisbane\u0027 in replyText",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 18/19) Standard clean inclusions [v1]",
+                        "question":  "Standard clean inclusions",
+                        "answer":  "A standard clean includes bathrooms, kitchen surfaces, floors, dusting, and general tidying.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3822",
+                        "retrieval_score":  "1.0",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 18/19) Standard clean inclusions [v2]",
+                        "question":  "S",
+                        "answer":  "It seems like your message may have been cut off. Could you please provide more details or clarify what you\u0027d like to know?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3825",
+                        "retrieval_score":  "0.2434655725955963",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 18/19) Standard clean inclusions [v3]",
+                        "question":  "Hey, quick one â€” Standard clean inclusions Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3822",
+                        "retrieval_score":  "0.6464583470362004",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 18/19) Standard clean inclusions [v4]",
+                        "question":  "Standard clna inclusions",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3822",
+                        "retrieval_score":  "0.5168204307556189",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 18/19) Standard clean inclusions [v5]",
+                        "question":  "Standard clean inclusions Also: Deep clean inclusions",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3823",
+                        "retrieval_score":  "0.7157981565118947",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 19/19) Deep clean inclusions [v1]",
+                        "question":  "Deep clean inclusions",
+                        "answer":  "A deep clean focuses on heavy build-up and detailing such as skirting and extra attention to problem areas. Add-ons like oven/fridge can be included if selected.",
+                        "http":  "200",
+                        "branch":  "fact_hit",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "true",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3823",
+                        "retrieval_score":  "0.9999991059306108",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 19/19) Deep clean inclusions [v2]",
+                        "question":  "D",
+                        "answer":  "It seems like your message might be incomplete. Could you please provide more details or clarify your question?",
+                        "http":  "200",
+                        "branch":  "general_ok",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3825",
+                        "retrieval_score":  "0.17988467452848134",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_ok\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 19/19) Deep clean inclusions [v3]",
+                        "question":  "Hey, quick one â€” Deep clean inclusions Also Iâ€™m flexible on timing, just tell me the policy.",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3823",
+                        "retrieval_score":  "0.5916690826416058",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 19/19) Deep clean inclusions [v4]",
+                        "question":  "Dp clan niclusions",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "general_fallback",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "false",
+                        "top_faq_id":  "3823",
+                        "retrieval_score":  "0.42266105008225807",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    },
+                    {
+                        "name":  "FAQ 19/19) Deep clean inclusions [v5]",
+                        "question":  "Deep clean inclusions Also: Parking policy",
+                        "answer":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "http":  "200",
+                        "branch":  "fact_miss",
+                        "tenant":  "biz9_real",
+                        "faq_hit":  "false",
+                        "fact_gate":  "true",
+                        "top_faq_id":  "3823",
+                        "retrieval_score":  "0.6007751344248423",
+                        "git_sha":  "6f9f150e6e6e2daa57001a67d03874cd2cc77873",
+                        "entrypoint":  "root.main",
+                        "build":  "render-prod-1",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027"
+                                  ]
+                    }
+                ]
+}

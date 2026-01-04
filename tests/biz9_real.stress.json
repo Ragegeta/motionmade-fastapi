@@ -1,0 +1,1142 @@
+[
+    {
+        "name":  "SMOKE) General knowledge stays general_ok",
+        "question":  "Why is the sky blue?",
+        "expect_debug_branch_any":  [
+                                        "general_ok"
+                                    ],
+        "severity":  "hard",
+        "category":  "smoke"
+    },
+    {
+        "name":  "SMOKE) Unknown capability must not become general_ok",
+        "question":  "Do you do carpet steam cleaning?",
+        "expect_debug_branch_any":  [
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "hard",
+        "category":  "smoke"
+    },
+    {
+        "name":  "FAQ 1/19) Oven clean add-on [exact]",
+        "question":  "Oven clean add-on",
+        "must_contain":  "$89",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 1/19) Oven clean add-on [variant]",
+        "question":  "Oven clean add-on",
+        "must_contain":  "$89",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 1/19) Oven clean add-on [noisy]",
+        "question":  "Hey, quick one — Oven clean add-on. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "$89",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 1/19) Oven clean add-on [multi-intent]",
+        "question":  "Oven clean add-on Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 1/19) Oven clean add-on [garbage-short]",
+        "question":  "O",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 2/19) Fridge clean add-on [exact]",
+        "question":  "Fridge clean add-on",
+        "must_contain":  "cleaning",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 2/19) Fridge clean add-on [variant]",
+        "question":  "Fridge clean add-on",
+        "must_contain":  "cleaning",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 2/19) Fridge clean add-on [noisy]",
+        "question":  "Hey, quick one — Fridge clean add-on. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "cleaning",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 2/19) Fridge clean add-on [multi-intent]",
+        "question":  "Fridge clean add-on Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 2/19) Fridge clean add-on [garbage-short]",
+        "question":  "F",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 3/19) Standard clean inclusions [exact]",
+        "question":  "Standard clean inclusions",
+        "must_contain":  "standard",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 3/19) Standard clean inclusions [variant]",
+        "question":  "Standard clean inclusions",
+        "must_contain":  "standard",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 3/19) Standard clean inclusions [noisy]",
+        "question":  "Hey, quick one — Standard clean inclusions. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "standard",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 3/19) Standard clean inclusions [multi-intent]",
+        "question":  "Standard clean inclusions Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 3/19) Standard clean inclusions [garbage-short]",
+        "question":  "S",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 4/19) Deep clean inclusions [exact]",
+        "question":  "Deep clean inclusions",
+        "must_contain":  "focuses",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 4/19) Deep clean inclusions [variant]",
+        "question":  "Deep clean inclusions",
+        "must_contain":  "focuses",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 4/19) Deep clean inclusions [noisy]",
+        "question":  "Hey, quick one — Deep clean inclusions. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "focuses",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 4/19) Deep clean inclusions [multi-intent]",
+        "question":  "Deep clean inclusions Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 4/19) Deep clean inclusions [garbage-short]",
+        "question":  "D",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 5/19) Bond clean availability [exact]",
+        "question":  "Bond clean availability",
+        "must_contain":  "end-of-lease",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 5/19) Bond clean availability [variant]",
+        "question":  "Bond clean availability",
+        "must_contain":  "end-of-lease",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 5/19) Bond clean availability [noisy]",
+        "question":  "Hey, quick one — Bond clean availability. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "end-of-lease",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 5/19) Bond clean availability [multi-intent]",
+        "question":  "Bond clean availability Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 5/19) Bond clean availability [garbage-short]",
+        "question":  "B",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 6/19) Service area [exact]",
+        "question":  "Service area",
+        "must_contain":  "service",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 6/19) Service area [variant]",
+        "question":  "Service area",
+        "must_contain":  "service",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 6/19) Service area [noisy]",
+        "question":  "Hey, quick one — Service area. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "service",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 6/19) Service area [multi-intent]",
+        "question":  "Service area Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 6/19) Service area [garbage-short]",
+        "question":  "S",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 7/19) Travel fee [exact]",
+        "question":  "Travel fee",
+        "must_contain":  "regular",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 7/19) Travel fee [variant]",
+        "question":  "Travel fee",
+        "must_contain":  "regular",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 7/19) Travel fee [noisy]",
+        "question":  "Hey, quick one — Travel fee. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "regular",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 7/19) Travel fee [multi-intent]",
+        "question":  "Travel fee Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 7/19) Travel fee [garbage-short]",
+        "question":  "T",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 8/19) Pets policy [exact]",
+        "question":  "Pets policy",
+        "must_contain":  "advance",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 8/19) Pets policy [variant]",
+        "question":  "Pets policy",
+        "must_contain":  "advance",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 8/19) Pets policy [noisy]",
+        "question":  "Hey, quick one — Pets policy. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "advance",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 8/19) Pets policy [multi-intent]",
+        "question":  "Pets policy Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 8/19) Pets policy [garbage-short]",
+        "question":  "P",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 9/19) Supplies and equipment [exact]",
+        "question":  "Supplies and equipment",
+        "must_contain":  "professional",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 9/19) Supplies and equipment [variant]",
+        "question":  "Supplies and equipment",
+        "must_contain":  "professional",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 9/19) Supplies and equipment [noisy]",
+        "question":  "Hey, quick one — Supplies and equipment. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "professional",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 9/19) Supplies and equipment [multi-intent]",
+        "question":  "Supplies and equipment Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 9/19) Supplies and equipment [garbage-short]",
+        "question":  "S",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 10/19) Eco-friendly products [exact]",
+        "question":  "Eco-friendly products",
+        "must_contain":  "Eco-friendly",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 10/19) Eco-friendly products [variant]",
+        "question":  "Eco-friendly products",
+        "must_contain":  "Eco-friendly",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 10/19) Eco-friendly products [noisy]",
+        "question":  "Hey, quick one — Eco-friendly products. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "Eco-friendly",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 10/19) Eco-friendly products [multi-intent]",
+        "question":  "Eco-friendly products Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 10/19) Eco-friendly products [garbage-short]",
+        "question":  "E",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 11/19) Windows add-on [exact]",
+        "question":  "Windows add-on",
+        "must_contain":  "Internal",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 11/19) Windows add-on [variant]",
+        "question":  "Windows add-on",
+        "must_contain":  "Internal",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 11/19) Windows add-on [noisy]",
+        "question":  "Hey, quick one — Windows add-on. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "Internal",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 11/19) Windows add-on [multi-intent]",
+        "question":  "Windows add-on Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 11/19) Windows add-on [garbage-short]",
+        "question":  "W",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 12/19) Laundry add-on [exact]",
+        "question":  "Laundry add-on",
+        "must_contain":  "Laundry",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 12/19) Laundry add-on [variant]",
+        "question":  "Laundry add-on",
+        "must_contain":  "Laundry",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 12/19) Laundry add-on [noisy]",
+        "question":  "Hey, quick one — Laundry add-on. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "Laundry",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 12/19) Laundry add-on [multi-intent]",
+        "question":  "Laundry add-on Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 12/19) Laundry add-on [garbage-short]",
+        "question":  "L",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 13/19) Linen change add-on [exact]",
+        "question":  "Linen change add-on",
+        "must_contain":  "changed",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 13/19) Linen change add-on [variant]",
+        "question":  "Linen change add-on",
+        "must_contain":  "changed",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 13/19) Linen change add-on [noisy]",
+        "question":  "Hey, quick one — Linen change add-on. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "changed",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 13/19) Linen change add-on [multi-intent]",
+        "question":  "Linen change add-on Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 13/19) Linen change add-on [garbage-short]",
+        "question":  "L",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 14/19) Arrival time window [exact]",
+        "question":  "Arrival time window",
+        "must_contain":  "typically",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 14/19) Arrival time window [variant]",
+        "question":  "Arrival time window",
+        "must_contain":  "typically",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 14/19) Arrival time window [noisy]",
+        "question":  "Hey, quick one — Arrival time window. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "typically",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 14/19) Arrival time window [multi-intent]",
+        "question":  "Arrival time window Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 14/19) Arrival time window [garbage-short]",
+        "question":  "A",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 15/19) Cancellations policy [exact]",
+        "question":  "Cancellations policy",
+        "must_contain":  "Cancellations",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 15/19) Cancellations policy [variant]",
+        "question":  "Cancellations policy",
+        "must_contain":  "Cancellations",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 15/19) Cancellations policy [noisy]",
+        "question":  "Hey, quick one — Cancellations policy. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "Cancellations",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 15/19) Cancellations policy [multi-intent]",
+        "question":  "Cancellations policy Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 15/19) Cancellations policy [garbage-short]",
+        "question":  "C",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 16/19) Payments accepted [exact]",
+        "question":  "Payments accepted",
+        "must_contain":  "transfer",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 16/19) Payments accepted [variant]",
+        "question":  "Payments accepted",
+        "must_contain":  "transfer",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 16/19) Payments accepted [noisy]",
+        "question":  "Hey, quick one — Payments accepted. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "transfer",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 16/19) Payments accepted [multi-intent]",
+        "question":  "Payments accepted Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 16/19) Payments accepted [garbage-short]",
+        "question":  "P",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 17/19) Insurance [exact]",
+        "question":  "Insurance",
+        "must_contain":  "appropriate",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 17/19) Insurance [variant]",
+        "question":  "Insurance",
+        "must_contain":  "appropriate",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 17/19) Insurance [noisy]",
+        "question":  "Hey, quick one — Insurance. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "appropriate",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 17/19) Insurance [multi-intent]",
+        "question":  "Insurance Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 17/19) Insurance [garbage-short]",
+        "question":  "I",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [exact]",
+        "question":  "If the cleaner has to park in a paid spot, what happens?",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [variant]",
+        "question":  "If the cleaner has to park in a paid spot, what happens?",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [noisy]",
+        "question":  "Hey, quick one — If the cleaner has to park in a paid spot, what happens?. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [multi-intent]",
+        "question":  "If the cleaner has to park in a paid spot, what happens? Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [garbage-short]",
+        "question":  "I",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    },
+    {
+        "name":  "FAQ 19/19) Parking policy [exact]",
+        "question":  "Parking policy",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "stress_exact"
+    },
+    {
+        "name":  "FAQ 19/19) Parking policy [variant]",
+        "question":  "Parking policy",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_variant"
+    },
+    {
+        "name":  "FAQ 19/19) Parking policy [noisy]",
+        "question":  "Hey, quick one — Parking policy. Also I’m flexible on timing, just tell me.",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_noisy"
+    },
+    {
+        "name":  "FAQ 19/19) Parking policy [multi-intent]",
+        "question":  "Parking policy Also: Another question",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit",
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_multi"
+    },
+    {
+        "name":  "FAQ 19/19) Parking policy [garbage-short]",
+        "question":  "P",
+        "expect_debug_branch_any":  [
+                                        "general_ok",
+                                        "general_fallback",
+                                        "fact_miss"
+                                    ],
+        "severity":  "soft",
+        "category":  "stress_garbage"
+    }
+]

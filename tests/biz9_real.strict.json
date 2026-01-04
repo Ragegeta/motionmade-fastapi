@@ -1,0 +1,573 @@
+[
+    {
+        "name":  "SMOKE) General knowledge stays general_ok",
+        "question":  "Why is the sky blue?",
+        "expect_debug_branch_any":  [
+                                        "general_ok"
+                                    ],
+        "severity":  "hard",
+        "category":  "smoke"
+    },
+    {
+        "name":  "SMOKE) Unknown capability must not become general_ok",
+        "question":  "Do you do carpet steam cleaning?",
+        "expect_debug_branch_any":  [
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ],
+        "severity":  "hard",
+        "category":  "smoke"
+    },
+    {
+        "name":  "FAQ 1/19) Oven clean add-on [strict 1]",
+        "question":  "Oven clean add-on",
+        "must_contain":  "$89",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 1/19) Oven clean add-on [strict 2]",
+        "question":  "Oven clean add-on",
+        "must_contain":  "$89",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 1/19) Oven clean add-on [strict 3]",
+        "question":  "How much extra is the oven add-on?",
+        "must_contain":  "$89",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 1/19) Oven clean add-on [strict 4]",
+        "question":  "how much extra is the oven add on",
+        "must_contain":  "$89",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 2/19) Fridge clean add-on [strict 1]",
+        "question":  "Fridge clean add-on",
+        "must_contain":  "cleaning",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 2/19) Fridge clean add-on [strict 2]",
+        "question":  "Fridge clean add-on",
+        "must_contain":  "cleaning",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 3/19) Standard clean inclusions [strict 1]",
+        "question":  "Standard clean inclusions",
+        "must_contain":  "standard",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 3/19) Standard clean inclusions [strict 2]",
+        "question":  "Standard clean inclusions",
+        "must_contain":  "standard",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 4/19) Deep clean inclusions [strict 1]",
+        "question":  "Deep clean inclusions",
+        "must_contain":  "focuses",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 4/19) Deep clean inclusions [strict 2]",
+        "question":  "Deep clean inclusions",
+        "must_contain":  "focuses",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 5/19) Bond clean availability [strict 1]",
+        "question":  "Bond clean availability",
+        "must_contain":  "end-of-lease",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 5/19) Bond clean availability [strict 2]",
+        "question":  "Bond clean availability",
+        "must_contain":  "end-of-lease",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 6/19) Service area [strict 1]",
+        "question":  "Service area",
+        "must_contain":  "service",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 6/19) Service area [strict 2]",
+        "question":  "Service area",
+        "must_contain":  "service",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 6/19) Service area [strict 3]",
+        "question":  "what suburbs do you cover",
+        "must_contain":  "service",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 6/19) Service area [strict 4]",
+        "question":  "what areas do you service",
+        "must_contain":  "service",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 7/19) Travel fee [strict 1]",
+        "question":  "Travel fee",
+        "must_contain":  "regular",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 7/19) Travel fee [strict 2]",
+        "question":  "Travel fee",
+        "must_contain":  "regular",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 8/19) Pets policy [strict 1]",
+        "question":  "Pets policy",
+        "must_contain":  "advance",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 8/19) Pets policy [strict 2]",
+        "question":  "Pets policy",
+        "must_contain":  "advance",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 9/19) Supplies and equipment [strict 1]",
+        "question":  "Supplies and equipment",
+        "must_contain":  "professional",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 9/19) Supplies and equipment [strict 2]",
+        "question":  "Supplies and equipment",
+        "must_contain":  "professional",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 9/19) Supplies and equipment [strict 3]",
+        "question":  "do you bring cleaning supplies",
+        "must_contain":  "professional",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 9/19) Supplies and equipment [strict 4]",
+        "question":  "do you bring cleaning products",
+        "must_contain":  "professional",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 10/19) Eco-friendly products [strict 1]",
+        "question":  "Eco-friendly products",
+        "must_contain":  "Eco-friendly",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 10/19) Eco-friendly products [strict 2]",
+        "question":  "Eco-friendly products",
+        "must_contain":  "Eco-friendly",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 11/19) Windows add-on [strict 1]",
+        "question":  "Windows add-on",
+        "must_contain":  "Internal",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 11/19) Windows add-on [strict 2]",
+        "question":  "Windows add-on",
+        "must_contain":  "Internal",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 12/19) Laundry add-on [strict 1]",
+        "question":  "Laundry add-on",
+        "must_contain":  "Laundry",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 12/19) Laundry add-on [strict 2]",
+        "question":  "Laundry add-on",
+        "must_contain":  "Laundry",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 13/19) Linen change add-on [strict 1]",
+        "question":  "Linen change add-on",
+        "must_contain":  "changed",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 13/19) Linen change add-on [strict 2]",
+        "question":  "Linen change add-on",
+        "must_contain":  "changed",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 14/19) Arrival time window [strict 1]",
+        "question":  "Arrival time window",
+        "must_contain":  "typically",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 14/19) Arrival time window [strict 2]",
+        "question":  "Arrival time window",
+        "must_contain":  "typically",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 15/19) Cancellations policy [strict 1]",
+        "question":  "Cancellations policy",
+        "must_contain":  "Cancellations",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 15/19) Cancellations policy [strict 2]",
+        "question":  "Cancellations policy",
+        "must_contain":  "Cancellations",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 16/19) Payments accepted [strict 1]",
+        "question":  "Payments accepted",
+        "must_contain":  "transfer",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 16/19) Payments accepted [strict 2]",
+        "question":  "Payments accepted",
+        "must_contain":  "transfer",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 17/19) Insurance [strict 1]",
+        "question":  "Insurance",
+        "must_contain":  "appropriate",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 17/19) Insurance [strict 2]",
+        "question":  "Insurance",
+        "must_contain":  "appropriate",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [strict 1]",
+        "question":  "If the cleaner has to park in a paid spot, what happens?",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [strict 2]",
+        "question":  "If the cleaner has to park in a paid spot, what happens?",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 19/19) Parking policy [strict 1]",
+        "question":  "Parking policy",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 19/19) Parking policy [strict 2]",
+        "question":  "Parking policy",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 19/19) Parking policy [strict 3]",
+        "question":  "Paid parking",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    },
+    {
+        "name":  "FAQ 19/19) Parking policy [strict 4]",
+        "question":  "What happens if there is paid parking?",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  "true",
+        "severity":  "hard",
+        "category":  "strict"
+    }
+]

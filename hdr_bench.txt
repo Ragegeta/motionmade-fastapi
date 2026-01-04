@@ -1,0 +1,39 @@
+HTTP/1.1 200 OK
+Date: Fri, 02 Jan 2026 07:58:45 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+CF-Ray: 9b78b66918ae7156-SIN
+CF-Cache-Status: DYNAMIC
+Access-Control-Allow-Origin: null
+Server: cloudflare
+Vary: Origin, accept-encoding
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Allow-Methods: GET,POST,PUT,OPTIONS
+Access-Control-Max-Age: 86400
+X-Proxy-Path: /api/v2/generate-quote-reply
+X-Proxy-Status: 200
+X-Proxy-Upstream: https://motionmade-fastapi.onrender.com
+alt-svc: h3=":443"; ma=86400
+rndr-id: add93b63-49be-4bd9
+x-build: render-prod-1
+x-debug-branch: fact_miss
+x-entrypoint: root.main
+x-fact-domain: pricing
+x-fact-gate-hit: true
+x-fact-rewrite: What is the cost of benchmark item BENCH001?
+x-faq-hit: false
+x-git-sha: 6f9f150e6e6e2daa57001a67d03874cd2cc77873
+x-release: main
+x-render-origin-server: uvicorn
+x-retrieval-delta: 0.027863739462364645
+x-retrieval-delta-raw: 0.027975436690349853
+x-retrieval-score: 0.9615961576935403
+x-retrieval-score-raw: 0.9999992847443071
+x-served-by: fastapi
+x-tenantid: biz9_bench100
+x-top-faq-id: 4710
+x-top-faq-id-raw: 4710
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=kXr9SVBkWPG%2F5ztNEsKxTiDBBb6kg%2BRwKliiXgDLeLzRlrhajufZFCOERuwfc%2F7XvQNidrIOyDvC5p0ljeoL5KPV8YfyVn%2FGjy06EpkxS%2FTrEL8bwuNiZNeyP74qXYE1IYpeX03NI8WW2UqqCFlIg%2FTXzGtlsLLYE95s"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+

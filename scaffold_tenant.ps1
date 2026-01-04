@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
   [Parameter(Mandatory=$true)][string]$NewTenantId,
   [string]$TemplateTenantId = "motionmade",
@@ -10,16 +10,15 @@ $ErrorActionPreference = "Stop"
 if ($NewTenantId -notmatch '^[a-zA-Z0-9_-]+$') { throw "Bad NewTenantId '$NewTenantId'. Use only letters/numbers/_/-" }
 if ($TemplateTenantId -notmatch '^[a-zA-Z0-9_-]+$') { throw "Bad TemplateTenantId '$TemplateTenantId'." }
 
-$root = $PSScriptRoot
-if (-not $root) { $root = Split-Path -Parent $MyInvocation.MyCommand.Path }
+$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (-not $root) { $root = Get-Location }
 
-function Write-Utf8NoBom([string]$Path, [string]$Content) {
-  $enc = New-Object System.Text.UTF8Encoding($false)
-  [IO.File]::WriteAllText($Path, $Content, $enc)
+function Ensure-Dir([string]$Path) {
+  if (-not (Test-Path $Path)) { New-Item -ItemType Directory -Path $Path | Out-Null }
 }
 
-$srcTenantDir = Join-Path $root (Join-Path "tenants" $TemplateTenantId)
-$dstTenantDir = Join-Path $root (Join-Path "tenants" $NewTenantId)
+$srcTenantDir = Join-Path (Join-Path $root "tenants") $TemplateTenantId
+$dstTenantDir = Join-Path (Join-Path $root "tenants") $NewTenantId
 $testsDir     = Join-Path $root "tests"
 $dstTestFile  = Join-Path $testsDir ("$NewTenantId.json")
 
@@ -28,24 +27,26 @@ if ((Test-Path $dstTenantDir) -and -not $Force) { throw "Tenant already exists: 
 
 # Create dirs
 if (Test-Path $dstTenantDir) { Remove-Item -Recurse -Force $dstTenantDir }
-New-Item -ItemType Directory -Path $dstTenantDir | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $dstTenantDir "backups") | Out-Null
-if (-not (Test-Path $testsDir)) { New-Item -ItemType Directory -Path $testsDir | Out-Null }
+Ensure-Dir $dstTenantDir
+Ensure-Dir (Join-Path $dstTenantDir "backups")
+Ensure-Dir $testsDir
 
-# Copy + rewrite tenant files (faqs.json and variant_profile.json)
+# Copy tenant files
 $srcFaqs    = Join-Path $srcTenantDir "faqs.json"
 $srcProfile = Join-Path $srcTenantDir "variant_profile.json"
 if (-not (Test-Path $srcFaqs)) { throw "Missing in template: $srcFaqs" }
 if (-not (Test-Path $srcProfile)) { throw "Missing in template: $srcProfile" }
 
-Copy-Item $srcFaqs (Join-Path $dstTenantDir "faqs.json") -Force
+Copy-Item $srcFaqs    (Join-Path $dstTenantDir "faqs.json") -Force
 Copy-Item $srcProfile (Join-Path $dstTenantDir "variant_profile.json") -Force
 
-# Make faqs_variants.json equal to faqs.json initially (pipeline will mutate it)
-Copy-Item\ (Join-Path\ $dstTenantDir\ "faqs\.json")\ (Join-Path\ $dstTenantDir\ "faqs_variants\.json")\ -Force\n#\ Create\ an\ initial\ rollback\ target\ so\ pipeline\ can\ always\ rollback\ on\ first\ run\nCopy-Item\ (Join-Path\ $dstTenantDir\ "faqs_variants\.json")\ (Join-Path\ $dstTenantDir\ "last_good_faqs_variants\.json")\ -Force
+# Working artifact starts as faqs.json
+Copy-Item (Join-Path $dstTenantDir "faqs.json") (Join-Path $dstTenantDir "faqs_variants.json") -Force
+# Create initial rollback target so first pipeline run can always rollback
+Copy-Item (Join-Path $dstTenantDir "faqs_variants.json") (Join-Path $dstTenantDir "last_good_faqs_variants.json") -Force
 
-# Create a starter tests file (intentionally minimal + forces you to fill must-hit tokens)
-$starter = [ordered]@{
+# Starter tests: 1 must-hit placeholder + 2 plumbing checks
+$starterObj = [ordered]@{
   base     = "https://api.motionmadebne.com.au"
   endpoint = "/api/v2/generate-quote-reply"
   tests    = @(
@@ -66,13 +67,11 @@ $starter = [ordered]@{
       expect_debug_branch_any = @("general_ok")
     }
   )
-} | ConvertTo-Json -Depth 30
+}
 
-Write-Utf8NoBom -Path $dstTestFile -Content $starter
+$starterJson = $starterObj | ConvertTo-Json -Depth 30
+Set-Content -Path $dstTestFile -Value $starterJson -Encoding UTF8
 
-Write-Host "âœ… Tenant scaffolded:" -ForegroundColor Green
-Write-Host "  $dstTenantDir"
-Write-Host "âœ… Test scaffolded:" -ForegroundColor Green
-Write-Host "  $dstTestFile"
-Write-Host ""
-Write-Host "NEXT: edit tenants\$NewTenantId\faqs.json, tenants\$NewTenantId\variant_profile.json, and tests\$NewTenantId.json (replace EDIT ME fields)."
+Write-Host "Tenant scaffolded: $dstTenantDir"
+Write-Host "Test scaffolded:   $dstTestFile"
+Write-Host "Next: edit tenants\$NewTenantId\faqs.json, tenants\$NewTenantId\variant_profile.json, and tests\$NewTenantId.json"

@@ -1,0 +1,1 @@
+{"replyText":"For accurate details, please contact us directly and we'll be happy to help.","lowEstimate":null,"highEstimate":null,"includedServices":[],"suggestedTimes":[],"estimateText":"","jobSummaryShort":"","disclaimer":"Prices are estimates and may vary based on condition and access."}

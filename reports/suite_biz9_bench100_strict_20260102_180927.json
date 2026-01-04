@@ -1,0 +1,2522 @@
+{
+    "tenantId":  "biz9_bench100",
+    "mode":  "strict",
+    "base":  "https://mm-client1-creator-backend-v1-0-0.abbedakbery14.workers.dev",
+    "origin":  "https://bench100.test",
+    "endpoint":  "/api/v2/widget/chat",
+    "generated_at":  "2026-01-02T18:23:35",
+    "hardFailCount":  99,
+    "score":  {
+                  "strict_required":  {
+                                          "hit":  34,
+                                          "total":  133
+                                      },
+                  "timeouts":  {
+                                   "hit":  0,
+                                   "total":  133
+                               },
+                  "stress_business":  {
+                                          "total":  0,
+                                          "hit":  0
+                                      },
+                  "stress_garbage":  {
+                                         "total":  0,
+                                         "hit":  0
+                                     }
+              },
+    "results":  [
+                    {
+                        "name":  "SMOKE) General knowledge stays general_ok",
+                        "question":  "Why is the sky blue?",
+                        "http":  "200",
+                        "time_ms":  10623,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4695",
+                        "x_retrieval_score":  "0.14681516847791398",
+                        "replyText":  "The sky appears blue due to a phenomenon called Rayleigh scattering. When sunlight enters Earth\u0027s atmosphere, it collides with molecules and small particles, scattering shorter wavelengths of light, such as blue, more than longer wavelengths like red. This scattering causes the blue light to be more prominent, giving the sky its characteristic color during the day.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "smoke"
+                    },
+                    {
+                        "name":  "SMOKE) Unknown capability must not become general_ok",
+                        "question":  "Do you do carpet steam cleaning?",
+                        "http":  "200",
+                        "time_ms":  6766,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4699",
+                        "x_retrieval_score":  "0.4723346514901319",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "smoke"
+                    },
+                    {
+                        "name":  "FAQ 1) Oven clean add-on [exact]",
+                        "question":  "Oven clean add-on",
+                        "http":  "200",
+                        "time_ms":  3515,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4691",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 1) Oven clean add-on [variant 1]",
+                        "question":  "How much extra is the oven add-on?",
+                        "http":  "200",
+                        "time_ms":  5244,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4691",
+                        "x_retrieval_score":  "0.9999997615813658",
+                        "replyText":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 1) Oven clean add-on [variant 2]",
+                        "question":  "how much extra is the oven add on",
+                        "http":  "200",
+                        "time_ms":  4589,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4691",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 1) Oven clean add-on [variant 3]",
+                        "question":  "how much is oven cleaning",
+                        "http":  "200",
+                        "time_ms":  3628,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4691",
+                        "x_retrieval_score":  "0.9999993443488684",
+                        "replyText":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 2) Fridge clean add-on [exact]",
+                        "question":  "Fridge clean add-on",
+                        "http":  "200",
+                        "time_ms":  3791,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4692",
+                        "x_retrieval_score":  "0.9999992251396179",
+                        "replyText":  "Fridge cleaning is an optional add-on. Contact us for pricing based on size and condition.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 3) Standard clean inclusions [exact]",
+                        "question":  "Standard clean inclusions",
+                        "http":  "200",
+                        "time_ms":  3711,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4693",
+                        "x_retrieval_score":  "0.9999992847442698",
+                        "replyText":  "A standard clean includes bathrooms, kitchen surfaces, floors, dusting, and general tidying.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 4) Deep clean inclusions [exact]",
+                        "question":  "Deep clean inclusions",
+                        "http":  "200",
+                        "time_ms":  3637,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4694",
+                        "x_retrieval_score":  "0.9999993443489856",
+                        "replyText":  "A deep clean focuses on heavy build-up and detailing such as skirting and extra attention to problem areas. Add-ons like oven/fridge can be included if selected.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 5) Bond clean availability [exact]",
+                        "question":  "Bond clean availability",
+                        "http":  "200",
+                        "time_ms":  4141,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4695",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we do bond/end-of-lease cleans using a checklist-style clean focused on kitchens, bathrooms, floors, skirting, and surfaces.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 6) Service area [exact]",
+                        "question":  "Service area",
+                        "http":  "200",
+                        "time_ms":  3455,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4696",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 6) Service area [variant 1]",
+                        "question":  "what suburbs do you cover",
+                        "http":  "200",
+                        "time_ms":  3545,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4696",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 6) Service area [variant 2]",
+                        "question":  "what areas do you service",
+                        "http":  "200",
+                        "time_ms":  3493,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4696",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 6) Service area [variant 3]",
+                        "question":  "where do you service",
+                        "http":  "200",
+                        "time_ms":  3557,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4696",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 7) Travel fee [exact]",
+                        "question":  "Travel fee",
+                        "http":  "200",
+                        "time_ms":  3585,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4697",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "There is no travel fee within our regular Brisbane service area. Outside areas may incur a travel fee - contact us to confirm.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 8) Pets policy [exact]",
+                        "question":  "Pets policy",
+                        "http":  "200",
+                        "time_ms":  4134,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4698",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we can clean homes with pets. Please let us know in advance so we can plan safely.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 9) Supplies and equipment [exact]",
+                        "question":  "Supplies and equipment",
+                        "http":  "200",
+                        "time_ms":  3513,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4699",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 9) Supplies and equipment [variant 1]",
+                        "question":  "do you bring cleaning supplies",
+                        "http":  "200",
+                        "time_ms":  3543,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4699",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 9) Supplies and equipment [variant 2]",
+                        "question":  "do you bring cleaning products",
+                        "http":  "200",
+                        "time_ms":  3713,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4699",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 9) Supplies and equipment [variant 3]",
+                        "question":  "do you bring your own supplies",
+                        "http":  "200",
+                        "time_ms":  4108,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4699",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 10) Eco-friendly products [exact]",
+                        "question":  "Eco-friendly products",
+                        "http":  "200",
+                        "time_ms":  3454,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4700",
+                        "x_retrieval_score":  "0.9999997615814085",
+                        "replyText":  "Eco-friendly or low-scent products can be used on request. Let us know your preference when booking.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 11) Windows add-on [exact]",
+                        "question":  "Windows add-on",
+                        "http":  "200",
+                        "time_ms":  3705,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4701",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Internal windows can be added on request. Exterior or high windows depend on safe access.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 12) Laundry add-on [exact]",
+                        "question":  "Laundry add-on",
+                        "http":  "200",
+                        "time_ms":  3706,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4702",
+                        "x_retrieval_score":  "0.9999993741511779",
+                        "replyText":  "Laundry is available as an add-on (wash, dry, and fold). No ironing.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 13) Linen change add-on [exact]",
+                        "question":  "Linen change add-on",
+                        "http":  "200",
+                        "time_ms":  3975,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4703",
+                        "x_retrieval_score":  "0.9999992847442911",
+                        "replyText":  "Yes - linen/beds can be changed as an add-on if clean sheets are left out.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 14) Arrival time window [exact]",
+                        "question":  "Arrival time window",
+                        "http":  "200",
+                        "time_ms":  3602,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4704",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We typically provide a 2-hour arrival window unless a fixed time is booked.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 15) Cancellations policy [exact]",
+                        "question":  "Cancellations policy",
+                        "http":  "200",
+                        "time_ms":  3565,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4705",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Cancellations with less than 24 hours\u0027 notice may incur a late cancellation fee.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 16) Payments accepted [exact]",
+                        "question":  "Payments accepted",
+                        "http":  "200",
+                        "time_ms":  3807,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4706",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We accept bank transfer and card payments. An invoice can be provided.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 17) Insurance [exact]",
+                        "question":  "Insurance",
+                        "http":  "200",
+                        "time_ms":  3785,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4707",
+                        "x_retrieval_score":  "0.999999105930435",
+                        "replyText":  "Yes - we carry appropriate insurance for cleaning work.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 18) If the cleaner has to park in a paid spot, what happens? [exact]",
+                        "question":  "If the cleaner has to park in a paid spot, what happens?",
+                        "http":  "200",
+                        "time_ms":  3573,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4708",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 19) Parking policy [exact]",
+                        "question":  "Parking policy",
+                        "http":  "200",
+                        "time_ms":  3697,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4709",
+                        "x_retrieval_score":  "0.9999992251396179",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 19) Parking policy [variant 1]",
+                        "question":  "Paid parking",
+                        "http":  "200",
+                        "time_ms":  4235,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4709",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 19) Parking policy [variant 2]",
+                        "question":  "What happens if there is paid parking?",
+                        "http":  "200",
+                        "time_ms":  3807,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4709",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 19) Parking policy [variant 3]",
+                        "question":  "Do you charge for parking if it is metered?",
+                        "http":  "200",
+                        "time_ms":  3516,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4709",
+                        "x_retrieval_score":  "0.9999995231628862",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 20) How much does benchmark item BENCH001 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH001 cost?",
+                        "http":  "200",
+                        "time_ms":  6846,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4710",
+                        "x_retrieval_score":  "0.9616075249654064",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 21) How much does benchmark item BENCH002 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH002 cost?",
+                        "http":  "200",
+                        "time_ms":  7086,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4711",
+                        "x_retrieval_score":  "0.9615798879140587",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 22) How much does benchmark item BENCH003 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH003 cost?",
+                        "http":  "200",
+                        "time_ms":  7226,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4712",
+                        "x_retrieval_score":  "0.9637506669013517",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 23) How much does benchmark item BENCH004 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH004 cost?",
+                        "http":  "200",
+                        "time_ms":  6830,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4713",
+                        "x_retrieval_score":  "0.9619803383326951",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 24) How much does benchmark item BENCH005 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH005 cost?",
+                        "http":  "200",
+                        "time_ms":  6814,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4714",
+                        "x_retrieval_score":  "0.9578517725644383",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 25) How much does benchmark item BENCH006 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH006 cost?",
+                        "http":  "200",
+                        "time_ms":  6635,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4715",
+                        "x_retrieval_score":  "0.9622051164860009",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 26) How much does benchmark item BENCH007 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH007 cost?",
+                        "http":  "200",
+                        "time_ms":  7041,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4716",
+                        "x_retrieval_score":  "0.9634785034345705",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 27) How much does benchmark item BENCH008 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH008 cost?",
+                        "http":  "200",
+                        "time_ms":  6629,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4717",
+                        "x_retrieval_score":  "0.9596484947623685",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 28) How much does benchmark item BENCH009 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH009 cost?",
+                        "http":  "200",
+                        "time_ms":  6774,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4718",
+                        "x_retrieval_score":  "0.9592743588791461",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 29) How much does benchmark item BENCH010 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH010 cost?",
+                        "http":  "200",
+                        "time_ms":  7239,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4719",
+                        "x_retrieval_score":  "0.9608675288119946",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 30) How much does benchmark item BENCH011 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH011 cost?",
+                        "http":  "200",
+                        "time_ms":  7169,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4720",
+                        "x_retrieval_score":  "0.9622665840506336",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 31) How much does benchmark item BENCH012 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH012 cost?",
+                        "http":  "200",
+                        "time_ms":  7002,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4721",
+                        "x_retrieval_score":  "0.9611378335274711",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 32) How much does benchmark item BENCH013 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH013 cost?",
+                        "http":  "200",
+                        "time_ms":  6946,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4722",
+                        "x_retrieval_score":  "0.9608495854825182",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 33) How much does benchmark item BENCH014 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH014 cost?",
+                        "http":  "200",
+                        "time_ms":  7231,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4723",
+                        "x_retrieval_score":  "0.961044192314148",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 34) How much does benchmark item BENCH015 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH015 cost?",
+                        "http":  "200",
+                        "time_ms":  7033,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4724",
+                        "x_retrieval_score":  "0.9610998723268813",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 35) How much does benchmark item BENCH016 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH016 cost?",
+                        "http":  "200",
+                        "time_ms":  6797,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4725",
+                        "x_retrieval_score":  "0.9636163754921128",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 36) How much does benchmark item BENCH017 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH017 cost?",
+                        "http":  "200",
+                        "time_ms":  6931,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4726",
+                        "x_retrieval_score":  "0.9598977017524666",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 37) How much does benchmark item BENCH018 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH018 cost?",
+                        "http":  "200",
+                        "time_ms":  6418,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4727",
+                        "x_retrieval_score":  "0.9608526229858398",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 38) How much does benchmark item BENCH019 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH019 cost?",
+                        "http":  "200",
+                        "time_ms":  6642,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4728",
+                        "x_retrieval_score":  "0.9624925587333049",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 39) How much does benchmark item BENCH020 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH020 cost?",
+                        "http":  "200",
+                        "time_ms":  6719,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4729",
+                        "x_retrieval_score":  "0.9626236491126404",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 40) How much does benchmark item BENCH021 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH021 cost?",
+                        "http":  "200",
+                        "time_ms":  6905,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4730",
+                        "x_retrieval_score":  "0.964929699897773",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 41) How much does benchmark item BENCH022 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH022 cost?",
+                        "http":  "200",
+                        "time_ms":  6804,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4731",
+                        "x_retrieval_score":  "0.9629071973021526",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 42) How much does benchmark item BENCH023 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH023 cost?",
+                        "http":  "200",
+                        "time_ms":  6895,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4732",
+                        "x_retrieval_score":  "0.9627220675084579",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 43) How much does benchmark item BENCH024 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH024 cost?",
+                        "http":  "200",
+                        "time_ms":  6484,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4733",
+                        "x_retrieval_score":  "0.9627518124428148",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 44) How much does benchmark item BENCH025 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH025 cost?",
+                        "http":  "200",
+                        "time_ms":  6572,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4734",
+                        "x_retrieval_score":  "0.9595344876271946",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 45) How much does benchmark item BENCH026 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH026 cost?",
+                        "http":  "200",
+                        "time_ms":  7241,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4735",
+                        "x_retrieval_score":  "0.9603711366653715",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 46) How much does benchmark item BENCH027 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH027 cost?",
+                        "http":  "200",
+                        "time_ms":  6886,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4736",
+                        "x_retrieval_score":  "0.9563223745630773",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 47) How much does benchmark item BENCH028 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH028 cost?",
+                        "http":  "200",
+                        "time_ms":  6880,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4737",
+                        "x_retrieval_score":  "0.9569423820410756",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 48) How much does benchmark item BENCH029 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH029 cost?",
+                        "http":  "200",
+                        "time_ms":  7722,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4738",
+                        "x_retrieval_score":  "0.9593957735188565",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 49) How much does benchmark item BENCH030 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH030 cost?",
+                        "http":  "200",
+                        "time_ms":  6600,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4739",
+                        "x_retrieval_score":  "0.9653345963159873",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 50) How much does benchmark item BENCH031 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH031 cost?",
+                        "http":  "200",
+                        "time_ms":  8437,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4740",
+                        "x_retrieval_score":  "0.9618666836261736",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 51) How much does benchmark item BENCH032 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH032 cost?",
+                        "http":  "200",
+                        "time_ms":  6582,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4741",
+                        "x_retrieval_score":  "0.9627060558831184",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 52) How much does benchmark item BENCH033 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH033 cost?",
+                        "http":  "200",
+                        "time_ms":  6834,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4742",
+                        "x_retrieval_score":  "0.9635240500824379",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 53) How much does benchmark item BENCH034 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH034 cost?",
+                        "http":  "200",
+                        "time_ms":  6848,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4743",
+                        "x_retrieval_score":  "0.9615035102959332",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 54) How much does benchmark item BENCH035 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH035 cost?",
+                        "http":  "200",
+                        "time_ms":  6684,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4744",
+                        "x_retrieval_score":  "0.9613381670310298",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 55) How much does benchmark item BENCH036 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH036 cost?",
+                        "http":  "200",
+                        "time_ms":  7237,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4745",
+                        "x_retrieval_score":  "0.9637923987777971",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 56) How much does benchmark item BENCH037 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH037 cost?",
+                        "http":  "200",
+                        "time_ms":  6911,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4746",
+                        "x_retrieval_score":  "0.9610119059416012",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 57) How much does benchmark item BENCH038 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH038 cost?",
+                        "http":  "200",
+                        "time_ms":  7019,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4747",
+                        "x_retrieval_score":  "0.9591403007507597",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 58) How much does benchmark item BENCH039 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH039 cost?",
+                        "http":  "200",
+                        "time_ms":  6825,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4748",
+                        "x_retrieval_score":  "0.9608788180613272",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 59) How much does benchmark item BENCH040 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH040 cost?",
+                        "http":  "200",
+                        "time_ms":  6797,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4749",
+                        "x_retrieval_score":  "0.9646612447904056",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 60) How much does benchmark item BENCH041 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH041 cost?",
+                        "http":  "200",
+                        "time_ms":  7053,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4750",
+                        "x_retrieval_score":  "0.9648137092590332",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 61) How much does benchmark item BENCH042 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH042 cost?",
+                        "http":  "200",
+                        "time_ms":  6874,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4751",
+                        "x_retrieval_score":  "0.9626433782535889",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 62) How much does benchmark item BENCH043 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH043 cost?",
+                        "http":  "200",
+                        "time_ms":  6730,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4752",
+                        "x_retrieval_score":  "0.9638893008232391",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 63) How much does benchmark item BENCH044 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH044 cost?",
+                        "http":  "200",
+                        "time_ms":  7016,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4753",
+                        "x_retrieval_score":  "0.9638129120786464",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 64) How much does benchmark item BENCH045 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH045 cost?",
+                        "http":  "200",
+                        "time_ms":  6873,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4754",
+                        "x_retrieval_score":  "0.9617823626204496",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 65) How much does benchmark item BENCH046 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH046 cost?",
+                        "http":  "200",
+                        "time_ms":  6652,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4755",
+                        "x_retrieval_score":  "0.9647982408046203",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 66) How much does benchmark item BENCH047 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH047 cost?",
+                        "http":  "200",
+                        "time_ms":  8134,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4756",
+                        "x_retrieval_score":  "0.9609841464483729",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 67) How much does benchmark item BENCH048 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH048 cost?",
+                        "http":  "200",
+                        "time_ms":  6732,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4757",
+                        "x_retrieval_score":  "0.9614621973909274",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 68) How much does benchmark item BENCH049 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH049 cost?",
+                        "http":  "200",
+                        "time_ms":  6808,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4758",
+                        "x_retrieval_score":  "0.9558434696943905",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 69) How much does benchmark item BENCH050 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH050 cost?",
+                        "http":  "200",
+                        "time_ms":  6992,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4759",
+                        "x_retrieval_score":  "0.9661710898672304",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 70) How much does benchmark item BENCH051 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH051 cost?",
+                        "http":  "200",
+                        "time_ms":  6775,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4760",
+                        "x_retrieval_score":  "0.967612745308118",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 71) How much does benchmark item BENCH052 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH052 cost?",
+                        "http":  "200",
+                        "time_ms":  7088,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4761",
+                        "x_retrieval_score":  "0.9655922096261796",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 72) How much does benchmark item BENCH053 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH053 cost?",
+                        "http":  "200",
+                        "time_ms":  6707,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4762",
+                        "x_retrieval_score":  "0.962777610156253",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 73) How much does benchmark item BENCH054 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH054 cost?",
+                        "http":  "200",
+                        "time_ms":  6761,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4763",
+                        "x_retrieval_score":  "0.9643746635690549",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 74) How much does benchmark item BENCH055 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH055 cost?",
+                        "http":  "200",
+                        "time_ms":  6960,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4764",
+                        "x_retrieval_score":  "0.9620500229567293",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 75) How much does benchmark item BENCH056 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH056 cost?",
+                        "http":  "200",
+                        "time_ms":  6676,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4765",
+                        "x_retrieval_score":  "0.9649894504239702",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 76) How much does benchmark item BENCH057 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH057 cost?",
+                        "http":  "200",
+                        "time_ms":  6625,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4766",
+                        "x_retrieval_score":  "0.9630900952437542",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 77) How much does benchmark item BENCH058 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH058 cost?",
+                        "http":  "200",
+                        "time_ms":  6843,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4767",
+                        "x_retrieval_score":  "0.9635152155486152",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 78) How much does benchmark item BENCH059 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH059 cost?",
+                        "http":  "200",
+                        "time_ms":  6931,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4768",
+                        "x_retrieval_score":  "0.9626680392421748",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 79) How much does benchmark item BENCH060 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH060 cost?",
+                        "http":  "200",
+                        "time_ms":  7339,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4769",
+                        "x_retrieval_score":  "0.9684198730868047",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 80) How much does benchmark item BENCH061 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH061 cost?",
+                        "http":  "200",
+                        "time_ms":  7439,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4770",
+                        "x_retrieval_score":  "0.9665907005423742",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 81) How much does benchmark item BENCH062 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH062 cost?",
+                        "http":  "200",
+                        "time_ms":  6807,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4771",
+                        "x_retrieval_score":  "0.963440303392381",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 82) How much does benchmark item BENCH063 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH063 cost?",
+                        "http":  "200",
+                        "time_ms":  6776,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4772",
+                        "x_retrieval_score":  "0.9608246684074402",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 83) How much does benchmark item BENCH064 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH064 cost?",
+                        "http":  "200",
+                        "time_ms":  6823,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4773",
+                        "x_retrieval_score":  "0.9621365666389465",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 84) How much does benchmark item BENCH065 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH065 cost?",
+                        "http":  "200",
+                        "time_ms":  6754,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4774",
+                        "x_retrieval_score":  "0.9638770201132922",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 85) How much does benchmark item BENCH066 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH066 cost?",
+                        "http":  "200",
+                        "time_ms":  6718,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4775",
+                        "x_retrieval_score":  "0.9623273498795496",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 86) How much does benchmark item BENCH067 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH067 cost?",
+                        "http":  "200",
+                        "time_ms":  6632,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4776",
+                        "x_retrieval_score":  "0.9580813125226552",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 87) How much does benchmark item BENCH068 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH068 cost?",
+                        "http":  "200",
+                        "time_ms":  7298,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4777",
+                        "x_retrieval_score":  "0.959924931517242",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 88) How much does benchmark item BENCH069 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH069 cost?",
+                        "http":  "200",
+                        "time_ms":  6844,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4778",
+                        "x_retrieval_score":  "0.9603692508514191",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 89) How much does benchmark item BENCH070 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH070 cost?",
+                        "http":  "200",
+                        "time_ms":  6517,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4779",
+                        "x_retrieval_score":  "0.9641653033347264",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 90) How much does benchmark item BENCH071 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH071 cost?",
+                        "http":  "200",
+                        "time_ms":  6811,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4780",
+                        "x_retrieval_score":  "0.9658010087487676",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 91) How much does benchmark item BENCH072 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH072 cost?",
+                        "http":  "200",
+                        "time_ms":  6874,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4781",
+                        "x_retrieval_score":  "0.9623408362459139",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 92) How much does benchmark item BENCH073 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH073 cost?",
+                        "http":  "200",
+                        "time_ms":  7856,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4782",
+                        "x_retrieval_score":  "0.9643644956676249",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 93) How much does benchmark item BENCH074 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH074 cost?",
+                        "http":  "200",
+                        "time_ms":  7542,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4783",
+                        "x_retrieval_score":  "0.9627941228624672",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 94) How much does benchmark item BENCH075 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH075 cost?",
+                        "http":  "200",
+                        "time_ms":  6796,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4784",
+                        "x_retrieval_score":  "0.9635581991935867",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 95) How much does benchmark item BENCH076 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH076 cost?",
+                        "http":  "200",
+                        "time_ms":  7600,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4785",
+                        "x_retrieval_score":  "0.9620121740095665",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 96) How much does benchmark item BENCH077 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH077 cost?",
+                        "http":  "200",
+                        "time_ms":  6698,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4786",
+                        "x_retrieval_score":  "0.9624811455629959",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 97) How much does benchmark item BENCH078 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH078 cost?",
+                        "http":  "200",
+                        "time_ms":  7305,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4787",
+                        "x_retrieval_score":  "0.9595670200426599",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 98) How much does benchmark item BENCH079 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH079 cost?",
+                        "http":  "200",
+                        "time_ms":  6802,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4788",
+                        "x_retrieval_score":  "0.9611947822926981",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 99) How much does benchmark item BENCH080 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH080 cost?",
+                        "http":  "200",
+                        "time_ms":  6835,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4789",
+                        "x_retrieval_score":  "0.9642480281813208",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 100) How much does benchmark item BENCH081 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH081 cost?",
+                        "http":  "200",
+                        "time_ms":  6667,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4790",
+                        "x_retrieval_score":  "0.960642240181437",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 101) How much does benchmark item BENCH082 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH082 cost?",
+                        "http":  "200",
+                        "time_ms":  7723,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4791",
+                        "x_retrieval_score":  "0.9613995838582396",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 102) How much does benchmark item BENCH083 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH083 cost?",
+                        "http":  "200",
+                        "time_ms":  6727,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4792",
+                        "x_retrieval_score":  "0.9614363312721526",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 103) How much does benchmark item BENCH084 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH084 cost?",
+                        "http":  "200",
+                        "time_ms":  6915,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4793",
+                        "x_retrieval_score":  "0.960960697841438",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 104) How much does benchmark item BENCH085 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH085 cost?",
+                        "http":  "200",
+                        "time_ms":  8737,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4794",
+                        "x_retrieval_score":  "0.9586212945395531",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 105) How much does benchmark item BENCH086 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH086 cost?",
+                        "http":  "200",
+                        "time_ms":  8437,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4795",
+                        "x_retrieval_score":  "0.9608815265752773",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 106) How much does benchmark item BENCH087 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH087 cost?",
+                        "http":  "200",
+                        "time_ms":  6666,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4796",
+                        "x_retrieval_score":  "0.962179389194792",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 107) How much does benchmark item BENCH088 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH088 cost?",
+                        "http":  "200",
+                        "time_ms":  8670,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4797",
+                        "x_retrieval_score":  "0.9604034137605812",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 108) How much does benchmark item BENCH089 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH089 cost?",
+                        "http":  "200",
+                        "time_ms":  6910,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4798",
+                        "x_retrieval_score":  "0.9601880931742289",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 109) How much does benchmark item BENCH090 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH090 cost?",
+                        "http":  "200",
+                        "time_ms":  7691,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4799",
+                        "x_retrieval_score":  "0.9621779654463071",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 110) How much does benchmark item BENCH091 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH091 cost?",
+                        "http":  "200",
+                        "time_ms":  8053,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4800",
+                        "x_retrieval_score":  "0.9634664741834463",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 111) How much does benchmark item BENCH092 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH092 cost?",
+                        "http":  "200",
+                        "time_ms":  11025,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4801",
+                        "x_retrieval_score":  "0.9609655668077954",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 112) How much does benchmark item BENCH093 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH093 cost?",
+                        "http":  "200",
+                        "time_ms":  7081,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4802",
+                        "x_retrieval_score":  "0.9623362511786884",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 113) How much does benchmark item BENCH094 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH094 cost?",
+                        "http":  "200",
+                        "time_ms":  7080,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4803",
+                        "x_retrieval_score":  "0.9578592181206022",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 114) How much does benchmark item BENCH095 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH095 cost?",
+                        "http":  "200",
+                        "time_ms":  7145,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4804",
+                        "x_retrieval_score":  "0.9596808814717166",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 115) How much does benchmark item BENCH096 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH096 cost?",
+                        "http":  "200",
+                        "time_ms":  9364,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4805",
+                        "x_retrieval_score":  "0.9616199731826851",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 116) How much does benchmark item BENCH097 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH097 cost?",
+                        "http":  "200",
+                        "time_ms":  8156,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4806",
+                        "x_retrieval_score":  "0.9578316883149721",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 117) How much does benchmark item BENCH098 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH098 cost?",
+                        "http":  "200",
+                        "time_ms":  7307,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4807",
+                        "x_retrieval_score":  "0.9588029906993645",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 118) How much does benchmark item BENCH099 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH099 cost?",
+                        "http":  "200",
+                        "time_ms":  6858,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4808",
+                        "x_retrieval_score":  "0.9613537192344666",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027Benchmark it\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 119) How much does benchmark item BENCH100 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH100 cost?",
+                        "http":  "200",
+                        "time_ms":  7654,
+                        "x_debug_branch":  "fact_rewrite_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4809",
+                        "x_retrieval_score":  "0.951666161914516",
+                        "replyText":  "Benchmark item BENCH100 costs -Forceprice. (Synthetic benchmark FAQ item.)",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    }
+                ]
+}

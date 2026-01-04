@@ -1,0 +1,35 @@
+HTTP/1.1 200 OK
+Date: Thu, 01 Jan 2026 10:19:09 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+CF-Ray: 9b7146c54eb09c98-SIN
+CF-Cache-Status: DYNAMIC
+Access-Control-Allow-Origin: https://289a9429.mm-client1-creator-ui.pages.dev
+Server: cloudflare
+Vary: Origin, accept-encoding
+Access-Control-Allow-Headers: Content-Type
+Access-Control-Allow-Methods: GET,POST,OPTIONS
+Access-Control-Max-Age: 86400
+X-Proxy-Path: /api/v2/generate-quote-reply
+X-Proxy-Status: 200
+X-Proxy-Upstream: https://motionmade-fastapi.onrender.com
+alt-svc: h3=":443"; ma=86400
+rndr-id: 255a2292-7c83-4eb3
+x-build: render-prod-1
+x-debug-branch: fact_hit
+x-entrypoint: root.main
+x-fact-domain: other
+x-fact-gate-hit: true
+x-faq-hit: true
+x-git-sha: 6f9f150e6e6e2daa57001a67d03874cd2cc77873
+x-release: main
+x-render-origin-server: uvicorn
+x-retrieval-delta: 0.14642992249100917
+x-retrieval-score: 0.9592614173889433
+x-served-by: fastapi
+x-tenantid: biz9_real
+x-top-faq-id: 3656
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=AFyvQ3o%2BNaxcVRe4uRqzctnnFE7BmVzxkCjPygtncU%2B5GfNqAuub06zLfyDj8mvRlaOxFOm69%2Bi16fk49OJPe5PxVnEZSLg48SATnW3c9uMzOFKPRIpASB%2F5NQxC%2B2vqFO0SWZpRIbDeXhulxPXpCpdYmp6csle1te7O"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+

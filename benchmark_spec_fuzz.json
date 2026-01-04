@@ -1,0 +1,16 @@
+﻿{
+  "seed": 1337,
+  "max_faqs_to_sample": 30,
+  "max_variants_per_faq": 2,
+  "modes": {
+    "fuzz": {
+      "exact": true,
+      "use_existing_variants": true,
+      "noisy_short": true,
+      "noisy_long": true,
+      "typos": true,
+      "mixed_intent": true
+    }
+  },
+  "include_smoke_tests": true
+}

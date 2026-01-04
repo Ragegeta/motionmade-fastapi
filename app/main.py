@@ -3,10 +3,12 @@ from __future__ import annotations
 import re
 import os
 import time
+import hashlib
+from pathlib import Path
 from typing import List, Optional, Set
 
 from fastapi import FastAPI, Header, HTTPException, Response, Request
-
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
 from pgvector import Vector
@@ -19,6 +21,8 @@ from .db import get_conn
 from .triage import triage_input, CLARIFY_RESPONSE
 from .normalize import normalize_message
 from .splitter import split_intents
+from .cache import get_cached_result, cache_result, get_cache_stats
+from .suite_runner import run_suite
 
 
 # -----------------------------
@@ -74,6 +78,18 @@ CREATE TABLE IF NOT EXISTS tenants (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS tenant_domains (
+  id BIGSERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  domain TEXT NOT NULL,
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (tenant_id, domain)
+);
+
+CREATE INDEX IF NOT EXISTS tenant_domains_tenant_idx ON tenant_domains(tenant_id);
+CREATE INDEX IF NOT EXISTS tenant_domains_domain_idx ON tenant_domains(domain);
+
 CREATE TABLE IF NOT EXISTS faq_items (
   id BIGSERIAL PRIMARY KEY,
   tenant_id TEXT NOT NULL REFERENCES tenants(id),
@@ -81,9 +97,31 @@ CREATE TABLE IF NOT EXISTS faq_items (
   answer TEXT NOT NULL,
   embedding vector(1536) NULL,
   enabled BOOLEAN NOT NULL DEFAULT true,
+  is_staged BOOLEAN NOT NULL DEFAULT false,
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (tenant_id, question, is_staged)
+);
+
+CREATE TABLE IF NOT EXISTS faq_items_last_good (
+  id BIGSERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id),
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  embedding vector(1536) NULL,
   updated_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE (tenant_id, question)
 );
+
+CREATE TABLE IF NOT EXISTS tenant_promote_history (
+  id BIGSERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id),
+  status TEXT NOT NULL,
+  suite_result JSONB,
+  first_failure JSONB,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS tenant_promote_history_tenant_idx ON tenant_promote_history(tenant_id, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS faq_tenant_enabled_idx ON faq_items(tenant_id, enabled);
 
@@ -105,8 +143,10 @@ CREATE TABLE IF NOT EXISTS telemetry (
   id BIGSERIAL PRIMARY KEY,
   tenant_id TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now(),
-  query_text TEXT,
-  normalized_text TEXT,
+  query_length INTEGER,
+  normalized_length INTEGER,
+  query_hash TEXT,
+  normalized_hash TEXT,
   intent_count INTEGER,
   debug_branch TEXT,
   faq_hit BOOLEAN,
@@ -141,6 +181,27 @@ def _base_payload():
     }
 
 
+def _hash_text(text: str) -> str:
+    """Generate a short hash for privacy-safe logging. Returns empty string for empty input."""
+    if not text:
+        return ""
+    # Use SHA256 and take first 16 chars for a short, collision-resistant hash
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()[:16]
+
+
+def _set_timing_headers(resp: Response, timings: dict, cache_hit: bool):
+    """Set timing headers (only in DEBUG mode)."""
+    if settings.DEBUG:
+        resp.headers["X-Timing-Triage"] = str(timings["triage_ms"])
+        resp.headers["X-Timing-NormalizeSplit"] = str(timings["normalize_split_ms"])
+        resp.headers["X-Timing-Embedding"] = str(timings["embedding_ms"])
+        resp.headers["X-Timing-Retrieval"] = str(timings["retrieval_ms"])
+        resp.headers["X-Timing-Rewrite"] = str(timings["rewrite_ms"])
+        resp.headers["X-Timing-LLM"] = str(timings["llm_ms"])
+        resp.headers["X-Timing-Total"] = str(timings["total_ms"])
+        resp.headers["X-Cache-Hit"] = "true" if cache_hit else "false"
+
+
 def _log_telemetry(
     tenant_id: str,
     query_text: str,
@@ -153,15 +214,21 @@ def _log_telemetry(
     rewrite_triggered: bool,
     latency_ms: int
 ):
-    """Log request telemetry for analytics. Fails silently."""
+    """Log request telemetry for analytics. Privacy-safe: stores only lengths and hashes, not raw text."""
     try:
+        query_len = len(query_text) if query_text else 0
+        normalized_len = len(normalized_text) if normalized_text else 0
+        query_hash = _hash_text(query_text)
+        normalized_hash = _hash_text(normalized_text)
+        
         with get_conn() as conn:
             conn.execute(
                 """INSERT INTO telemetry 
-                   (tenant_id, query_text, normalized_text, intent_count, debug_branch, 
-                    faq_hit, top_faq_id, retrieval_score, rewrite_triggered, latency_ms)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (tenant_id, (query_text or "")[:500], (normalized_text or "")[:500], intent_count, 
+                   (tenant_id, query_length, normalized_length, query_hash, normalized_hash, 
+                    intent_count, debug_branch, faq_hit, top_faq_id, retrieval_score, 
+                    rewrite_triggered, latency_ms)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (tenant_id, query_len, normalized_len, query_hash, normalized_hash, intent_count, 
                  debug_branch, faq_hit, top_faq_id, retrieval_score, rewrite_triggered, latency_ms)
             )
             conn.commit()
@@ -217,6 +284,61 @@ def _init_debug_headers(resp: Response, tenant_id: str, msg: str) -> str:
 def _startup():
     with get_conn() as conn:
         conn.execute(SCHEMA_SQL)
+        # Migrate telemetry table if old columns exist
+        try:
+            # Check if old columns exist
+            check_old = conn.execute("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'telemetry' AND column_name IN ('query_text', 'normalized_text')
+            """).fetchall()
+            
+            # Check if new columns exist
+            check_new = conn.execute("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'telemetry' AND column_name IN ('query_length', 'query_hash')
+            """).fetchall()
+            
+            if check_old and not check_new:
+                # Migrate: add new columns, then drop old ones
+                conn.execute("""
+                    ALTER TABLE telemetry 
+                    ADD COLUMN IF NOT EXISTS query_length INTEGER,
+                    ADD COLUMN IF NOT EXISTS normalized_length INTEGER,
+                    ADD COLUMN IF NOT EXISTS query_hash TEXT,
+                    ADD COLUMN IF NOT EXISTS normalized_hash TEXT
+                """)
+                # Note: We don't drop old columns immediately to allow gradual migration
+                # Old columns can be dropped manually after verifying new schema works
+        except Exception:
+            pass  # Migration is best-effort, don't fail startup
+        
+        # Migrate faq_items to add is_staged column if missing
+        try:
+            check_staged = conn.execute("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'faq_items' AND column_name = 'is_staged'
+            """).fetchall()
+            
+            if not check_staged:
+                conn.execute("""
+                    ALTER TABLE faq_items 
+                    ADD COLUMN IF NOT EXISTS is_staged BOOLEAN NOT NULL DEFAULT false
+                """)
+                # Update unique constraint
+                try:
+                    conn.execute("DROP INDEX IF EXISTS faq_items_tenant_question_key")
+                except:
+                    pass
+                conn.execute("""
+                    CREATE UNIQUE INDEX IF NOT EXISTS faq_items_tenant_question_staged_key 
+                    ON faq_items(tenant_id, question, is_staged)
+                """)
+        except Exception:
+            pass  # Migration is best-effort
+        
         conn.commit()
 
 
@@ -252,7 +374,13 @@ def put_faqs(
                 (tenantId, tenantId),
             )
 
-            conn.execute("DELETE FROM faq_items WHERE tenant_id=%s", (tenantId,))
+            # Delete only live FAQs (not staged)
+            # Handle case where is_staged column might not exist yet
+            try:
+                conn.execute("DELETE FROM faq_items WHERE tenant_id=%s AND is_staged=false", (tenantId,))
+            except Exception:
+                # Fallback: delete all if column doesn't exist (for migration period)
+                conn.execute("DELETE FROM faq_items WHERE tenant_id=%s", (tenantId,))
 
             for it in items:
                 q = (it.question or "").strip()
@@ -341,9 +469,23 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
     _start_time = time.time()
     tenant_id = (req.tenantId or "").strip()
     msg = (req.customerMessage or "").strip()
+    
+    # Timing breakdown
+    timings = {
+        "triage_ms": 0,
+        "normalize_split_ms": 0,
+        "embedding_ms": 0,
+        "retrieval_ms": 0,
+        "rewrite_ms": 0,
+        "llm_ms": 0,
+        "total_ms": 0
+    }
+    _cache_hit = False
 
     # === TRIAGE ===
+    _t0 = time.time()
     triage_result, should_continue = triage_input(msg)
+    timings["triage_ms"] = int((time.time() - _t0) * 1000)
     resp.headers["X-Triage-Result"] = triage_result
     
     if not should_continue:
@@ -351,7 +493,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         resp.headers["X-Faq-Hit"] = "false"
         payload = _base_payload()
         payload["replyText"] = CLARIFY_RESPONSE
-        _latency_ms = int((time.time() - _start_time) * 1000)
+        timings["total_ms"] = int((time.time() - _start_time) * 1000)
+        _set_timing_headers(resp, timings, _cache_hit)
         _log_telemetry(
             tenant_id=tenant_id,
             query_text=msg,
@@ -362,11 +505,12 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
             retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=_latency_ms
+            latency_ms=timings["total_ms"]
         )
         return payload
 
     # === NORMALIZE ===
+    _t0 = time.time()
     normalized_msg = normalize_message(msg)
     resp.headers["X-Normalized-Input"] = (normalized_msg or "")[:80]
 
@@ -375,6 +519,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
     if not intents:
         intents = [normalized_msg] if normalized_msg else [msg]
     resp.headers["X-Intent-Count"] = str(len(intents))
+    timings["normalize_split_ms"] = int((time.time() - _t0) * 1000)
     
     # Use first intent for retrieval (multi-intent handling comes later)
     primary_query = intents[0] if intents else normalized_msg or msg
@@ -383,12 +528,46 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
     payload = _base_payload()
 
     # -----------------------------
+    # Check cache first (only for FAQ hits)
+    # -----------------------------
+    cached_result = get_cached_result(tenant_id, primary_query)
+    if cached_result:
+        _cache_hit = True
+        resp.headers["X-Cache-Hit"] = "true"
+        resp.headers["X-Debug-Branch"] = cached_result.get("debug_branch", "fact_hit")
+        resp.headers["X-Faq-Hit"] = "true"
+        resp.headers["X-Retrieval-Score"] = str(cached_result.get("retrieval_score", ""))
+        if cached_result.get("top_faq_id"):
+            resp.headers["X-Top-Faq-Id"] = str(cached_result["top_faq_id"])
+        payload["replyText"] = cached_result["replyText"]
+        timings["total_ms"] = int((time.time() - _start_time) * 1000)
+        _set_timing_headers(resp, timings, _cache_hit)
+        _log_telemetry(
+            tenant_id=tenant_id,
+            query_text=msg,
+            normalized_text=normalized_msg,
+            intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+            debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+            faq_hit=True,
+            top_faq_id=cached_result.get("top_faq_id"),
+            retrieval_score=cached_result.get("retrieval_score"),
+            rewrite_triggered=False,
+            latency_ms=timings["total_ms"]
+        )
+        return payload
+
+    # -----------------------------
     # Retrieval-first (ALWAYS runs)
     # -----------------------------
     try:
         # 1) Original retrieval
+        _t0 = time.time()
         q_emb = embed_text(primary_query)
+        timings["embedding_ms"] = int((time.time() - _t0) * 1000)
+        
+        _t0 = time.time()
         hit, ans, score, delta, faq_id = retrieve_faq_answer(tenant_id, q_emb)
+        timings["retrieval_ms"] = int((time.time() - _t0) * 1000)
 
         if score is not None:
             resp.headers["X-Retrieval-Score"] = str(score)
@@ -401,7 +580,17 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             resp.headers["X-Debug-Branch"] = "fact_hit"
             resp.headers["X-Faq-Hit"] = "true"
             payload["replyText"] = str(ans).strip()
-            _latency_ms = int((time.time() - _start_time) * 1000)
+            
+            # Cache the result (only for FAQ hits)
+            cache_result(tenant_id, primary_query, {
+                "replyText": payload["replyText"],
+                "debug_branch": "fact_hit",
+                "retrieval_score": score,
+                "top_faq_id": faq_id
+            })
+            
+            timings["total_ms"] = int((time.time() - _start_time) * 1000)
+            _set_timing_headers(resp, timings, _cache_hit)
             _log_telemetry(
                 tenant_id=tenant_id,
                 query_text=msg,
@@ -412,7 +601,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                 top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
                 retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
                 rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-                latency_ms=_latency_ms
+                latency_ms=timings["total_ms"]
             )
             return payload
 
@@ -428,6 +617,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             resp.headers["X-Top-Faq-Id-Raw"] = resp.headers["X-Top-Faq-Id"]
 
         rewrite = ""
+        _t0 = time.time()
         try:
             system = (
                 "Rewrite the user message into a short FAQ-style query (max 12 words). "
@@ -436,7 +626,9 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                 "Output only the rewritten query text with no quotes or explanation."
             )
             rewrite = chat_once(system, f"Original customer message: {msg}", temperature=0.0).strip()
+            timings["llm_ms"] += int((time.time() - _t0) * 1000)
         except Exception:
+            timings["llm_ms"] += int((time.time() - _t0) * 1000)
             rewrite = ""
 
         if rewrite:
@@ -445,8 +637,14 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                 rewrite = ""
 
         if rewrite:
+            _t0 = time.time()
             rw_emb = embed_text(rewrite)
+            timings["embedding_ms"] += int((time.time() - _t0) * 1000)
+            
+            _t0 = time.time()
             rw_hit, rw_ans, rw_score, rw_delta, rw_faq_id = retrieve_faq_answer(tenant_id, rw_emb)
+            timings["retrieval_ms"] += int((time.time() - _t0) * 1000)
+            timings["rewrite_ms"] = int((time.time() - _start_time) * 1000) - timings["triage_ms"] - timings["normalize_split_ms"] - timings["embedding_ms"] - timings["retrieval_ms"] - timings["llm_ms"]
 
             if rw_score is not None:
                 resp.headers["X-Retrieval-Score"] = str(rw_score)
@@ -459,7 +657,17 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                 resp.headers["X-Debug-Branch"] = "fact_rewrite_hit"
                 resp.headers["X-Faq-Hit"] = "true"
                 payload["replyText"] = str(rw_ans).strip()
-                _latency_ms = int((time.time() - _start_time) * 1000)
+                
+                # Cache the result (only for FAQ hits)
+                cache_result(tenant_id, primary_query, {
+                    "replyText": payload["replyText"],
+                    "debug_branch": "fact_rewrite_hit",
+                    "retrieval_score": rw_score,
+                    "top_faq_id": rw_faq_id
+                })
+                
+                timings["total_ms"] = int((time.time() - _start_time) * 1000)
+                _set_timing_headers(resp, timings, _cache_hit)
                 _log_telemetry(
                     tenant_id=tenant_id,
                     query_text=msg,
@@ -470,7 +678,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                     top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
                     retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
                     rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-                    latency_ms=_latency_ms
+                    latency_ms=timings["total_ms"]
                 )
                 return payload
 
@@ -479,7 +687,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         resp.headers["X-Debug-Branch"] = "error"
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
-        _latency_ms = int((time.time() - _start_time) * 1000)
+        timings["total_ms"] = int((time.time() - _start_time) * 1000)
+        _set_timing_headers(resp, timings, _cache_hit)
         _log_telemetry(
             tenant_id=tenant_id,
             query_text=msg,
@@ -490,7 +699,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
             retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=_latency_ms
+            latency_ms=timings["total_ms"]
         )
         return payload
 
@@ -501,7 +710,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         resp.headers["X-Debug-Branch"] = "fact_miss"
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
-        _latency_ms = int((time.time() - _start_time) * 1000)
+        timings["total_ms"] = int((time.time() - _start_time) * 1000)
+        _set_timing_headers(resp, timings, _cache_hit)
         _log_telemetry(
             tenant_id=tenant_id,
             query_text=msg,
@@ -512,13 +722,14 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
             retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=_latency_ms
+            latency_ms=timings["total_ms"]
         )
         return payload
 
     # -----------------------------
     # General chat (only truly non-business)
     # -----------------------------
+    _t0 = time.time()
     try:
         system = (
             "Reply in one short paragraph. Do not ask follow-up questions. "
@@ -526,11 +737,14 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             f"If the user asks anything that sounds like business specifics, reply exactly: {FALLBACK}"
         )
         reply = chat_once(system, msg, temperature=0.6)
+        timings["llm_ms"] = int((time.time() - _t0) * 1000)
     except Exception:
+        timings["llm_ms"] = int((time.time() - _t0) * 1000)
         resp.headers["X-Debug-Branch"] = "error"
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
-        _latency_ms = int((time.time() - _start_time) * 1000)
+        timings["total_ms"] = int((time.time() - _start_time) * 1000)
+        _set_timing_headers(resp, timings, _cache_hit)
         _log_telemetry(
             tenant_id=tenant_id,
             query_text=msg,
@@ -541,7 +755,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
             retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=_latency_ms
+            latency_ms=timings["total_ms"]
         )
         return payload
 
@@ -549,7 +763,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         resp.headers["X-Debug-Branch"] = "general_fallback"
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
-        _latency_ms = int((time.time() - _start_time) * 1000)
+        timings["total_ms"] = int((time.time() - _start_time) * 1000)
+        _set_timing_headers(resp, timings, _cache_hit)
         _log_telemetry(
             tenant_id=tenant_id,
             query_text=msg,
@@ -560,14 +775,15 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
             retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=_latency_ms
+            latency_ms=timings["total_ms"]
         )
         return payload
 
     resp.headers["X-Debug-Branch"] = "general_ok"
     resp.headers["X-Faq-Hit"] = "false"
     payload["replyText"] = reply
-    _latency_ms = int((time.time() - _start_time) * 1000)
+    timings["total_ms"] = int((time.time() - _start_time) * 1000)
+    _set_timing_headers(resp, timings, _cache_hit)
     _log_telemetry(
         tenant_id=tenant_id,
         query_text=msg,
@@ -578,7 +794,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
         retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
         rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-        latency_ms=_latency_ms
+        latency_ms=timings["total_ms"]
     )
     return payload
 
@@ -589,14 +805,17 @@ def health():
     return {"ok": True, "gitSha": git_sha, "release": release}
 
 
-@app.get("/admin/tenant/{tenantId}/stats")
-def get_tenant_stats(tenantId: str, resp: Response, authorization: str = Header(default="")):
-    """Get telemetry stats for a tenant (last 24 hours)."""
-    _set_common_headers(resp, tenantId)
-    
-    if authorization != f"Bearer {settings.ADMIN_TOKEN}":
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
+@app.get("/admin", response_class=HTMLResponse)
+def admin_ui():
+    """Serve admin UI."""
+    html_path = Path(__file__).parent.parent / "app" / "templates" / "admin.html"
+    if html_path.exists():
+        return html_path.read_text(encoding="utf-8")
+    return "<h1>Admin UI not found</h1>"
+
+
+def _get_tenant_stats_impl(tenantId: str):
+    """Internal implementation for getting tenant stats."""
     with get_conn() as conn:
         row = conn.execute("""
             SELECT 
@@ -626,10 +845,740 @@ def get_tenant_stats(tenantId: str, resp: Response, authorization: str = Header(
     }
 
 
+@app.get("/admin/api/tenant/{tenantId}/stats")
+def get_tenant_stats_api(tenantId: str, resp: Response, authorization: str = Header(default="")):
+    """Get telemetry stats for a tenant (last 24 hours) - Admin UI endpoint."""
+    _check_admin_auth(authorization)
+    return _get_tenant_stats_impl(tenantId)
+
+
+@app.get("/admin/tenant/{tenantId}/stats")
+def get_tenant_stats(tenantId: str, resp: Response, authorization: str = Header(default="")):
+    """Get telemetry stats for a tenant (last 24 hours)."""
+    _set_common_headers(resp, tenantId)
+    
+    if authorization != f"Bearer {settings.ADMIN_TOKEN}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    return _get_tenant_stats_impl(tenantId)
+
+
 @app.get("/api/v2/admin/tenant/{tenantId}/stats")
 def get_tenant_stats_v2(tenantId: str, resp: Response, authorization: str = Header(default="")):
     """Admin telemetry stats endpoint (Cloudflare-compatible path)."""
     return get_tenant_stats(tenantId, resp, authorization)
+
+
+def _get_tenant_alerts_impl(tenantId: str):
+    """Internal implementation for getting tenant alerts (last hour)."""
+    with get_conn() as conn:
+        row = conn.execute("""
+            SELECT 
+                COUNT(*) as total_queries,
+                COUNT(*) FILTER (WHERE faq_hit = true) as faq_hits,
+                COUNT(*) FILTER (WHERE debug_branch = 'clarify') as clarify_count,
+                COUNT(*) FILTER (WHERE debug_branch IN ('fact_miss', 'general_fallback')) as fallback_count,
+                COUNT(*) FILTER (WHERE debug_branch = 'error') as error_count,
+                COALESCE(AVG(latency_ms)::integer, 0) as avg_latency_ms
+            FROM telemetry 
+            WHERE tenant_id = %s 
+            AND created_at > now() - interval '1 hour'
+        """, (tenantId,)).fetchone()
+    
+    total_queries = row[0] or 0
+    total = total_queries or 1  # Avoid division by zero
+    
+    hit_rate = round((row[1] or 0) / total, 3)
+    clarify_rate = round((row[2] or 0) / total, 3)
+    fallback_rate = round((row[3] or 0) / total, 3)
+    error_rate = round((row[4] or 0) / total, 3)
+    avg_latency_ms = row[5] or 0
+    
+    alerts = []
+    
+    # Only compute alerts if we have enough data
+    if total_queries >= 10:
+        if hit_rate < 0.3:
+            alerts.append({
+                "level": "warning",
+                "type": "low_hit_rate",
+                "message": f"FAQ hit rate is low: {hit_rate * 100:.1f}%",
+                "value": hit_rate
+            })
+        
+        if fallback_rate > 0.4:
+            alerts.append({
+                "level": "warning",
+                "type": "high_fallback_rate",
+                "message": f"Fallback rate is high: {fallback_rate * 100:.1f}%",
+                "value": fallback_rate
+            })
+        
+        if error_rate > 0.1:
+            alerts.append({
+                "level": "error",
+                "type": "high_error_rate",
+                "message": f"Error rate is high: {error_rate * 100:.1f}%",
+                "value": error_rate
+            })
+        
+        if avg_latency_ms > 2000:
+            alerts.append({
+                "level": "warning",
+                "type": "high_latency",
+                "message": f"Average latency is high: {avg_latency_ms}ms",
+                "value": avg_latency_ms
+            })
+    
+    return {
+        "tenant_id": tenantId,
+        "period": "last_hour",
+        "total_queries": total_queries,
+        "hit_rate": hit_rate,
+        "fallback_rate": fallback_rate,
+        "clarify_rate": clarify_rate,
+        "error_rate": error_rate,
+        "avg_latency_ms": avg_latency_ms,
+        "alerts": alerts
+    }
+
+
+@app.get("/admin/api/tenant/{tenantId}/alerts")
+def get_tenant_alerts_api(tenantId: str, resp: Response, authorization: str = Header(default="")):
+    """Get tenant alerts (last hour) - Admin UI endpoint."""
+    _check_admin_auth(authorization)
+    return _get_tenant_alerts_impl(tenantId)
+
+
+@app.get("/api/v2/admin/tenant/{tenantId}/alerts")
+def get_tenant_alerts_v2(tenantId: str, resp: Response, authorization: str = Header(default="")):
+    """Get tenant alerts (last hour) - Cloudflare-compatible path."""
+    _check_admin_auth(authorization)
+    return _get_tenant_alerts_impl(tenantId)
+
+
+def _get_tenant_readiness_impl(tenantId: str):
+    """Internal implementation for checking tenant readiness."""
+    checks = []
+    all_passed = True
+    
+    # Check 1: Tenant exists
+    with get_conn() as conn:
+        tenant_row = conn.execute(
+            "SELECT id FROM tenants WHERE id = %s",
+            (tenantId,)
+        ).fetchone()
+        
+        tenant_exists = tenant_row is not None
+        checks.append({
+            "name": "tenant_exists",
+            "passed": tenant_exists,
+            "message": "Tenant exists" if tenant_exists else "Tenant not found"
+        })
+        if not tenant_exists:
+            all_passed = False
+            return {
+                "tenant_id": tenantId,
+                "ready": False,
+                "checks": checks,
+                "recommendation": "Create the tenant first"
+            }
+        
+        # Check 2: Has >=1 enabled domain
+        domain_count = conn.execute(
+            "SELECT COUNT(*) FROM tenant_domains WHERE tenant_id = %s AND enabled = true",
+            (tenantId,)
+        ).fetchone()[0] or 0
+        
+        has_domains = domain_count >= 1
+        checks.append({
+            "name": "has_enabled_domains",
+            "passed": has_domains,
+            "message": f"Has {domain_count} enabled domain(s)" if has_domains else "No enabled domains"
+        })
+        if not has_domains:
+            all_passed = False
+        
+        # Check 3: Has live FAQs
+        live_faq_count = conn.execute(
+            "SELECT COUNT(*) FROM faq_items WHERE tenant_id = %s AND is_staged = false",
+            (tenantId,)
+        ).fetchone()[0] or 0
+        
+        has_live_faqs = live_faq_count > 0
+        checks.append({
+            "name": "has_live_faqs",
+            "passed": has_live_faqs,
+            "message": f"Has {live_faq_count} live FAQ(s)" if has_live_faqs else "No live FAQs"
+        })
+        if not has_live_faqs:
+            all_passed = False
+        
+        # Check 4: Has last_good backup
+        last_good_count = conn.execute(
+            "SELECT COUNT(*) FROM faq_items_last_good WHERE tenant_id = %s",
+            (tenantId,)
+        ).fetchone()[0] or 0
+        
+        has_backup = last_good_count > 0
+        checks.append({
+            "name": "has_last_good_backup",
+            "passed": has_backup,
+            "message": f"Has {last_good_count} last_good FAQ(s)" if has_backup else "No last_good backup"
+        })
+        if not has_backup:
+            all_passed = False
+    
+    # Check 5: Has test suite file
+    tests_dir = Path(__file__).parent.parent / "tests"
+    test_file = tests_dir / f"{tenantId}.json"
+    has_test_file = test_file.exists()
+    
+    checks.append({
+        "name": "has_test_suite",
+        "passed": has_test_file,
+        "message": f"Test suite file exists: {test_file.name}" if has_test_file else f"Test suite file missing: {test_file.name}"
+    })
+    if not has_test_file:
+        all_passed = False
+    
+    # Generate recommendation
+    if all_passed:
+        recommendation = "Tenant is ready for production"
+    else:
+        failed_checks = [c["name"] for c in checks if not c["passed"]]
+        if "tenant_exists" in failed_checks:
+            recommendation = "Create the tenant first"
+        elif "has_enabled_domains" in failed_checks:
+            recommendation = "Add at least one enabled domain"
+        elif "has_live_faqs" in failed_checks:
+            recommendation = "Upload and promote FAQs to live"
+        elif "has_last_good_backup" in failed_checks:
+            recommendation = "Promote FAQs to create a last_good backup"
+        elif "has_test_suite" in failed_checks:
+            recommendation = f"Create test suite file: tests/{tenantId}.json"
+        else:
+            recommendation = "Fix the failed checks above"
+    
+    return {
+        "tenant_id": tenantId,
+        "ready": all_passed,
+        "checks": checks,
+        "recommendation": recommendation
+    }
+
+
+@app.get("/admin/api/tenant/{tenantId}/readiness")
+def get_tenant_readiness_api(tenantId: str, resp: Response, authorization: str = Header(default="")):
+    """Get tenant readiness status - Admin UI endpoint."""
+    _check_admin_auth(authorization)
+    return _get_tenant_readiness_impl(tenantId)
+
+
+@app.get("/api/v2/admin/tenant/{tenantId}/readiness")
+def get_tenant_readiness_v2(tenantId: str, resp: Response, authorization: str = Header(default="")):
+    """Get tenant readiness status - Cloudflare-compatible path."""
+    _check_admin_auth(authorization)
+    return _get_tenant_readiness_impl(tenantId)
+
+
+# ============ ADMIN UI ENDPOINTS ============
+
+def _check_admin_auth(authorization: str):
+    """Check admin authorization. Raises HTTPException if invalid."""
+    if authorization != f"Bearer {settings.ADMIN_TOKEN}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+class TenantCreate(BaseModel):
+    id: str
+    name: str
+
+
+class DomainAdd(BaseModel):
+    domain: str
+
+
+@app.get("/admin/api/tenants")
+def list_tenants(resp: Response, authorization: str = Header(default="")):
+    """List all tenants."""
+    _check_admin_auth(authorization)
+    
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT id, name, created_at FROM tenants ORDER BY created_at DESC"
+        ).fetchall()
+    
+    tenants = [
+        {
+            "id": row[0],
+            "name": row[1] or row[0],
+            "created_at": row[2].isoformat() if row[2] else None
+        }
+        for row in rows
+    ]
+    
+    return {"tenants": tenants}
+
+
+@app.post("/admin/api/tenants")
+def create_tenant(
+    tenant: TenantCreate,
+    resp: Response,
+    authorization: str = Header(default="")
+):
+    """Create a new tenant."""
+    _check_admin_auth(authorization)
+    
+    tenant_id = (tenant.id or "").strip()
+    tenant_name = (tenant.name or "").strip()
+    
+    if not tenant_id:
+        raise HTTPException(status_code=400, detail="Tenant ID required")
+    
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "INSERT INTO tenants (id, name) VALUES (%s, %s) ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name",
+                (tenant_id, tenant_name or tenant_id)
+            )
+            conn.commit()
+        
+        return {"id": tenant_id, "name": tenant_name or tenant_id, "created": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create tenant: {str(e)}")
+
+
+@app.get("/admin/api/tenant/{tenantId}")
+def get_tenant_detail(tenantId: str, resp: Response, authorization: str = Header(default="")):
+    """Get tenant details including domains, staged FAQ count, and last run status."""
+    _check_admin_auth(authorization)
+    
+    import json as json_lib
+    
+    with get_conn() as conn:
+        tenant_row = conn.execute(
+            "SELECT id, name, created_at FROM tenants WHERE id = %s",
+            (tenantId,)
+        ).fetchone()
+        
+        if not tenant_row:
+            raise HTTPException(status_code=404, detail="Tenant not found")
+        
+        domain_rows = conn.execute(
+            "SELECT domain, enabled, created_at FROM tenant_domains WHERE tenant_id = %s ORDER BY domain",
+            (tenantId,)
+        ).fetchall()
+        
+        # Get staged FAQ count
+        staged_count = conn.execute(
+            "SELECT COUNT(*) FROM faq_items WHERE tenant_id=%s AND is_staged=true",
+            (tenantId,)
+        ).fetchone()[0]
+        
+        # Get live FAQ count
+        live_count = conn.execute(
+            "SELECT COUNT(*) FROM faq_items WHERE tenant_id=%s AND is_staged=false",
+            (tenantId,)
+        ).fetchone()[0]
+        
+        # Get last_good count
+        last_good_count = conn.execute(
+            "SELECT COUNT(*) FROM faq_items_last_good WHERE tenant_id=%s",
+            (tenantId,)
+        ).fetchone()[0]
+        
+        # Get last promote history
+        last_run = conn.execute("""
+            SELECT status, suite_result, first_failure, created_at
+            FROM tenant_promote_history
+            WHERE tenant_id = %s
+            ORDER BY created_at DESC
+            LIMIT 1
+        """, (tenantId,)).fetchone()
+    
+    domains = [
+        {
+            "domain": row[0],
+            "enabled": row[1],
+            "created_at": row[2].isoformat() if row[2] else None
+        }
+        for row in domain_rows
+    ]
+    
+    result = {
+        "id": tenant_row[0],
+        "name": tenant_row[1] or tenant_row[0],
+        "created_at": tenant_row[2].isoformat() if tenant_row[2] else None,
+        "domains": domains,
+        "staged_faq_count": staged_count,
+        "live_faq_count": live_count,
+        "last_good_count": last_good_count
+    }
+    
+    if last_run:
+        result["last_run"] = {
+            "status": last_run[0],
+            "created_at": last_run[3].isoformat() if last_run[3] else None
+        }
+        if last_run[1]:
+            try:
+                result["last_run"]["suite_result"] = json_lib.loads(last_run[1])
+            except:
+                pass
+        if last_run[2]:
+            try:
+                result["last_run"]["first_failure"] = json_lib.loads(last_run[2])
+            except:
+                pass
+    
+    return result
+
+
+@app.post("/admin/api/tenant/{tenantId}/domains")
+def add_domain(
+    tenantId: str,
+    domain: DomainAdd,
+    resp: Response,
+    authorization: str = Header(default="")
+):
+    """Add a domain for a tenant."""
+    _check_admin_auth(authorization)
+    
+    domain_str = (domain.domain or "").strip().lower()
+    if not domain_str:
+        raise HTTPException(status_code=400, detail="Domain required")
+    
+    try:
+        with get_conn() as conn:
+            # Ensure tenant exists
+            conn.execute(
+                "INSERT INTO tenants (id, name) VALUES (%s, %s) ON CONFLICT (id) DO NOTHING",
+                (tenantId, tenantId)
+            )
+            
+            # Add domain
+            conn.execute(
+                "INSERT INTO tenant_domains (tenant_id, domain, enabled) VALUES (%s, %s, true) ON CONFLICT (tenant_id, domain) DO UPDATE SET enabled=true",
+                (tenantId, domain_str)
+            )
+            conn.commit()
+        
+        return {"tenant_id": tenantId, "domain": domain_str, "added": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add domain: {str(e)}")
+
+
+@app.delete("/admin/api/tenant/{tenantId}/domains/{domain}")
+def remove_domain(
+    tenantId: str,
+    domain: str,
+    resp: Response,
+    authorization: str = Header(default="")
+):
+    """Remove or disable a domain for a tenant."""
+    _check_admin_auth(authorization)
+    
+    domain_str = domain.strip().lower()
+    
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "DELETE FROM tenant_domains WHERE tenant_id = %s AND domain = %s",
+                (tenantId, domain_str)
+            )
+            conn.commit()
+        
+        return {"tenant_id": tenantId, "domain": domain_str, "removed": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to remove domain: {str(e)}")
+
+
+@app.put("/admin/api/tenant/{tenantId}/faqs/staged")
+def upload_staged_faqs(
+    tenantId: str,
+    items: List[FaqItem],
+    resp: Response,
+    authorization: str = Header(default="")
+):
+    """Upload FAQs to staging (does not replace live FAQs)."""
+    _check_admin_auth(authorization)
+    
+    try:
+        count = 0
+        with get_conn() as conn:
+            # Ensure tenant exists
+            conn.execute(
+                "INSERT INTO tenants (id, name) VALUES (%s, %s) ON CONFLICT (id) DO NOTHING",
+                (tenantId, tenantId)
+            )
+            
+            # Delete existing staged FAQs (keep live unchanged)
+            conn.execute("DELETE FROM faq_items WHERE tenant_id=%s AND is_staged=true", (tenantId,))
+            
+            # Also delete staged variants (they'll be recreated)
+            conn.execute("""
+                DELETE FROM faq_variants 
+                WHERE faq_id IN (SELECT id FROM faq_items WHERE tenant_id=%s AND is_staged=true)
+            """, (tenantId,))
+            
+            for it in items:
+                q = (it.question or "").strip()
+                a = (it.answer or "").strip()
+                if not q or not a:
+                    continue
+
+                emb_q = embed_text(q)
+                row = conn.execute(
+                    "INSERT INTO faq_items (tenant_id, question, answer, embedding, enabled, is_staged) "
+                    "VALUES (%s,%s,%s,%s,true,true) RETURNING id",
+                    (tenantId, q, a, Vector(emb_q)),
+                ).fetchone()
+                faq_id = row[0]
+
+                raw_variants = it.variants or []
+                seen = set()
+                variants: List[str] = []
+                for v in [q, *raw_variants]:
+                    vv = (v or "").strip()
+                    if not vv:
+                        continue
+                    key = vv.lower()
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    variants.append(vv)
+
+                for vq in variants:
+                    v_emb = embed_text(vq)
+                    conn.execute(
+                        "INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled) "
+                        "VALUES (%s,%s,%s,true)",
+                        (faq_id, vq, Vector(v_emb)),
+                    )
+
+                count += 1
+
+            conn.commit()
+        
+        return {"tenant_id": tenantId, "staged_count": count, "message": f"Staged {count} FAQs"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to stage FAQs: {str(e)}")
+
+
+@app.post("/admin/api/tenant/{tenantId}/promote")
+def promote_staged(
+    tenantId: str,
+    resp: Response,
+    authorization: str = Header(default="")
+):
+    """Promote staged FAQs to live after running suite."""
+    _check_admin_auth(authorization)
+    
+    import json as json_lib
+    
+    # Get base URL from settings or use default
+    base_url = os.getenv("PUBLIC_BASE_URL") or "http://localhost:8000"
+    
+    try:
+        # 1. Check if staged FAQs exist
+        with get_conn() as conn:
+            staged_count = conn.execute(
+                "SELECT COUNT(*) FROM faq_items WHERE tenant_id=%s AND is_staged=true",
+                (tenantId,)
+            ).fetchone()[0]
+            
+            if staged_count == 0:
+                raise HTTPException(status_code=400, detail="No staged FAQs to promote")
+        
+        # 2. Temporarily activate staged FAQs for testing
+        # We'll swap staged to live temporarily, run suite, then decide
+        with get_conn() as conn:
+            # Backup current live FAQs to last_good if not already there
+            conn.execute("""
+                INSERT INTO faq_items_last_good (tenant_id, question, answer, embedding)
+                SELECT tenant_id, question, answer, embedding
+                FROM faq_items
+                WHERE tenant_id=%s AND is_staged=false
+                ON CONFLICT (tenant_id, question) DO UPDATE
+                SET answer=EXCLUDED.answer, embedding=EXCLUDED.embedding, updated_at=now()
+            """, (tenantId,))
+            
+            # Temporarily make staged FAQs live (for suite run)
+            conn.execute("""
+                UPDATE faq_items SET is_staged=false WHERE tenant_id=%s AND is_staged=true
+            """, (tenantId,))
+            conn.commit()
+        
+        # 3. Run suite
+        suite_result = run_suite(base_url, tenantId)
+        
+        # 4. If pass: keep staged as live, update last_good
+        # If fail: restore live from last_good, move staged back
+        with get_conn() as conn:
+            if suite_result["passed"]:
+                # Promote: staged is already live, just update last_good
+                conn.execute("""
+                    DELETE FROM faq_items_last_good WHERE tenant_id=%s
+                """, (tenantId,))
+                conn.execute("""
+                    INSERT INTO faq_items_last_good (tenant_id, question, answer, embedding)
+                    SELECT tenant_id, question, answer, embedding
+                    FROM faq_items
+                    WHERE tenant_id=%s AND is_staged=false
+                    ON CONFLICT (tenant_id, question) DO UPDATE
+                    SET answer=EXCLUDED.answer, embedding=EXCLUDED.embedding, updated_at=now()
+                """, (tenantId,))
+                
+                # Log success
+                conn.execute("""
+                    INSERT INTO tenant_promote_history (tenant_id, status, suite_result)
+                    VALUES (%s, 'success', %s)
+                """, (tenantId, json_lib.dumps(suite_result)))
+            else:
+                # Rollback: restore live from last_good, move current back to staged
+                # First, move current (failed) back to staged
+                conn.execute("""
+                    UPDATE faq_items SET is_staged=true 
+                    WHERE tenant_id=%s AND is_staged=false
+                    AND id NOT IN (SELECT id FROM faq_items_last_good WHERE tenant_id=%s)
+                """, (tenantId, tenantId))
+                
+                # Restore last_good to live
+                conn.execute("""
+                    DELETE FROM faq_items WHERE tenant_id=%s AND is_staged=false
+                """, (tenantId,))
+                conn.execute("""
+                    DELETE FROM faq_variants 
+                    WHERE faq_id IN (SELECT id FROM faq_items WHERE tenant_id=%s)
+                """, (tenantId,))
+                
+                # Restore last_good FAQs
+                last_good_rows = conn.execute("""
+                    SELECT question, answer, embedding FROM faq_items_last_good WHERE tenant_id=%s
+                """, (tenantId,)).fetchall()
+                
+                for row in last_good_rows:
+                    q, a, emb = row
+                    faq_row = conn.execute("""
+                        INSERT INTO faq_items (tenant_id, question, answer, embedding, enabled, is_staged)
+                        VALUES (%s, %s, %s, %s, true, false) RETURNING id
+                    """, (tenantId, q, a, emb)).fetchone()
+                    faq_id = faq_row[0]
+                    
+                    # Recreate variants (simplified - just question as variant)
+                    q_emb = embed_text(q)
+                    conn.execute("""
+                        INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled)
+                        VALUES (%s, %s, %s, true)
+                    """, (faq_id, q, Vector(q_emb)))
+                
+                # Log failure
+                conn.execute("""
+                    INSERT INTO tenant_promote_history (tenant_id, status, suite_result, first_failure)
+                    VALUES (%s, 'failed', %s, %s)
+                """, (tenantId, json_lib.dumps(suite_result), json_lib.dumps(suite_result.get("first_failure"))))
+            
+            conn.commit()
+        
+        if suite_result["passed"]:
+            return {
+                "tenant_id": tenantId,
+                "status": "success",
+                "message": f"Promoted {staged_count} FAQs to live",
+                "suite_result": suite_result
+            }
+        else:
+            return {
+                "tenant_id": tenantId,
+                "status": "failed",
+                "message": "Suite failed, staged FAQs not promoted",
+                "suite_result": suite_result,
+                "first_failure": suite_result.get("first_failure")
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        # On error, try to restore
+        try:
+            with get_conn() as conn:
+                # Restore last_good
+                conn.execute("""
+                    DELETE FROM faq_items WHERE tenant_id=%s AND is_staged=false
+                """, (tenantId,))
+                last_good_rows = conn.execute("""
+                    SELECT question, answer, embedding FROM faq_items_last_good WHERE tenant_id=%s
+                """, (tenantId,)).fetchall()
+                for row in last_good_rows:
+                    q, a, emb = row
+                    conn.execute("""
+                        INSERT INTO faq_items (tenant_id, question, answer, embedding, enabled, is_staged)
+                        VALUES (%s, %s, %s, %s, true, false) ON CONFLICT DO NOTHING
+                    """, (tenantId, q, a, emb))
+                conn.commit()
+        except:
+            pass
+        raise HTTPException(status_code=500, detail=f"Promote failed: {str(e)}")
+
+
+@app.post("/admin/api/tenant/{tenantId}/rollback")
+def rollback_tenant(
+    tenantId: str,
+    resp: Response,
+    authorization: str = Header(default="")
+):
+    """Rollback to last_good FAQs."""
+    _check_admin_auth(authorization)
+    
+    try:
+        with get_conn() as conn:
+            # Check if last_good exists
+            last_good_count = conn.execute("""
+                SELECT COUNT(*) FROM faq_items_last_good WHERE tenant_id=%s
+            """, (tenantId,)).fetchone()[0]
+            
+            if last_good_count == 0:
+                raise HTTPException(status_code=400, detail="No last_good FAQs to rollback to")
+            
+            # Delete current live FAQs
+            conn.execute("DELETE FROM faq_items WHERE tenant_id=%s AND is_staged=false", (tenantId,))
+            conn.execute("""
+                DELETE FROM faq_variants 
+                WHERE faq_id IN (SELECT id FROM faq_items WHERE tenant_id=%s)
+            """, (tenantId,))
+            
+            # Restore last_good to live
+            last_good_rows = conn.execute("""
+                SELECT question, answer, embedding FROM faq_items_last_good WHERE tenant_id=%s
+            """, (tenantId,)).fetchall()
+            
+            for row in last_good_rows:
+                q, a, emb = row
+                faq_row = conn.execute("""
+                    INSERT INTO faq_items (tenant_id, question, answer, embedding, enabled, is_staged)
+                    VALUES (%s, %s, %s, %s, true, false) RETURNING id
+                """, (tenantId, q, a, emb)).fetchone()
+                faq_id = faq_row[0]
+                
+                # Recreate variants
+                q_emb = embed_text(q)
+                conn.execute("""
+                    INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled)
+                    VALUES (%s, %s, %s, true)
+                """, (faq_id, q, Vector(q_emb)))
+            
+            conn.commit()
+        
+        return {
+            "tenant_id": tenantId,
+            "status": "success",
+            "message": f"Rolled back to last_good ({last_good_count} FAQs)"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Rollback failed: {str(e)}")
 
 
 @app.get("/debug/routes")

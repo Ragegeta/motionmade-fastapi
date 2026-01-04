@@ -1,0 +1,581 @@
+{
+    "tenantId":  "biz9_real",
+    "mode":  "strict",
+    "base":  "https://mm-client1-creator-backend-v1-0-0.abbedakbery14.workers.dev",
+    "origin":  "https://motionmadebne.com.au",
+    "endpoint":  "/api/v2/widget/chat",
+    "generated_at":  "2026-01-04T16:31:15",
+    "hardFailCount":  15,
+    "score":  {
+                  "strict_required":  {
+                                          "hit":  14,
+                                          "total":  29
+                                      },
+                  "timeouts":  {
+                                   "hit":  0,
+                                   "total":  29
+                               },
+                  "stress_business":  {
+                                          "total":  0,
+                                          "hit":  0
+                                      },
+                  "stress_garbage":  {
+                                         "total":  0,
+                                         "hit":  0
+                                     }
+              },
+    "results":  [
+                    {
+                        "name":  "SMOKE) General knowledge stays general_ok",
+                        "question":  "Why is the sky blue?",
+                        "http":  "200",
+                        "time_ms":  11493,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4986",
+                        "x_retrieval_score":  "0.14687058329582636",
+                        "replyText":  "The sky appears blue due to a phenomenon called Rayleigh scattering. When sunlight enters the Earth\u0027s atmosphere, it collides with gas molecules and other small particles, scattering shorter wavelengths of light, such as blue, more than longer wavelengths like red. This scattering causes the blue light to be more prominent, giving the sky its characteristic color during the day.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "smoke"
+                    },
+                    {
+                        "name":  "SMOKE) Unknown capability must not become general_ok",
+                        "question":  "Do you do carpet steam cleaning?",
+                        "http":  "200",
+                        "time_ms":  8771,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4990",
+                        "x_retrieval_score":  "0.4723346514901319",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "smoke"
+                    },
+                    {
+                        "name":  "FAQ 1/19) Oven clean add-on [exact]",
+                        "question":  "Oven clean add-on",
+                        "http":  "200",
+                        "time_ms":  9824,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4944",
+                        "x_retrieval_score":  "0.8657985489608648",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4944 score=0.8657985489608648 gate=false)",
+                                      "FAIL: missing token \u0027$89\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 1/19) Oven clean add-on [variant 1]",
+                        "question":  "How much extra is the oven add-on?",
+                        "http":  "200",
+                        "time_ms":  8785,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4982",
+                        "x_retrieval_score":  "0.8942263518965625",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4982 score=0.8942263518965625 gate=true)",
+                                      "FAIL: missing token \u0027$89\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 1/19) Oven clean add-on [variant 2]",
+                        "question":  "how much extra is the oven add on",
+                        "http":  "200",
+                        "time_ms":  10426,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4982",
+                        "x_retrieval_score":  "0.926595119434483",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4982 score=0.926595119434483 gate=true)",
+                                      "FAIL: missing token \u0027$89\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 2/19) Fridge clean add-on [exact]",
+                        "question":  "Fridge clean add-on",
+                        "http":  "200",
+                        "time_ms":  9931,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4947",
+                        "x_retrieval_score":  "0.8937155667712963",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4947 score=0.8937155667712963 gate=false)",
+                                      "FAIL: missing token \u0027Fridge\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 3/19) Standard clean inclusions [exact]",
+                        "question":  "Standard clean inclusions",
+                        "http":  "200",
+                        "time_ms":  10485,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4949",
+                        "x_retrieval_score":  "0.8384724951700884",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4949 score=0.8384724951700884 gate=false)",
+                                      "FAIL: missing token \u0027A standard clean\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 4/19) Deep clean inclusions [exact]",
+                        "question":  "Deep clean inclusions",
+                        "http":  "200",
+                        "time_ms":  10359,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4951",
+                        "x_retrieval_score":  "0.6210560531997785",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4951 score=0.6210560531997785 gate=false)",
+                                      "FAIL: missing token \u0027oven\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 5/19) Bond clean availability [exact]",
+                        "question":  "Bond clean availability",
+                        "http":  "200",
+                        "time_ms":  8766,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4953",
+                        "x_retrieval_score":  "0.6687860488891791",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4953 score=0.6687860488891791 gate=false)",
+                                      "FAIL: missing token \u0027Yes - we do bond\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 6/19) Service area [exact]",
+                        "question":  "Service area",
+                        "http":  "200",
+                        "time_ms":  8601,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4954",
+                        "x_retrieval_score":  "0.7511024326743159",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4954 score=0.7511024326743159 gate=true)",
+                                      "FAIL: missing token \u0027Brisbane\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 6/19) Service area [variant 1]",
+                        "question":  "what suburbs do you cover",
+                        "http":  "200",
+                        "time_ms":  8966,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4987",
+                        "x_retrieval_score":  "0.7362373189643293",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4987 score=0.7362373189643293 gate=true)",
+                                      "FAIL: missing token \u0027Brisbane\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 6/19) Service area [variant 2]",
+                        "question":  "what areas do you service",
+                        "http":  "200",
+                        "time_ms":  8841,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4955",
+                        "x_retrieval_score":  "0.8545398029410737",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4955 score=0.8545398029410737 gate=true)",
+                                      "FAIL: missing token \u0027Brisbane\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 7/19) Travel fee [exact]",
+                        "question":  "Travel fee",
+                        "http":  "200",
+                        "time_ms":  8768,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4988",
+                        "x_retrieval_score":  "0.7641220179905315",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4988 score=0.7641220179905315 gate=true)",
+                                      "FAIL: missing token \u0027Brisbane\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 8/19) Pets policy [exact]",
+                        "question":  "Pets policy",
+                        "http":  "200",
+                        "time_ms":  9363,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4958",
+                        "x_retrieval_score":  "0.766774402068532",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4958 score=0.766774402068532 gate=false)",
+                                      "FAIL: missing token \u0027pets\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 9/19) Supplies and equipment [exact]",
+                        "question":  "Supplies and equipment",
+                        "http":  "200",
+                        "time_ms":  8556,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4961",
+                        "x_retrieval_score":  "0.7376075010778759",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4961 score=0.7376075010778759 gate=true)",
+                                      "FAIL: missing token \u0027Yes - we bring p\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 9/19) Supplies and equipment [variant 1]",
+                        "question":  "do you bring cleaning supplies",
+                        "http":  "200",
+                        "time_ms":  8456,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4960",
+                        "x_retrieval_score":  "0.8241645903391193",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4960 score=0.8241645903391193 gate=true)",
+                                      "FAIL: missing token \u0027Yes - we bring p\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 9/19) Supplies and equipment [variant 2]",
+                        "question":  "do you bring cleaning products",
+                        "http":  "200",
+                        "time_ms":  8620,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "4961",
+                        "x_retrieval_score":  "0.8113912827605788",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=4961 score=0.8113912827605788 gate=true)",
+                                      "FAIL: missing token \u0027Yes - we bring p\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 10/19) Eco-friendly products [exact]",
+                        "question":  "Eco-friendly products",
+                        "http":  "200",
+                        "time_ms":  5659,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5010",
+                        "x_retrieval_score":  "0.9076865315437381",
+                        "replyText":  "Eco-friendly or low-scent products can be used on request. Let us know your preference when booking.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 11/19) Windows add-on [exact]",
+                        "question":  "Windows add-on",
+                        "http":  "200",
+                        "time_ms":  5659,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5011",
+                        "x_retrieval_score":  "0.9630612134933472",
+                        "replyText":  "Internal windows can be added on request. Exterior or high windows depend on safe access.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 12/19) Laundry add-on [exact]",
+                        "question":  "Laundry add-on",
+                        "http":  "200",
+                        "time_ms":  5623,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5012",
+                        "x_retrieval_score":  "0.9617129254851622",
+                        "replyText":  "Laundry is available as an add-on (wash, dry, and fold). No ironing.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 13/19) Linen change add-on [exact]",
+                        "question":  "Linen change add-on",
+                        "http":  "200",
+                        "time_ms":  5812,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5013",
+                        "x_retrieval_score":  "0.9479310574613808",
+                        "replyText":  "Yes - linen/beds can be changed as an add-on if clean sheets are left out.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 14/19) Arrival time window [exact]",
+                        "question":  "Arrival time window",
+                        "http":  "200",
+                        "time_ms":  5585,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5014",
+                        "x_retrieval_score":  "0.884665569424827",
+                        "replyText":  "We typically provide a 2-hour arrival window unless a fixed time is booked.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 15/19) Cancellations policy [exact]",
+                        "question":  "Cancellations policy",
+                        "http":  "200",
+                        "time_ms":  5956,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5015",
+                        "x_retrieval_score":  "0.9462445538507258",
+                        "replyText":  "Cancellations with less than 24 hours\u0027 notice may incur a late cancellation fee.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 16/19) Payments accepted [exact]",
+                        "question":  "Payments accepted",
+                        "http":  "200",
+                        "time_ms":  5610,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5016",
+                        "x_retrieval_score":  "0.941285929275453",
+                        "replyText":  "We accept bank transfer and card payments. An invoice can be provided.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 17/19) Insurance [exact]",
+                        "question":  "Insurance",
+                        "http":  "200",
+                        "time_ms":  5484,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5017",
+                        "x_retrieval_score":  "0.9095625606309641",
+                        "replyText":  "Yes - we carry appropriate insurance for cleaning work.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [exact]",
+                        "question":  "If the cleaner has to park in a paid spot, what happens?",
+                        "http":  "200",
+                        "time_ms":  5620,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5018",
+                        "x_retrieval_score":  "0.9658825109636245",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 19/19) Parking policy [exact]",
+                        "question":  "Parking policy",
+                        "http":  "200",
+                        "time_ms":  5610,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5019",
+                        "x_retrieval_score":  "0.822690725326544",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 19/19) Parking policy [variant 1]",
+                        "question":  "Paid parking",
+                        "http":  "200",
+                        "time_ms":  5449,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5019",
+                        "x_retrieval_score":  "0.9592614173889433",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 19/19) Parking policy [variant 2]",
+                        "question":  "What happens if there is paid parking?",
+                        "http":  "200",
+                        "time_ms":  5533,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5019",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    }
+                ]
+}

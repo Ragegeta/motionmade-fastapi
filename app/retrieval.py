@@ -27,6 +27,7 @@ def retrieve_faq_answer(tenant_id: str, query_embedding):
     JOIN faq_items fi ON fi.id = fv.faq_id
     WHERE fi.tenant_id = %s
       AND fi.enabled = true
+      AND fi.is_staged = false
       AND fv.enabled = true
     ORDER BY fv.variant_embedding <=> %s
     LIMIT 30

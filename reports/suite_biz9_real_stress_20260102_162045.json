@@ -1,0 +1,1784 @@
+{
+    "tenantId":  "biz9_real",
+    "mode":  "stress",
+    "base":  "https://mm-client1-creator-backend-v1-0-0.abbedakbery14.workers.dev",
+    "origin":  "https://motionmadebne.com.au",
+    "endpoint":  "/api/v2/widget/chat",
+    "generated_at":  "2026-01-02T16:29:50",
+    "hardFailCount":  0,
+    "score":  {
+                  "strict_required":  {
+                                          "total":  0,
+                                          "hit":  0
+                                      },
+                  "timeouts":  {
+                                   "hit":  0,
+                                   "total":  97
+                               },
+                  "stress_business":  {
+                                          "total":  0,
+                                          "hit":  0
+                                      },
+                  "stress_garbage":  {
+                                         "total":  0,
+                                         "hit":  0
+                                     }
+              },
+    "results":  [
+                    {
+                        "name":  "SMOKE) General knowledge stays general_ok",
+                        "question":  "Why is the sky blue?",
+                        "http":  "200",
+                        "time_ms":  8676,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3824",
+                        "x_retrieval_score":  "0.14687058329582636",
+                        "replyText":  "The sky appears blue due to a phenomenon called Rayleigh scattering. When sunlight enters Earth\u0027s atmosphere, it collides with air molecules, scattering shorter wavelengths of light, like blue, more than longer wavelengths, such as red. This scattering causes the blue light to be more visible, giving the sky its characteristic color.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "smoke"
+                    },
+                    {
+                        "name":  "SMOKE) Unknown capability must not become general_ok",
+                        "question":  "Do you do carpet steam cleaning?",
+                        "http":  "200",
+                        "time_ms":  7701,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3828",
+                        "x_retrieval_score":  "0.4723346514901319",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "smoke"
+                    },
+                    {
+                        "name":  "FAQ 1/19) Oven clean add-on [exact]",
+                        "question":  "Oven clean add-on",
+                        "http":  "200",
+                        "time_ms":  3582,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3820",
+                        "x_retrieval_score":  "0.9999997913837375",
+                        "replyText":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 1/19) Oven clean add-on [variant]",
+                        "question":  "Oven clean add-on",
+                        "http":  "200",
+                        "time_ms":  3461,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3820",
+                        "x_retrieval_score":  "0.9999990761280997",
+                        "replyText":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 1/19) Oven clean add-on [noisy]",
+                        "question":  "Hey, quick one â€” Oven clean add-on. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  7593,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3820",
+                        "x_retrieval_score":  "0.7449277265348356",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit, fact_miss], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027$89\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 1/19) Oven clean add-on [multi-intent]",
+                        "question":  "Oven clean add-on Also: Another question",
+                        "http":  "200",
+                        "time_ms":  3632,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3820",
+                        "x_retrieval_score":  "0.8703749803490992",
+                        "replyText":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 1/19) Oven clean add-on [garbage-short]",
+                        "question":  "O",
+                        "http":  "200",
+                        "time_ms":  7825,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3828",
+                        "x_retrieval_score":  "0.26471680402755926",
+                        "replyText":  "It seems like your message got cut off. How can I assist you today?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 2/19) Fridge clean add-on [exact]",
+                        "question":  "Fridge clean add-on",
+                        "http":  "200",
+                        "time_ms":  3568,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3821",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Fridge cleaning is an optional add-on. Contact us for pricing based on size and condition.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 2/19) Fridge clean add-on [variant]",
+                        "question":  "Fridge clean add-on",
+                        "http":  "200",
+                        "time_ms":  3490,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3821",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Fridge cleaning is an optional add-on. Contact us for pricing based on size and condition.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 2/19) Fridge clean add-on [noisy]",
+                        "question":  "Hey, quick one â€” Fridge clean add-on. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  7771,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3821",
+                        "x_retrieval_score":  "0.7860422006870642",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit, fact_miss], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027cleaning\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 2/19) Fridge clean add-on [multi-intent]",
+                        "question":  "Fridge clean add-on Also: Another question",
+                        "http":  "200",
+                        "time_ms":  3543,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3821",
+                        "x_retrieval_score":  "0.8919997682571198",
+                        "replyText":  "Fridge cleaning is an optional add-on. Contact us for pricing based on size and condition.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 2/19) Fridge clean add-on [garbage-short]",
+                        "question":  "F",
+                        "http":  "200",
+                        "time_ms":  7734,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3821",
+                        "x_retrieval_score":  "0.19324029168602463",
+                        "replyText":  "It seems like your message might be incomplete. Could you please provide more details or clarify your request?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 3/19) Standard clean inclusions [exact]",
+                        "question":  "Standard clean inclusions",
+                        "http":  "200",
+                        "time_ms":  3573,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3822",
+                        "x_retrieval_score":  "0.9999989271166569",
+                        "replyText":  "A standard clean includes bathrooms, kitchen surfaces, floors, dusting, and general tidying.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 3/19) Standard clean inclusions [variant]",
+                        "question":  "Standard clean inclusions",
+                        "http":  "200",
+                        "time_ms":  4155,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3822",
+                        "x_retrieval_score":  "0.9999989867212218",
+                        "replyText":  "A standard clean includes bathrooms, kitchen surfaces, floors, dusting, and general tidying.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 3/19) Standard clean inclusions [noisy]",
+                        "question":  "Hey, quick one â€” Standard clean inclusions. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  6652,
+                        "x_debug_branch":  "fact_rewrite_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3822",
+                        "x_retrieval_score":  "0.8384880116305345",
+                        "replyText":  "A standard clean includes bathrooms, kitchen surfaces, floors, dusting, and general tidying.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 3/19) Standard clean inclusions [multi-intent]",
+                        "question":  "Standard clean inclusions Also: Another question",
+                        "http":  "200",
+                        "time_ms":  3474,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3822",
+                        "x_retrieval_score":  "0.8722577171172088",
+                        "replyText":  "A standard clean includes bathrooms, kitchen surfaces, floors, dusting, and general tidying.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 3/19) Standard clean inclusions [garbage-short]",
+                        "question":  "S",
+                        "http":  "200",
+                        "time_ms":  7302,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3825",
+                        "x_retrieval_score":  "0.2434655725955963",
+                        "replyText":  "It seems like your message may have been cut off. Could you please provide more details or clarify your request?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 4/19) Deep clean inclusions [exact]",
+                        "question":  "Deep clean inclusions",
+                        "http":  "200",
+                        "time_ms":  3531,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3823",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "A deep clean focuses on heavy build-up and detailing such as skirting and extra attention to problem areas. Add-ons like oven/fridge can be included if selected.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 4/19) Deep clean inclusions [variant]",
+                        "question":  "Deep clean inclusions",
+                        "http":  "200",
+                        "time_ms":  4021,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3823",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "A deep clean focuses on heavy build-up and detailing such as skirting and extra attention to problem areas. Add-ons like oven/fridge can be included if selected.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 4/19) Deep clean inclusions [noisy]",
+                        "question":  "Hey, quick one â€” Deep clean inclusions. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  7416,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3823",
+                        "x_retrieval_score":  "0.8089550733566342",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit, fact_miss], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027focuses\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 4/19) Deep clean inclusions [multi-intent]",
+                        "question":  "Deep clean inclusions Also: Another question",
+                        "http":  "200",
+                        "time_ms":  3577,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3823",
+                        "x_retrieval_score":  "0.8745228908813958",
+                        "replyText":  "A deep clean focuses on heavy build-up and detailing such as skirting and extra attention to problem areas. Add-ons like oven/fridge can be included if selected.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 4/19) Deep clean inclusions [garbage-short]",
+                        "question":  "D",
+                        "http":  "200",
+                        "time_ms":  7456,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3825",
+                        "x_retrieval_score":  "0.17988467452848134",
+                        "replyText":  "It seems like your message was cut off. Could you please provide more details or clarify what you need?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 5/19) Bond clean availability [exact]",
+                        "question":  "Bond clean availability",
+                        "http":  "200",
+                        "time_ms":  3591,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3824",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we do bond/end-of-lease cleans using a checklist-style clean focused on kitchens, bathrooms, floors, skirting, and surfaces.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 5/19) Bond clean availability [variant]",
+                        "question":  "Bond clean availability",
+                        "http":  "200",
+                        "time_ms":  3522,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3824",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we do bond/end-of-lease cleans using a checklist-style clean focused on kitchens, bathrooms, floors, skirting, and surfaces.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 5/19) Bond clean availability [noisy]",
+                        "question":  "Hey, quick one â€” Bond clean availability. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  6525,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3824",
+                        "x_retrieval_score":  "0.6911444891863502",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: missing token \u0027end-of-lease\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 5/19) Bond clean availability [multi-intent]",
+                        "question":  "Bond clean availability Also: Another question",
+                        "http":  "200",
+                        "time_ms":  3556,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3824",
+                        "x_retrieval_score":  "0.8987886188970414",
+                        "replyText":  "Yes - we do bond/end-of-lease cleans using a checklist-style clean focused on kitchens, bathrooms, floors, skirting, and surfaces.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 5/19) Bond clean availability [garbage-short]",
+                        "question":  "B",
+                        "http":  "200",
+                        "time_ms":  8255,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3825",
+                        "x_retrieval_score":  "0.27501069903118824",
+                        "replyText":  "It seems like your message was cut off. Could you please provide more details or clarify what you need assistance with?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 6/19) Service area [exact]",
+                        "question":  "Service area",
+                        "http":  "200",
+                        "time_ms":  3516,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3825",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 6/19) Service area [variant]",
+                        "question":  "Service area",
+                        "http":  "200",
+                        "time_ms":  3497,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3825",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 6/19) Service area [noisy]",
+                        "question":  "Hey, quick one â€” Service area. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  6884,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3825",
+                        "x_retrieval_score":  "0.5803235077472361",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: missing token \u0027service\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 6/19) Service area [multi-intent]",
+                        "question":  "Service area Also: Another question",
+                        "http":  "200",
+                        "time_ms":  6552,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3825",
+                        "x_retrieval_score":  "0.7511024326743159",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 6/19) Service area [garbage-short]",
+                        "question":  "S",
+                        "http":  "200",
+                        "time_ms":  7794,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3825",
+                        "x_retrieval_score":  "0.24346911103747382",
+                        "replyText":  "It seems like your message might be incomplete. Could you please provide more details or clarify what you need?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 7/19) Travel fee [exact]",
+                        "question":  "Travel fee",
+                        "http":  "200",
+                        "time_ms":  4124,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3826",
+                        "x_retrieval_score":  "0.9999991357326254",
+                        "replyText":  "There is no travel fee within our regular Brisbane service area. Outside areas may incur a travel fee - contact us to confirm.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 7/19) Travel fee [variant]",
+                        "question":  "Travel fee",
+                        "http":  "200",
+                        "time_ms":  3655,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3826",
+                        "x_retrieval_score":  "0.9999991357326254",
+                        "replyText":  "There is no travel fee within our regular Brisbane service area. Outside areas may incur a travel fee - contact us to confirm.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 7/19) Travel fee [noisy]",
+                        "question":  "Hey, quick one â€” Travel fee. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  6906,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3826",
+                        "x_retrieval_score":  "0.6011598110198975",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: missing token \u0027regular\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 7/19) Travel fee [multi-intent]",
+                        "question":  "Travel fee Also: Another question",
+                        "http":  "200",
+                        "time_ms":  6801,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3826",
+                        "x_retrieval_score":  "0.7641371347985958",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 7/19) Travel fee [garbage-short]",
+                        "question":  "T",
+                        "http":  "200",
+                        "time_ms":  7928,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3825",
+                        "x_retrieval_score":  "0.16135350831470197",
+                        "replyText":  "It seems like your message may have been cut off. Could you please provide more information or clarify what you need?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 8/19) Pets policy [exact]",
+                        "question":  "Pets policy",
+                        "http":  "200",
+                        "time_ms":  3603,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3827",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we can clean homes with pets. Please let us know in advance so we can plan safely.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 8/19) Pets policy [variant]",
+                        "question":  "Pets policy",
+                        "http":  "200",
+                        "time_ms":  3533,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3827",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we can clean homes with pets. Please let us know in advance so we can plan safely.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 8/19) Pets policy [noisy]",
+                        "question":  "Hey, quick one â€” Pets policy. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  7946,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3827",
+                        "x_retrieval_score":  "0.6325705112390807",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit, fact_miss], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027advance\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 8/19) Pets policy [multi-intent]",
+                        "question":  "Pets policy Also: Another question",
+                        "http":  "200",
+                        "time_ms":  7168,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3827",
+                        "x_retrieval_score":  "0.7667509913444737",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 8/19) Pets policy [garbage-short]",
+                        "question":  "P",
+                        "http":  "200",
+                        "time_ms":  8060,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3838",
+                        "x_retrieval_score":  "0.21029481291770935",
+                        "replyText":  "It seems like your message might be incomplete. Could you please provide more details or clarify what you need?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 9/19) Supplies and equipment [exact]",
+                        "question":  "Supplies and equipment",
+                        "http":  "200",
+                        "time_ms":  3465,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3828",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 9/19) Supplies and equipment [variant]",
+                        "question":  "Supplies and equipment",
+                        "http":  "200",
+                        "time_ms":  3624,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3828",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 9/19) Supplies and equipment [noisy]",
+                        "question":  "Hey, quick one â€” Supplies and equipment. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  6697,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3828",
+                        "x_retrieval_score":  "0.6057633287624555",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: missing token \u0027professional\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 9/19) Supplies and equipment [multi-intent]",
+                        "question":  "Supplies and equipment Also: Another question",
+                        "http":  "200",
+                        "time_ms":  7218,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3828",
+                        "x_retrieval_score":  "0.7376075010778759",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 9/19) Supplies and equipment [garbage-short]",
+                        "question":  "S",
+                        "http":  "200",
+                        "time_ms":  8191,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3825",
+                        "x_retrieval_score":  "0.24342136085033417",
+                        "replyText":  "It seems like your message was cut off. How can I assist you today?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 10/19) Eco-friendly products [exact]",
+                        "question":  "Eco-friendly products",
+                        "http":  "200",
+                        "time_ms":  3896,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3829",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Eco-friendly or low-scent products can be used on request. Let us know your preference when booking.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 10/19) Eco-friendly products [variant]",
+                        "question":  "Eco-friendly products",
+                        "http":  "200",
+                        "time_ms":  3584,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3829",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Eco-friendly or low-scent products can be used on request. Let us know your preference when booking.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 10/19) Eco-friendly products [noisy]",
+                        "question":  "Hey, quick one â€” Eco-friendly products. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  7620,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3829",
+                        "x_retrieval_score":  "0.5872742637722806",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit, fact_miss], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027Eco-friendly\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 10/19) Eco-friendly products [multi-intent]",
+                        "question":  "Eco-friendly products Also: Another question",
+                        "http":  "200",
+                        "time_ms":  8060,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3829",
+                        "x_retrieval_score":  "0.7706788641619019",
+                        "replyText":  "Eco-friendly products are designed to minimize environmental impact, often made from sustainable materials and focusing on reducing waste, pollution, and energy consumption. If you have another question, feel free to ask!",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit, fact_miss, general_fallback], got \u0027general_ok\u0027"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 10/19) Eco-friendly products [garbage-short]",
+                        "question":  "E",
+                        "http":  "200",
+                        "time_ms":  7612,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3829",
+                        "x_retrieval_score":  "0.1589613001300454",
+                        "replyText":  "It seems like your message was cut off. Could you please provide more details or clarify what you need?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 11/19) Windows add-on [exact]",
+                        "question":  "Windows add-on",
+                        "http":  "200",
+                        "time_ms":  3693,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3830",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Internal windows can be added on request. Exterior or high windows depend on safe access.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 11/19) Windows add-on [variant]",
+                        "question":  "Windows add-on",
+                        "http":  "200",
+                        "time_ms":  3493,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3830",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Internal windows can be added on request. Exterior or high windows depend on safe access.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 11/19) Windows add-on [noisy]",
+                        "question":  "Hey, quick one â€” Windows add-on. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  7822,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3830",
+                        "x_retrieval_score":  "0.6401918148880127",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit, fact_miss], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027Internal\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 11/19) Windows add-on [multi-intent]",
+                        "question":  "Windows add-on Also: Another question",
+                        "http":  "200",
+                        "time_ms":  7558,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3830",
+                        "x_retrieval_score":  "0.6710412894438208",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 11/19) Windows add-on [garbage-short]",
+                        "question":  "W",
+                        "http":  "200",
+                        "time_ms":  7446,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3830",
+                        "x_retrieval_score":  "0.19792836594154672",
+                        "replyText":  "It seems your message might be incomplete. Could you please provide more details or clarify your request?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 12/19) Laundry add-on [exact]",
+                        "question":  "Laundry add-on",
+                        "http":  "200",
+                        "time_ms":  3565,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3831",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Laundry is available as an add-on (wash, dry, and fold). No ironing.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 12/19) Laundry add-on [variant]",
+                        "question":  "Laundry add-on",
+                        "http":  "200",
+                        "time_ms":  3499,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3831",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Laundry is available as an add-on (wash, dry, and fold). No ironing.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 12/19) Laundry add-on [noisy]",
+                        "question":  "Hey, quick one â€” Laundry add-on. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  7666,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3831",
+                        "x_retrieval_score":  "0.7763565912034173",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit, fact_miss], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027Laundry\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 12/19) Laundry add-on [multi-intent]",
+                        "question":  "Laundry add-on Also: Another question",
+                        "http":  "200",
+                        "time_ms":  3526,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3831",
+                        "x_retrieval_score":  "0.8555254254058272",
+                        "replyText":  "Laundry is available as an add-on (wash, dry, and fold). No ironing.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 12/19) Laundry add-on [garbage-short]",
+                        "question":  "L",
+                        "http":  "200",
+                        "time_ms":  8588,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3836",
+                        "x_retrieval_score":  "0.19622173000043042",
+                        "replyText":  "It seems like your message was cut off. Could you provide more details or clarify what you need?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 13/19) Linen change add-on [exact]",
+                        "question":  "Linen change add-on",
+                        "http":  "200",
+                        "time_ms":  3494,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3832",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - linen/beds can be changed as an add-on if clean sheets are left out.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 13/19) Linen change add-on [variant]",
+                        "question":  "Linen change add-on",
+                        "http":  "200",
+                        "time_ms":  3577,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3832",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - linen/beds can be changed as an add-on if clean sheets are left out.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 13/19) Linen change add-on [noisy]",
+                        "question":  "Hey, quick one â€” Linen change add-on. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  8730,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3832",
+                        "x_retrieval_score":  "0.7820555827551441",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit, fact_miss], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027changed\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 13/19) Linen change add-on [multi-intent]",
+                        "question":  "Linen change add-on Also: Another question",
+                        "http":  "200",
+                        "time_ms":  3587,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3832",
+                        "x_retrieval_score":  "0.8891939122926169",
+                        "replyText":  "Yes - linen/beds can be changed as an add-on if clean sheets are left out.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 13/19) Linen change add-on [garbage-short]",
+                        "question":  "L",
+                        "http":  "200",
+                        "time_ms":  7760,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3836",
+                        "x_retrieval_score":  "0.1963069917972693",
+                        "replyText":  "It seems like your message might have been cut off. Could you please provide more details or clarify what you need?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 14/19) Arrival time window [exact]",
+                        "question":  "Arrival time window",
+                        "http":  "200",
+                        "time_ms":  3701,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3833",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We typically provide a 2-hour arrival window unless a fixed time is booked.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 14/19) Arrival time window [variant]",
+                        "question":  "Arrival time window",
+                        "http":  "200",
+                        "time_ms":  3593,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3833",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We typically provide a 2-hour arrival window unless a fixed time is booked.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 14/19) Arrival time window [noisy]",
+                        "question":  "Hey, quick one â€” Arrival time window. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  6663,
+                        "x_debug_branch":  "fact_rewrite_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3833",
+                        "x_retrieval_score":  "0.8908301326385295",
+                        "replyText":  "We typically provide a 2-hour arrival window unless a fixed time is booked.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 14/19) Arrival time window [multi-intent]",
+                        "question":  "Arrival time window Also: Another question",
+                        "http":  "200",
+                        "time_ms":  3651,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3833",
+                        "x_retrieval_score":  "0.8320507211564252",
+                        "replyText":  "We typically provide a 2-hour arrival window unless a fixed time is booked.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 14/19) Arrival time window [garbage-short]",
+                        "question":  "A",
+                        "http":  "200",
+                        "time_ms":  7731,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3825",
+                        "x_retrieval_score":  "0.17345601198863803",
+                        "replyText":  "It seems like your message was cut off. Could you please provide more details or clarify what you need assistance with?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 15/19) Cancellations policy [exact]",
+                        "question":  "Cancellations policy",
+                        "http":  "200",
+                        "time_ms":  3494,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3834",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Cancellations with less than 24 hours\u0027 notice may incur a late cancellation fee.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 15/19) Cancellations policy [variant]",
+                        "question":  "Cancellations policy",
+                        "http":  "200",
+                        "time_ms":  3821,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3834",
+                        "x_retrieval_score":  "0.9999991655351721",
+                        "replyText":  "Cancellations with less than 24 hours\u0027 notice may incur a late cancellation fee.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 15/19) Cancellations policy [noisy]",
+                        "question":  "Hey, quick one â€” Cancellations policy. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  6620,
+                        "x_debug_branch":  "fact_rewrite_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3834",
+                        "x_retrieval_score":  "0.846781450893712",
+                        "replyText":  "Cancellations with less than 24 hours\u0027 notice may incur a late cancellation fee.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 15/19) Cancellations policy [multi-intent]",
+                        "question":  "Cancellations policy Also: Another question",
+                        "http":  "200",
+                        "time_ms":  6751,
+                        "x_debug_branch":  "fact_rewrite_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3834",
+                        "x_retrieval_score":  "0.846781450893712",
+                        "replyText":  "Cancellations with less than 24 hours\u0027 notice may incur a late cancellation fee.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 15/19) Cancellations policy [garbage-short]",
+                        "question":  "C",
+                        "http":  "200",
+                        "time_ms":  7592,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3822",
+                        "x_retrieval_score":  "0.17165362278775897",
+                        "replyText":  "It seems like your message got cut off. Could you please provide more details or clarify your request?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 16/19) Payments accepted [exact]",
+                        "question":  "Payments accepted",
+                        "http":  "200",
+                        "time_ms":  3586,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3835",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We accept bank transfer and card payments. An invoice can be provided.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 16/19) Payments accepted [variant]",
+                        "question":  "Payments accepted",
+                        "http":  "200",
+                        "time_ms":  3463,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3835",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We accept bank transfer and card payments. An invoice can be provided.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 16/19) Payments accepted [noisy]",
+                        "question":  "Hey, quick one â€” Payments accepted. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  6720,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3835",
+                        "x_retrieval_score":  "0.5288769006729126",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: missing token \u0027transfer\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 16/19) Payments accepted [multi-intent]",
+                        "question":  "Payments accepted Also: Another question",
+                        "http":  "200",
+                        "time_ms":  6964,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3835",
+                        "x_retrieval_score":  "0.6550165805230498",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 16/19) Payments accepted [garbage-short]",
+                        "question":  "P",
+                        "http":  "200",
+                        "time_ms":  8054,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3838",
+                        "x_retrieval_score":  "0.21029481291770935",
+                        "replyText":  "It seems like your message might be incomplete. Could you please provide more details or clarify what you need assistance with?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 17/19) Insurance [exact]",
+                        "question":  "Insurance",
+                        "http":  "200",
+                        "time_ms":  3996,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3836",
+                        "x_retrieval_score":  "0.999999105930435",
+                        "replyText":  "Yes - we carry appropriate insurance for cleaning work.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 17/19) Insurance [variant]",
+                        "question":  "Insurance",
+                        "http":  "200",
+                        "time_ms":  3532,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3836",
+                        "x_retrieval_score":  "0.999999105930435",
+                        "replyText":  "Yes - we carry appropriate insurance for cleaning work.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 17/19) Insurance [noisy]",
+                        "question":  "Hey, quick one â€” Insurance. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  7312,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3836",
+                        "x_retrieval_score":  "0.46248442158195924",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit, fact_miss], got \u0027general_fallback\u0027",
+                                      "FAIL: missing token \u0027appropriate\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 17/19) Insurance [multi-intent]",
+                        "question":  "Insurance Also: Another question",
+                        "http":  "200",
+                        "time_ms":  7182,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3836",
+                        "x_retrieval_score":  "0.5240610525571682",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 17/19) Insurance [garbage-short]",
+                        "question":  "I",
+                        "http":  "200",
+                        "time_ms":  8062,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3828",
+                        "x_retrieval_score":  "0.26471680402755926",
+                        "replyText":  "It seems like your message got cut off. How can I assist you today?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [exact]",
+                        "question":  "If the cleaner has to park in a paid spot, what happens?",
+                        "http":  "200",
+                        "time_ms":  3518,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3837",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [variant]",
+                        "question":  "If the cleaner has to park in a paid spot, what happens?",
+                        "http":  "200",
+                        "time_ms":  3519,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3837",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [noisy]",
+                        "question":  "Hey, quick one â€” If the cleaner has to park in a paid spot, what happens?. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  6581,
+                        "x_debug_branch":  "fact_rewrite_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3837",
+                        "x_retrieval_score":  "0.9436987357229577",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [multi-intent]",
+                        "question":  "If the cleaner has to park in a paid spot, what happens? Also: Another question",
+                        "http":  "200",
+                        "time_ms":  3579,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3837",
+                        "x_retrieval_score":  "0.9423583396397575",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [garbage-short]",
+                        "question":  "I",
+                        "http":  "200",
+                        "time_ms":  7676,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3828",
+                        "x_retrieval_score":  "0.26471680402755926",
+                        "replyText":  "It seems like your message got cut off. Could you please provide more details or clarify what you need?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    },
+                    {
+                        "name":  "FAQ 19/19) Parking policy [exact]",
+                        "question":  "Parking policy",
+                        "http":  "200",
+                        "time_ms":  3602,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3838",
+                        "x_retrieval_score":  "0.999999463558197",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "stress_exact"
+                    },
+                    {
+                        "name":  "FAQ 19/19) Parking policy [variant]",
+                        "question":  "Parking policy",
+                        "http":  "200",
+                        "time_ms":  3658,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3838",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_variant"
+                    },
+                    {
+                        "name":  "FAQ 19/19) Parking policy [noisy]",
+                        "question":  "Hey, quick one â€” Parking policy. Also Iâ€™m flexible on timing, just tell me.",
+                        "http":  "200",
+                        "time_ms":  6626,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3838",
+                        "x_retrieval_score":  "0.6654752692296952",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: missing token \u0027parking\u0027 in replyText"
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_noisy"
+                    },
+                    {
+                        "name":  "FAQ 19/19) Parking policy [multi-intent]",
+                        "question":  "Parking policy Also: Another question",
+                        "http":  "200",
+                        "time_ms":  6859,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3838",
+                        "x_retrieval_score":  "0.7841358442144636",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_multi"
+                    },
+                    {
+                        "name":  "FAQ 19/19) Parking policy [garbage-short]",
+                        "question":  "P",
+                        "http":  "200",
+                        "time_ms":  7445,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "3838",
+                        "x_retrieval_score":  "0.21029481291770935",
+                        "replyText":  "It seems your message was cut off. Could you please provide more details or clarify your request?",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "soft",
+                        "category":  "stress_garbage"
+                    }
+                ]
+}

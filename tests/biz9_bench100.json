@@ -1,0 +1,2683 @@
+[
+    {
+        "category":  "strict_required",
+        "severity":  "hard",
+        "name":  "SMOKE) General knowledge stays general_ok",
+        "question":  "Why is the sky blue?",
+        "expect_debug_branch_any":  [
+                                        "general_ok"
+                                    ]
+    },
+    {
+        "category":  "strict_required",
+        "severity":  "hard",
+        "name":  "SMOKE) Unknown capability must not become general_ok",
+        "question":  "Do you do carpet steam cleaning?",
+        "expect_debug_branch_any":  [
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ]
+    },
+    {
+        "question":  "Oven clean add-on",
+        "name":  "FAQ 1/119) Oven clean add-on [exact]",
+        "must_contain":  "$89",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Oven clean add-on",
+        "name":  "FAQ 1/119) Oven clean add-on [variant 1]",
+        "must_contain":  "$89",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much extra is the oven add-on?",
+        "name":  "FAQ 1/119) Oven clean add-on [variant 2]",
+        "must_contain":  "$89",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Fridge clean add-on",
+        "name":  "FAQ 2/119) Fridge clean add-on [exact]",
+        "must_contain":  "Fridge",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Fridge clean add-on",
+        "name":  "FAQ 2/119) Fridge clean add-on [variant 1]",
+        "must_contain":  "Fridge",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Standard clean inclusions",
+        "name":  "FAQ 3/119) Standard clean inclusions [exact]",
+        "must_contain":  "standard",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Standard clean inclusions",
+        "name":  "FAQ 3/119) Standard clean inclusions [variant 1]",
+        "must_contain":  "standard",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Deep clean inclusions",
+        "name":  "FAQ 4/119) Deep clean inclusions [exact]",
+        "must_contain":  "deep",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Deep clean inclusions",
+        "name":  "FAQ 4/119) Deep clean inclusions [variant 1]",
+        "must_contain":  "deep",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Bond clean availability",
+        "name":  "FAQ 5/119) Bond clean availability [exact]",
+        "must_contain":  "bond",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Bond clean availability",
+        "name":  "FAQ 5/119) Bond clean availability [variant 1]",
+        "must_contain":  "bond",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Service area",
+        "name":  "FAQ 6/119) Service area [exact]",
+        "must_contain":  "We service B",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Service area",
+        "name":  "FAQ 6/119) Service area [variant 1]",
+        "must_contain":  "We service B",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "what suburbs do you cover",
+        "name":  "FAQ 6/119) Service area [variant 2]",
+        "must_contain":  "We service B",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Travel fee",
+        "name":  "FAQ 7/119) Travel fee [exact]",
+        "must_contain":  "There is no ",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Travel fee",
+        "name":  "FAQ 7/119) Travel fee [variant 1]",
+        "must_contain":  "There is no ",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Pets policy",
+        "name":  "FAQ 8/119) Pets policy [exact]",
+        "must_contain":  "pets",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Pets policy",
+        "name":  "FAQ 8/119) Pets policy [variant 1]",
+        "must_contain":  "pets",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Supplies and equipment",
+        "name":  "FAQ 9/119) Supplies and equipment [exact]",
+        "must_contain":  "Yes - we bri",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Supplies and equipment",
+        "name":  "FAQ 9/119) Supplies and equipment [variant 1]",
+        "must_contain":  "Yes - we bri",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "do you bring cleaning supplies",
+        "name":  "FAQ 9/119) Supplies and equipment [variant 2]",
+        "must_contain":  "Yes - we bri",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Eco-friendly products",
+        "name":  "FAQ 10/119) Eco-friendly products [exact]",
+        "must_contain":  "Eco-friendly",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Eco-friendly products",
+        "name":  "FAQ 10/119) Eco-friendly products [variant 1]",
+        "must_contain":  "Eco-friendly",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Windows add-on",
+        "name":  "FAQ 11/119) Windows add-on [exact]",
+        "must_contain":  "Internal win",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Windows add-on",
+        "name":  "FAQ 11/119) Windows add-on [variant 1]",
+        "must_contain":  "Internal win",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Laundry add-on",
+        "name":  "FAQ 12/119) Laundry add-on [exact]",
+        "must_contain":  "Laundry is a",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Laundry add-on",
+        "name":  "FAQ 12/119) Laundry add-on [variant 1]",
+        "must_contain":  "Laundry is a",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Linen change add-on",
+        "name":  "FAQ 13/119) Linen change add-on [exact]",
+        "must_contain":  "Yes - linen/",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Linen change add-on",
+        "name":  "FAQ 13/119) Linen change add-on [variant 1]",
+        "must_contain":  "Yes - linen/",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Arrival time window",
+        "name":  "FAQ 14/119) Arrival time window [exact]",
+        "must_contain":  "We typically",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Arrival time window",
+        "name":  "FAQ 14/119) Arrival time window [variant 1]",
+        "must_contain":  "We typically",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Cancellations policy",
+        "name":  "FAQ 15/119) Cancellations policy [exact]",
+        "must_contain":  "Cancellation",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Cancellations policy",
+        "name":  "FAQ 15/119) Cancellations policy [variant 1]",
+        "must_contain":  "Cancellation",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Payments accepted",
+        "name":  "FAQ 16/119) Payments accepted [exact]",
+        "must_contain":  "invoice",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Payments accepted",
+        "name":  "FAQ 16/119) Payments accepted [variant 1]",
+        "must_contain":  "invoice",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Insurance",
+        "name":  "FAQ 17/119) Insurance [exact]",
+        "must_contain":  "Yes - we car",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Insurance",
+        "name":  "FAQ 17/119) Insurance [variant 1]",
+        "must_contain":  "Yes - we car",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "If the cleaner has to park in a paid spot, what happens?",
+        "name":  "FAQ 18/119) If the cleaner has to park in a paid spot, what happens? [exact]",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "If the cleaner has to park in a paid spot, what happens?",
+        "name":  "FAQ 18/119) If the cleaner has to park in a paid spot, what happens? [variant 1]",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Parking policy",
+        "name":  "FAQ 19/119) Parking policy [exact]",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Parking policy",
+        "name":  "FAQ 19/119) Parking policy [variant 1]",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "Paid parking",
+        "name":  "FAQ 19/119) Parking policy [variant 2]",
+        "must_contain":  "parking",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH001 cost?",
+        "name":  "FAQ 20/119) How much does benchmark item BENCH001 cost? [exact]",
+        "must_contain":  "BENCH001",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH001 cost?",
+        "name":  "FAQ 20/119) How much does benchmark item BENCH001 cost? [variant 1]",
+        "must_contain":  "BENCH001",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH002 cost?",
+        "name":  "FAQ 21/119) How much does benchmark item BENCH002 cost? [exact]",
+        "must_contain":  "BENCH002",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH002 cost?",
+        "name":  "FAQ 21/119) How much does benchmark item BENCH002 cost? [variant 1]",
+        "must_contain":  "BENCH002",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH003 cost?",
+        "name":  "FAQ 22/119) How much does benchmark item BENCH003 cost? [exact]",
+        "must_contain":  "BENCH003",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH003 cost?",
+        "name":  "FAQ 22/119) How much does benchmark item BENCH003 cost? [variant 1]",
+        "must_contain":  "BENCH003",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH004 cost?",
+        "name":  "FAQ 23/119) How much does benchmark item BENCH004 cost? [exact]",
+        "must_contain":  "BENCH004",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH004 cost?",
+        "name":  "FAQ 23/119) How much does benchmark item BENCH004 cost? [variant 1]",
+        "must_contain":  "BENCH004",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH005 cost?",
+        "name":  "FAQ 24/119) How much does benchmark item BENCH005 cost? [exact]",
+        "must_contain":  "BENCH005",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH005 cost?",
+        "name":  "FAQ 24/119) How much does benchmark item BENCH005 cost? [variant 1]",
+        "must_contain":  "BENCH005",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH006 cost?",
+        "name":  "FAQ 25/119) How much does benchmark item BENCH006 cost? [exact]",
+        "must_contain":  "BENCH006",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH006 cost?",
+        "name":  "FAQ 25/119) How much does benchmark item BENCH006 cost? [variant 1]",
+        "must_contain":  "BENCH006",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH007 cost?",
+        "name":  "FAQ 26/119) How much does benchmark item BENCH007 cost? [exact]",
+        "must_contain":  "BENCH007",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH007 cost?",
+        "name":  "FAQ 26/119) How much does benchmark item BENCH007 cost? [variant 1]",
+        "must_contain":  "BENCH007",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH008 cost?",
+        "name":  "FAQ 27/119) How much does benchmark item BENCH008 cost? [exact]",
+        "must_contain":  "BENCH008",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH008 cost?",
+        "name":  "FAQ 27/119) How much does benchmark item BENCH008 cost? [variant 1]",
+        "must_contain":  "BENCH008",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH009 cost?",
+        "name":  "FAQ 28/119) How much does benchmark item BENCH009 cost? [exact]",
+        "must_contain":  "BENCH009",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH009 cost?",
+        "name":  "FAQ 28/119) How much does benchmark item BENCH009 cost? [variant 1]",
+        "must_contain":  "BENCH009",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH010 cost?",
+        "name":  "FAQ 29/119) How much does benchmark item BENCH010 cost? [exact]",
+        "must_contain":  "BENCH010",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH010 cost?",
+        "name":  "FAQ 29/119) How much does benchmark item BENCH010 cost? [variant 1]",
+        "must_contain":  "BENCH010",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH011 cost?",
+        "name":  "FAQ 30/119) How much does benchmark item BENCH011 cost? [exact]",
+        "must_contain":  "BENCH011",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH011 cost?",
+        "name":  "FAQ 30/119) How much does benchmark item BENCH011 cost? [variant 1]",
+        "must_contain":  "BENCH011",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH012 cost?",
+        "name":  "FAQ 31/119) How much does benchmark item BENCH012 cost? [exact]",
+        "must_contain":  "BENCH012",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH012 cost?",
+        "name":  "FAQ 31/119) How much does benchmark item BENCH012 cost? [variant 1]",
+        "must_contain":  "BENCH012",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH013 cost?",
+        "name":  "FAQ 32/119) How much does benchmark item BENCH013 cost? [exact]",
+        "must_contain":  "BENCH013",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH013 cost?",
+        "name":  "FAQ 32/119) How much does benchmark item BENCH013 cost? [variant 1]",
+        "must_contain":  "BENCH013",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH014 cost?",
+        "name":  "FAQ 33/119) How much does benchmark item BENCH014 cost? [exact]",
+        "must_contain":  "BENCH014",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH014 cost?",
+        "name":  "FAQ 33/119) How much does benchmark item BENCH014 cost? [variant 1]",
+        "must_contain":  "BENCH014",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH015 cost?",
+        "name":  "FAQ 34/119) How much does benchmark item BENCH015 cost? [exact]",
+        "must_contain":  "BENCH015",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH015 cost?",
+        "name":  "FAQ 34/119) How much does benchmark item BENCH015 cost? [variant 1]",
+        "must_contain":  "BENCH015",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH016 cost?",
+        "name":  "FAQ 35/119) How much does benchmark item BENCH016 cost? [exact]",
+        "must_contain":  "BENCH016",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH016 cost?",
+        "name":  "FAQ 35/119) How much does benchmark item BENCH016 cost? [variant 1]",
+        "must_contain":  "BENCH016",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH017 cost?",
+        "name":  "FAQ 36/119) How much does benchmark item BENCH017 cost? [exact]",
+        "must_contain":  "BENCH017",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH017 cost?",
+        "name":  "FAQ 36/119) How much does benchmark item BENCH017 cost? [variant 1]",
+        "must_contain":  "BENCH017",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH018 cost?",
+        "name":  "FAQ 37/119) How much does benchmark item BENCH018 cost? [exact]",
+        "must_contain":  "BENCH018",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH018 cost?",
+        "name":  "FAQ 37/119) How much does benchmark item BENCH018 cost? [variant 1]",
+        "must_contain":  "BENCH018",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH019 cost?",
+        "name":  "FAQ 38/119) How much does benchmark item BENCH019 cost? [exact]",
+        "must_contain":  "BENCH019",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH019 cost?",
+        "name":  "FAQ 38/119) How much does benchmark item BENCH019 cost? [variant 1]",
+        "must_contain":  "BENCH019",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH020 cost?",
+        "name":  "FAQ 39/119) How much does benchmark item BENCH020 cost? [exact]",
+        "must_contain":  "BENCH020",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH020 cost?",
+        "name":  "FAQ 39/119) How much does benchmark item BENCH020 cost? [variant 1]",
+        "must_contain":  "BENCH020",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH021 cost?",
+        "name":  "FAQ 40/119) How much does benchmark item BENCH021 cost? [exact]",
+        "must_contain":  "BENCH021",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH021 cost?",
+        "name":  "FAQ 40/119) How much does benchmark item BENCH021 cost? [variant 1]",
+        "must_contain":  "BENCH021",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH022 cost?",
+        "name":  "FAQ 41/119) How much does benchmark item BENCH022 cost? [exact]",
+        "must_contain":  "BENCH022",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH022 cost?",
+        "name":  "FAQ 41/119) How much does benchmark item BENCH022 cost? [variant 1]",
+        "must_contain":  "BENCH022",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH023 cost?",
+        "name":  "FAQ 42/119) How much does benchmark item BENCH023 cost? [exact]",
+        "must_contain":  "BENCH023",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH023 cost?",
+        "name":  "FAQ 42/119) How much does benchmark item BENCH023 cost? [variant 1]",
+        "must_contain":  "BENCH023",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH024 cost?",
+        "name":  "FAQ 43/119) How much does benchmark item BENCH024 cost? [exact]",
+        "must_contain":  "BENCH024",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH024 cost?",
+        "name":  "FAQ 43/119) How much does benchmark item BENCH024 cost? [variant 1]",
+        "must_contain":  "BENCH024",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH025 cost?",
+        "name":  "FAQ 44/119) How much does benchmark item BENCH025 cost? [exact]",
+        "must_contain":  "BENCH025",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH025 cost?",
+        "name":  "FAQ 44/119) How much does benchmark item BENCH025 cost? [variant 1]",
+        "must_contain":  "BENCH025",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH026 cost?",
+        "name":  "FAQ 45/119) How much does benchmark item BENCH026 cost? [exact]",
+        "must_contain":  "BENCH026",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH026 cost?",
+        "name":  "FAQ 45/119) How much does benchmark item BENCH026 cost? [variant 1]",
+        "must_contain":  "BENCH026",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH027 cost?",
+        "name":  "FAQ 46/119) How much does benchmark item BENCH027 cost? [exact]",
+        "must_contain":  "BENCH027",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH027 cost?",
+        "name":  "FAQ 46/119) How much does benchmark item BENCH027 cost? [variant 1]",
+        "must_contain":  "BENCH027",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH028 cost?",
+        "name":  "FAQ 47/119) How much does benchmark item BENCH028 cost? [exact]",
+        "must_contain":  "BENCH028",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH028 cost?",
+        "name":  "FAQ 47/119) How much does benchmark item BENCH028 cost? [variant 1]",
+        "must_contain":  "BENCH028",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH029 cost?",
+        "name":  "FAQ 48/119) How much does benchmark item BENCH029 cost? [exact]",
+        "must_contain":  "BENCH029",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH029 cost?",
+        "name":  "FAQ 48/119) How much does benchmark item BENCH029 cost? [variant 1]",
+        "must_contain":  "BENCH029",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH030 cost?",
+        "name":  "FAQ 49/119) How much does benchmark item BENCH030 cost? [exact]",
+        "must_contain":  "BENCH030",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH030 cost?",
+        "name":  "FAQ 49/119) How much does benchmark item BENCH030 cost? [variant 1]",
+        "must_contain":  "BENCH030",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH031 cost?",
+        "name":  "FAQ 50/119) How much does benchmark item BENCH031 cost? [exact]",
+        "must_contain":  "BENCH031",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH031 cost?",
+        "name":  "FAQ 50/119) How much does benchmark item BENCH031 cost? [variant 1]",
+        "must_contain":  "BENCH031",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH032 cost?",
+        "name":  "FAQ 51/119) How much does benchmark item BENCH032 cost? [exact]",
+        "must_contain":  "BENCH032",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH032 cost?",
+        "name":  "FAQ 51/119) How much does benchmark item BENCH032 cost? [variant 1]",
+        "must_contain":  "BENCH032",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH033 cost?",
+        "name":  "FAQ 52/119) How much does benchmark item BENCH033 cost? [exact]",
+        "must_contain":  "BENCH033",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH033 cost?",
+        "name":  "FAQ 52/119) How much does benchmark item BENCH033 cost? [variant 1]",
+        "must_contain":  "BENCH033",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH034 cost?",
+        "name":  "FAQ 53/119) How much does benchmark item BENCH034 cost? [exact]",
+        "must_contain":  "BENCH034",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH034 cost?",
+        "name":  "FAQ 53/119) How much does benchmark item BENCH034 cost? [variant 1]",
+        "must_contain":  "BENCH034",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH035 cost?",
+        "name":  "FAQ 54/119) How much does benchmark item BENCH035 cost? [exact]",
+        "must_contain":  "BENCH035",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH035 cost?",
+        "name":  "FAQ 54/119) How much does benchmark item BENCH035 cost? [variant 1]",
+        "must_contain":  "BENCH035",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH036 cost?",
+        "name":  "FAQ 55/119) How much does benchmark item BENCH036 cost? [exact]",
+        "must_contain":  "BENCH036",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH036 cost?",
+        "name":  "FAQ 55/119) How much does benchmark item BENCH036 cost? [variant 1]",
+        "must_contain":  "BENCH036",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH037 cost?",
+        "name":  "FAQ 56/119) How much does benchmark item BENCH037 cost? [exact]",
+        "must_contain":  "BENCH037",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH037 cost?",
+        "name":  "FAQ 56/119) How much does benchmark item BENCH037 cost? [variant 1]",
+        "must_contain":  "BENCH037",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH038 cost?",
+        "name":  "FAQ 57/119) How much does benchmark item BENCH038 cost? [exact]",
+        "must_contain":  "BENCH038",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH038 cost?",
+        "name":  "FAQ 57/119) How much does benchmark item BENCH038 cost? [variant 1]",
+        "must_contain":  "BENCH038",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH039 cost?",
+        "name":  "FAQ 58/119) How much does benchmark item BENCH039 cost? [exact]",
+        "must_contain":  "BENCH039",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH039 cost?",
+        "name":  "FAQ 58/119) How much does benchmark item BENCH039 cost? [variant 1]",
+        "must_contain":  "BENCH039",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH040 cost?",
+        "name":  "FAQ 59/119) How much does benchmark item BENCH040 cost? [exact]",
+        "must_contain":  "BENCH040",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH040 cost?",
+        "name":  "FAQ 59/119) How much does benchmark item BENCH040 cost? [variant 1]",
+        "must_contain":  "BENCH040",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH041 cost?",
+        "name":  "FAQ 60/119) How much does benchmark item BENCH041 cost? [exact]",
+        "must_contain":  "BENCH041",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH041 cost?",
+        "name":  "FAQ 60/119) How much does benchmark item BENCH041 cost? [variant 1]",
+        "must_contain":  "BENCH041",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH042 cost?",
+        "name":  "FAQ 61/119) How much does benchmark item BENCH042 cost? [exact]",
+        "must_contain":  "BENCH042",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH042 cost?",
+        "name":  "FAQ 61/119) How much does benchmark item BENCH042 cost? [variant 1]",
+        "must_contain":  "BENCH042",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH043 cost?",
+        "name":  "FAQ 62/119) How much does benchmark item BENCH043 cost? [exact]",
+        "must_contain":  "BENCH043",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH043 cost?",
+        "name":  "FAQ 62/119) How much does benchmark item BENCH043 cost? [variant 1]",
+        "must_contain":  "BENCH043",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH044 cost?",
+        "name":  "FAQ 63/119) How much does benchmark item BENCH044 cost? [exact]",
+        "must_contain":  "BENCH044",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH044 cost?",
+        "name":  "FAQ 63/119) How much does benchmark item BENCH044 cost? [variant 1]",
+        "must_contain":  "BENCH044",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH045 cost?",
+        "name":  "FAQ 64/119) How much does benchmark item BENCH045 cost? [exact]",
+        "must_contain":  "BENCH045",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH045 cost?",
+        "name":  "FAQ 64/119) How much does benchmark item BENCH045 cost? [variant 1]",
+        "must_contain":  "BENCH045",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH046 cost?",
+        "name":  "FAQ 65/119) How much does benchmark item BENCH046 cost? [exact]",
+        "must_contain":  "BENCH046",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH046 cost?",
+        "name":  "FAQ 65/119) How much does benchmark item BENCH046 cost? [variant 1]",
+        "must_contain":  "BENCH046",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH047 cost?",
+        "name":  "FAQ 66/119) How much does benchmark item BENCH047 cost? [exact]",
+        "must_contain":  "BENCH047",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH047 cost?",
+        "name":  "FAQ 66/119) How much does benchmark item BENCH047 cost? [variant 1]",
+        "must_contain":  "BENCH047",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH048 cost?",
+        "name":  "FAQ 67/119) How much does benchmark item BENCH048 cost? [exact]",
+        "must_contain":  "BENCH048",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH048 cost?",
+        "name":  "FAQ 67/119) How much does benchmark item BENCH048 cost? [variant 1]",
+        "must_contain":  "BENCH048",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH049 cost?",
+        "name":  "FAQ 68/119) How much does benchmark item BENCH049 cost? [exact]",
+        "must_contain":  "BENCH049",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH049 cost?",
+        "name":  "FAQ 68/119) How much does benchmark item BENCH049 cost? [variant 1]",
+        "must_contain":  "BENCH049",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH050 cost?",
+        "name":  "FAQ 69/119) How much does benchmark item BENCH050 cost? [exact]",
+        "must_contain":  "BENCH050",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH050 cost?",
+        "name":  "FAQ 69/119) How much does benchmark item BENCH050 cost? [variant 1]",
+        "must_contain":  "BENCH050",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH051 cost?",
+        "name":  "FAQ 70/119) How much does benchmark item BENCH051 cost? [exact]",
+        "must_contain":  "BENCH051",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH051 cost?",
+        "name":  "FAQ 70/119) How much does benchmark item BENCH051 cost? [variant 1]",
+        "must_contain":  "BENCH051",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH052 cost?",
+        "name":  "FAQ 71/119) How much does benchmark item BENCH052 cost? [exact]",
+        "must_contain":  "BENCH052",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH052 cost?",
+        "name":  "FAQ 71/119) How much does benchmark item BENCH052 cost? [variant 1]",
+        "must_contain":  "BENCH052",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH053 cost?",
+        "name":  "FAQ 72/119) How much does benchmark item BENCH053 cost? [exact]",
+        "must_contain":  "BENCH053",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH053 cost?",
+        "name":  "FAQ 72/119) How much does benchmark item BENCH053 cost? [variant 1]",
+        "must_contain":  "BENCH053",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH054 cost?",
+        "name":  "FAQ 73/119) How much does benchmark item BENCH054 cost? [exact]",
+        "must_contain":  "BENCH054",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH054 cost?",
+        "name":  "FAQ 73/119) How much does benchmark item BENCH054 cost? [variant 1]",
+        "must_contain":  "BENCH054",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH055 cost?",
+        "name":  "FAQ 74/119) How much does benchmark item BENCH055 cost? [exact]",
+        "must_contain":  "BENCH055",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH055 cost?",
+        "name":  "FAQ 74/119) How much does benchmark item BENCH055 cost? [variant 1]",
+        "must_contain":  "BENCH055",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH056 cost?",
+        "name":  "FAQ 75/119) How much does benchmark item BENCH056 cost? [exact]",
+        "must_contain":  "BENCH056",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH056 cost?",
+        "name":  "FAQ 75/119) How much does benchmark item BENCH056 cost? [variant 1]",
+        "must_contain":  "BENCH056",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH057 cost?",
+        "name":  "FAQ 76/119) How much does benchmark item BENCH057 cost? [exact]",
+        "must_contain":  "BENCH057",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH057 cost?",
+        "name":  "FAQ 76/119) How much does benchmark item BENCH057 cost? [variant 1]",
+        "must_contain":  "BENCH057",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH058 cost?",
+        "name":  "FAQ 77/119) How much does benchmark item BENCH058 cost? [exact]",
+        "must_contain":  "BENCH058",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH058 cost?",
+        "name":  "FAQ 77/119) How much does benchmark item BENCH058 cost? [variant 1]",
+        "must_contain":  "BENCH058",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH059 cost?",
+        "name":  "FAQ 78/119) How much does benchmark item BENCH059 cost? [exact]",
+        "must_contain":  "BENCH059",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH059 cost?",
+        "name":  "FAQ 78/119) How much does benchmark item BENCH059 cost? [variant 1]",
+        "must_contain":  "BENCH059",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH060 cost?",
+        "name":  "FAQ 79/119) How much does benchmark item BENCH060 cost? [exact]",
+        "must_contain":  "BENCH060",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH060 cost?",
+        "name":  "FAQ 79/119) How much does benchmark item BENCH060 cost? [variant 1]",
+        "must_contain":  "BENCH060",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH061 cost?",
+        "name":  "FAQ 80/119) How much does benchmark item BENCH061 cost? [exact]",
+        "must_contain":  "BENCH061",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH061 cost?",
+        "name":  "FAQ 80/119) How much does benchmark item BENCH061 cost? [variant 1]",
+        "must_contain":  "BENCH061",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH062 cost?",
+        "name":  "FAQ 81/119) How much does benchmark item BENCH062 cost? [exact]",
+        "must_contain":  "BENCH062",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH062 cost?",
+        "name":  "FAQ 81/119) How much does benchmark item BENCH062 cost? [variant 1]",
+        "must_contain":  "BENCH062",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH063 cost?",
+        "name":  "FAQ 82/119) How much does benchmark item BENCH063 cost? [exact]",
+        "must_contain":  "BENCH063",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH063 cost?",
+        "name":  "FAQ 82/119) How much does benchmark item BENCH063 cost? [variant 1]",
+        "must_contain":  "BENCH063",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH064 cost?",
+        "name":  "FAQ 83/119) How much does benchmark item BENCH064 cost? [exact]",
+        "must_contain":  "BENCH064",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH064 cost?",
+        "name":  "FAQ 83/119) How much does benchmark item BENCH064 cost? [variant 1]",
+        "must_contain":  "BENCH064",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH065 cost?",
+        "name":  "FAQ 84/119) How much does benchmark item BENCH065 cost? [exact]",
+        "must_contain":  "BENCH065",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH065 cost?",
+        "name":  "FAQ 84/119) How much does benchmark item BENCH065 cost? [variant 1]",
+        "must_contain":  "BENCH065",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH066 cost?",
+        "name":  "FAQ 85/119) How much does benchmark item BENCH066 cost? [exact]",
+        "must_contain":  "BENCH066",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH066 cost?",
+        "name":  "FAQ 85/119) How much does benchmark item BENCH066 cost? [variant 1]",
+        "must_contain":  "BENCH066",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH067 cost?",
+        "name":  "FAQ 86/119) How much does benchmark item BENCH067 cost? [exact]",
+        "must_contain":  "BENCH067",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH067 cost?",
+        "name":  "FAQ 86/119) How much does benchmark item BENCH067 cost? [variant 1]",
+        "must_contain":  "BENCH067",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH068 cost?",
+        "name":  "FAQ 87/119) How much does benchmark item BENCH068 cost? [exact]",
+        "must_contain":  "BENCH068",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH068 cost?",
+        "name":  "FAQ 87/119) How much does benchmark item BENCH068 cost? [variant 1]",
+        "must_contain":  "BENCH068",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH069 cost?",
+        "name":  "FAQ 88/119) How much does benchmark item BENCH069 cost? [exact]",
+        "must_contain":  "BENCH069",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH069 cost?",
+        "name":  "FAQ 88/119) How much does benchmark item BENCH069 cost? [variant 1]",
+        "must_contain":  "BENCH069",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH070 cost?",
+        "name":  "FAQ 89/119) How much does benchmark item BENCH070 cost? [exact]",
+        "must_contain":  "BENCH070",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH070 cost?",
+        "name":  "FAQ 89/119) How much does benchmark item BENCH070 cost? [variant 1]",
+        "must_contain":  "BENCH070",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH071 cost?",
+        "name":  "FAQ 90/119) How much does benchmark item BENCH071 cost? [exact]",
+        "must_contain":  "BENCH071",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH071 cost?",
+        "name":  "FAQ 90/119) How much does benchmark item BENCH071 cost? [variant 1]",
+        "must_contain":  "BENCH071",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH072 cost?",
+        "name":  "FAQ 91/119) How much does benchmark item BENCH072 cost? [exact]",
+        "must_contain":  "BENCH072",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH072 cost?",
+        "name":  "FAQ 91/119) How much does benchmark item BENCH072 cost? [variant 1]",
+        "must_contain":  "BENCH072",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH073 cost?",
+        "name":  "FAQ 92/119) How much does benchmark item BENCH073 cost? [exact]",
+        "must_contain":  "BENCH073",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH073 cost?",
+        "name":  "FAQ 92/119) How much does benchmark item BENCH073 cost? [variant 1]",
+        "must_contain":  "BENCH073",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH074 cost?",
+        "name":  "FAQ 93/119) How much does benchmark item BENCH074 cost? [exact]",
+        "must_contain":  "BENCH074",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH074 cost?",
+        "name":  "FAQ 93/119) How much does benchmark item BENCH074 cost? [variant 1]",
+        "must_contain":  "BENCH074",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH075 cost?",
+        "name":  "FAQ 94/119) How much does benchmark item BENCH075 cost? [exact]",
+        "must_contain":  "BENCH075",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH075 cost?",
+        "name":  "FAQ 94/119) How much does benchmark item BENCH075 cost? [variant 1]",
+        "must_contain":  "BENCH075",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH076 cost?",
+        "name":  "FAQ 95/119) How much does benchmark item BENCH076 cost? [exact]",
+        "must_contain":  "BENCH076",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH076 cost?",
+        "name":  "FAQ 95/119) How much does benchmark item BENCH076 cost? [variant 1]",
+        "must_contain":  "BENCH076",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH077 cost?",
+        "name":  "FAQ 96/119) How much does benchmark item BENCH077 cost? [exact]",
+        "must_contain":  "BENCH077",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH077 cost?",
+        "name":  "FAQ 96/119) How much does benchmark item BENCH077 cost? [variant 1]",
+        "must_contain":  "BENCH077",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH078 cost?",
+        "name":  "FAQ 97/119) How much does benchmark item BENCH078 cost? [exact]",
+        "must_contain":  "BENCH078",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH078 cost?",
+        "name":  "FAQ 97/119) How much does benchmark item BENCH078 cost? [variant 1]",
+        "must_contain":  "BENCH078",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH079 cost?",
+        "name":  "FAQ 98/119) How much does benchmark item BENCH079 cost? [exact]",
+        "must_contain":  "BENCH079",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH079 cost?",
+        "name":  "FAQ 98/119) How much does benchmark item BENCH079 cost? [variant 1]",
+        "must_contain":  "BENCH079",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH080 cost?",
+        "name":  "FAQ 99/119) How much does benchmark item BENCH080 cost? [exact]",
+        "must_contain":  "BENCH080",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH080 cost?",
+        "name":  "FAQ 99/119) How much does benchmark item BENCH080 cost? [variant 1]",
+        "must_contain":  "BENCH080",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH081 cost?",
+        "name":  "FAQ 100/119) How much does benchmark item BENCH081 cost? [exact]",
+        "must_contain":  "BENCH081",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH081 cost?",
+        "name":  "FAQ 100/119) How much does benchmark item BENCH081 cost? [variant 1]",
+        "must_contain":  "BENCH081",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH082 cost?",
+        "name":  "FAQ 101/119) How much does benchmark item BENCH082 cost? [exact]",
+        "must_contain":  "BENCH082",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH082 cost?",
+        "name":  "FAQ 101/119) How much does benchmark item BENCH082 cost? [variant 1]",
+        "must_contain":  "BENCH082",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH083 cost?",
+        "name":  "FAQ 102/119) How much does benchmark item BENCH083 cost? [exact]",
+        "must_contain":  "BENCH083",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH083 cost?",
+        "name":  "FAQ 102/119) How much does benchmark item BENCH083 cost? [variant 1]",
+        "must_contain":  "BENCH083",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH084 cost?",
+        "name":  "FAQ 103/119) How much does benchmark item BENCH084 cost? [exact]",
+        "must_contain":  "BENCH084",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH084 cost?",
+        "name":  "FAQ 103/119) How much does benchmark item BENCH084 cost? [variant 1]",
+        "must_contain":  "BENCH084",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH085 cost?",
+        "name":  "FAQ 104/119) How much does benchmark item BENCH085 cost? [exact]",
+        "must_contain":  "BENCH085",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH085 cost?",
+        "name":  "FAQ 104/119) How much does benchmark item BENCH085 cost? [variant 1]",
+        "must_contain":  "BENCH085",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH086 cost?",
+        "name":  "FAQ 105/119) How much does benchmark item BENCH086 cost? [exact]",
+        "must_contain":  "BENCH086",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH086 cost?",
+        "name":  "FAQ 105/119) How much does benchmark item BENCH086 cost? [variant 1]",
+        "must_contain":  "BENCH086",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH087 cost?",
+        "name":  "FAQ 106/119) How much does benchmark item BENCH087 cost? [exact]",
+        "must_contain":  "BENCH087",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH087 cost?",
+        "name":  "FAQ 106/119) How much does benchmark item BENCH087 cost? [variant 1]",
+        "must_contain":  "BENCH087",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH088 cost?",
+        "name":  "FAQ 107/119) How much does benchmark item BENCH088 cost? [exact]",
+        "must_contain":  "BENCH088",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH088 cost?",
+        "name":  "FAQ 107/119) How much does benchmark item BENCH088 cost? [variant 1]",
+        "must_contain":  "BENCH088",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH089 cost?",
+        "name":  "FAQ 108/119) How much does benchmark item BENCH089 cost? [exact]",
+        "must_contain":  "BENCH089",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH089 cost?",
+        "name":  "FAQ 108/119) How much does benchmark item BENCH089 cost? [variant 1]",
+        "must_contain":  "BENCH089",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH090 cost?",
+        "name":  "FAQ 109/119) How much does benchmark item BENCH090 cost? [exact]",
+        "must_contain":  "BENCH090",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH090 cost?",
+        "name":  "FAQ 109/119) How much does benchmark item BENCH090 cost? [variant 1]",
+        "must_contain":  "BENCH090",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH091 cost?",
+        "name":  "FAQ 110/119) How much does benchmark item BENCH091 cost? [exact]",
+        "must_contain":  "BENCH091",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH091 cost?",
+        "name":  "FAQ 110/119) How much does benchmark item BENCH091 cost? [variant 1]",
+        "must_contain":  "BENCH091",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH092 cost?",
+        "name":  "FAQ 111/119) How much does benchmark item BENCH092 cost? [exact]",
+        "must_contain":  "BENCH092",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH092 cost?",
+        "name":  "FAQ 111/119) How much does benchmark item BENCH092 cost? [variant 1]",
+        "must_contain":  "BENCH092",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH093 cost?",
+        "name":  "FAQ 112/119) How much does benchmark item BENCH093 cost? [exact]",
+        "must_contain":  "BENCH093",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH093 cost?",
+        "name":  "FAQ 112/119) How much does benchmark item BENCH093 cost? [variant 1]",
+        "must_contain":  "BENCH093",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH094 cost?",
+        "name":  "FAQ 113/119) How much does benchmark item BENCH094 cost? [exact]",
+        "must_contain":  "BENCH094",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH094 cost?",
+        "name":  "FAQ 113/119) How much does benchmark item BENCH094 cost? [variant 1]",
+        "must_contain":  "BENCH094",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH095 cost?",
+        "name":  "FAQ 114/119) How much does benchmark item BENCH095 cost? [exact]",
+        "must_contain":  "BENCH095",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH095 cost?",
+        "name":  "FAQ 114/119) How much does benchmark item BENCH095 cost? [variant 1]",
+        "must_contain":  "BENCH095",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH096 cost?",
+        "name":  "FAQ 115/119) How much does benchmark item BENCH096 cost? [exact]",
+        "must_contain":  "BENCH096",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH096 cost?",
+        "name":  "FAQ 115/119) How much does benchmark item BENCH096 cost? [variant 1]",
+        "must_contain":  "BENCH096",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH097 cost?",
+        "name":  "FAQ 116/119) How much does benchmark item BENCH097 cost? [exact]",
+        "must_contain":  "BENCH097",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH097 cost?",
+        "name":  "FAQ 116/119) How much does benchmark item BENCH097 cost? [variant 1]",
+        "must_contain":  "BENCH097",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH098 cost?",
+        "name":  "FAQ 117/119) How much does benchmark item BENCH098 cost? [exact]",
+        "must_contain":  "BENCH098",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH098 cost?",
+        "name":  "FAQ 117/119) How much does benchmark item BENCH098 cost? [variant 1]",
+        "must_contain":  "BENCH098",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH099 cost?",
+        "name":  "FAQ 118/119) How much does benchmark item BENCH099 cost? [exact]",
+        "must_contain":  "BENCH099",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH099 cost?",
+        "name":  "FAQ 118/119) How much does benchmark item BENCH099 cost? [variant 1]",
+        "must_contain":  "BENCH099",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH100 cost?",
+        "name":  "FAQ 119/119) How much does benchmark item BENCH100 cost? [exact]",
+        "must_contain":  "BENCH100",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    },
+    {
+        "question":  "How much does benchmark item BENCH100 cost?",
+        "name":  "FAQ 119/119) How much does benchmark item BENCH100 cost? [variant 1]",
+        "must_contain":  "BENCH100",
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "severity":  "hard",
+        "category":  "strict_required"
+    }
+]

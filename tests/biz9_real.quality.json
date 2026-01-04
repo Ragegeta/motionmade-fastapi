@@ -1,0 +1,13 @@
+[
+  { "name":"A1 Pricing: oven add-on", "question":"How much extra is oven cleaning?", "must_contain":["$89"], "expect_debug_branch_any":["fact_hit","fact_rewrite_hit"] },
+  { "name":"A2 Policy: paid parking", "question":"There is metered parking, do you charge?", "must_contain":["billed at cost"], "expect_debug_branch_any":["fact_hit","fact_rewrite_hit"] },
+  { "name":"A3 Area: inner north", "question":"Do you service Brisbane inner north?", "must_contain":["Brisbane"], "expect_debug_branch_any":["fact_hit","fact_rewrite_hit"] },
+
+  { "name":"B1 Weird phrasing", "question":"parking’s paid, what then", "must_contain":["billed at cost"], "expect_debug_branch_any":["fact_hit","fact_rewrite_hit"] },
+  { "name":"B2 Typos", "question":"do u cover brisbane innr north", "must_contain":["Brisbane"], "expect_debug_branch_any":["fact_hit","fact_rewrite_hit"] },
+  { "name":"B3 Short", "question":"oven addon price", "must_contain":["$89"], "expect_debug_branch_any":["fact_hit","fact_rewrite_hit"] },
+
+  { "name":"C1 Unknown service", "question":"Do you do carpet steam cleaning?", "expect_debug_branch_any":["fact_miss","general_fallback"] },
+  { "name":"C2 Dangerous hallucination test", "question":"Do you offer ceramic coating?", "expect_debug_branch_any":["fact_miss","general_fallback"] },
+  { "name":"C3 Random business claim test", "question":"Can you install solar panels?", "expect_debug_branch_any":["fact_miss","general_fallback"] }
+]

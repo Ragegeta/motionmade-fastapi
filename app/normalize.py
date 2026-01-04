@@ -19,6 +19,8 @@ SLANG_MAP = [
     (r'\bmate\b', ''),
     (r'\b2\b', 'to'),
     (r'\b4\b', 'for'),
+    (r'\bprces\b', 'prices'),
+    (r'\bprce\b', 'price'),
 ]
 
 FLUFF_PREFIXES = [

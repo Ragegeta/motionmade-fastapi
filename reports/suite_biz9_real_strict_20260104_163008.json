@@ -1,0 +1,553 @@
+{
+    "tenantId":  "biz9_real",
+    "mode":  "strict",
+    "base":  "https://mm-client1-creator-backend-v1-0-0.abbedakbery14.workers.dev",
+    "origin":  "https://motionmadebne.com.au",
+    "endpoint":  "/api/v2/widget/chat",
+    "generated_at":  "2026-01-04T16:33:07",
+    "hardFailCount":  1,
+    "score":  {
+                  "strict_required":  {
+                                          "hit":  28,
+                                          "total":  29
+                                      },
+                  "timeouts":  {
+                                   "hit":  0,
+                                   "total":  29
+                               },
+                  "stress_business":  {
+                                          "total":  0,
+                                          "hit":  0
+                                      },
+                  "stress_garbage":  {
+                                         "total":  0,
+                                         "hit":  0
+                                     }
+              },
+    "results":  [
+                    {
+                        "name":  "SMOKE) General knowledge stays general_ok",
+                        "question":  "Why is the sky blue?",
+                        "http":  "200",
+                        "time_ms":  10180,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5005",
+                        "x_retrieval_score":  "0.14687058329582636",
+                        "replyText":  "The sky appears blue due to a phenomenon called Rayleigh scattering. As sunlight passes through the Earth\u0027s atmosphere, shorter blue wavelengths are scattered in all directions by the gases and particles in the air, making the sky look blue to our eyes.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "smoke"
+                    },
+                    {
+                        "name":  "SMOKE) Unknown capability must not become general_ok",
+                        "question":  "Do you do carpet steam cleaning?",
+                        "http":  "200",
+                        "time_ms":  9039,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5009",
+                        "x_retrieval_score":  "0.4723346514901319",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "smoke"
+                    },
+                    {
+                        "name":  "FAQ 1/19) Oven clean add-on [exact]",
+                        "question":  "Oven clean add-on",
+                        "http":  "200",
+                        "time_ms":  8596,
+                        "x_debug_branch":  "fact_rewrite_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5001",
+                        "x_retrieval_score":  "0.8658099770546206",
+                        "replyText":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 1/19) Oven clean add-on [variant 1]",
+                        "question":  "How much extra is the oven add-on?",
+                        "http":  "200",
+                        "time_ms":  5708,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5001",
+                        "x_retrieval_score":  "0.9675462861331685",
+                        "replyText":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 1/19) Oven clean add-on [variant 2]",
+                        "question":  "how much extra is the oven add on",
+                        "http":  "200",
+                        "time_ms":  5594,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5001",
+                        "x_retrieval_score":  "0.9999994635582308",
+                        "replyText":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 2/19) Fridge clean add-on [exact]",
+                        "question":  "Fridge clean add-on",
+                        "http":  "200",
+                        "time_ms":  5669,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5002",
+                        "x_retrieval_score":  "0.9462710272912147",
+                        "replyText":  "Fridge cleaning is an optional add-on. Contact us for pricing based on size and condition.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 3/19) Standard clean inclusions [exact]",
+                        "question":  "Standard clean inclusions",
+                        "http":  "200",
+                        "time_ms":  5810,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5003",
+                        "x_retrieval_score":  "0.9564427707459346",
+                        "replyText":  "A standard clean includes bathrooms, kitchen surfaces, floors, dusting, and general tidying.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 4/19) Deep clean inclusions [exact]",
+                        "question":  "Deep clean inclusions",
+                        "http":  "200",
+                        "time_ms":  5500,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5004",
+                        "x_retrieval_score":  "0.9696087873448387",
+                        "replyText":  "A deep clean focuses on heavy build-up and detailing such as skirting and extra attention to problem areas. Add-ons like oven/fridge can be included if selected.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 5/19) Bond clean availability [exact]",
+                        "question":  "Bond clean availability",
+                        "http":  "200",
+                        "time_ms":  5691,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5005",
+                        "x_retrieval_score":  "0.960174918174771",
+                        "replyText":  "Yes - we do bond/end-of-lease cleans using a checklist-style clean focused on kitchens, bathrooms, floors, skirting, and surfaces.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 6/19) Service area [exact]",
+                        "question":  "Service area",
+                        "http":  "200",
+                        "time_ms":  5481,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5006",
+                        "x_retrieval_score":  "0.943537179020813",
+                        "replyText":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 6/19) Service area [variant 1]",
+                        "question":  "what suburbs do you cover",
+                        "http":  "200",
+                        "time_ms":  5640,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5006",
+                        "x_retrieval_score":  "0.9999992251397174",
+                        "replyText":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 6/19) Service area [variant 2]",
+                        "question":  "what areas do you service",
+                        "http":  "200",
+                        "time_ms":  5439,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5006",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 7/19) Travel fee [exact]",
+                        "question":  "Travel fee",
+                        "http":  "200",
+                        "time_ms":  5542,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5007",
+                        "x_retrieval_score":  "0.926330915252086",
+                        "replyText":  "There is no travel fee within our regular Brisbane service area. Outside areas may incur a travel fee - contact us to confirm.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 8/19) Pets policy [exact]",
+                        "question":  "Pets policy",
+                        "http":  "200",
+                        "time_ms":  9066,
+                        "x_debug_branch":  "general_fallback",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5008",
+                        "x_retrieval_score":  "0.7667509913444737",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027general_fallback\u0027",
+                                      "FAIL: expected x-faq-hit=true, got \u0027false\u0027 (top_faq_id=5008 score=0.7667509913444737 gate=false)",
+                                      "FAIL: missing token \u0027pets\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 9/19) Supplies and equipment [exact]",
+                        "question":  "Supplies and equipment",
+                        "http":  "200",
+                        "time_ms":  5475,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5009",
+                        "x_retrieval_score":  "0.9476957383518598",
+                        "replyText":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 9/19) Supplies and equipment [variant 1]",
+                        "question":  "do you bring cleaning supplies",
+                        "http":  "200",
+                        "time_ms":  5462,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5009",
+                        "x_retrieval_score":  "0.9999997019767957",
+                        "replyText":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 9/19) Supplies and equipment [variant 2]",
+                        "question":  "do you bring cleaning products",
+                        "http":  "200",
+                        "time_ms":  5627,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5009",
+                        "x_retrieval_score":  "0.999999523162785",
+                        "replyText":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 10/19) Eco-friendly products [exact]",
+                        "question":  "Eco-friendly products",
+                        "http":  "200",
+                        "time_ms":  5889,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5010",
+                        "x_retrieval_score":  "0.9076865315437381",
+                        "replyText":  "Eco-friendly or low-scent products can be used on request. Let us know your preference when booking.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 11/19) Windows add-on [exact]",
+                        "question":  "Windows add-on",
+                        "http":  "200",
+                        "time_ms":  5607,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5011",
+                        "x_retrieval_score":  "0.9630612134933472",
+                        "replyText":  "Internal windows can be added on request. Exterior or high windows depend on safe access.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 12/19) Laundry add-on [exact]",
+                        "question":  "Laundry add-on",
+                        "http":  "200",
+                        "time_ms":  5663,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5012",
+                        "x_retrieval_score":  "0.9617129254851622",
+                        "replyText":  "Laundry is available as an add-on (wash, dry, and fold). No ironing.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 13/19) Linen change add-on [exact]",
+                        "question":  "Linen change add-on",
+                        "http":  "200",
+                        "time_ms":  5625,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5013",
+                        "x_retrieval_score":  "0.9479462001419918",
+                        "replyText":  "Yes - linen/beds can be changed as an add-on if clean sheets are left out.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 14/19) Arrival time window [exact]",
+                        "question":  "Arrival time window",
+                        "http":  "200",
+                        "time_ms":  5603,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5014",
+                        "x_retrieval_score":  "0.8846328659683982",
+                        "replyText":  "We typically provide a 2-hour arrival window unless a fixed time is booked.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 15/19) Cancellations policy [exact]",
+                        "question":  "Cancellations policy",
+                        "http":  "200",
+                        "time_ms":  6884,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5015",
+                        "x_retrieval_score":  "0.9462416768074304",
+                        "replyText":  "Cancellations with less than 24 hours\u0027 notice may incur a late cancellation fee.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 16/19) Payments accepted [exact]",
+                        "question":  "Payments accepted",
+                        "http":  "200",
+                        "time_ms":  5693,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5016",
+                        "x_retrieval_score":  "0.9412854243857242",
+                        "replyText":  "We accept bank transfer and card payments. An invoice can be provided.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 17/19) Insurance [exact]",
+                        "question":  "Insurance",
+                        "http":  "200",
+                        "time_ms":  5541,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5017",
+                        "x_retrieval_score":  "0.9095625606309641",
+                        "replyText":  "Yes - we carry appropriate insurance for cleaning work.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 18/19) If the cleaner has to park in a paid spot, what happens? [exact]",
+                        "question":  "If the cleaner has to park in a paid spot, what happens?",
+                        "http":  "200",
+                        "time_ms":  5616,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5018",
+                        "x_retrieval_score":  "0.9658825109636245",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 19/19) Parking policy [exact]",
+                        "question":  "Parking policy",
+                        "http":  "200",
+                        "time_ms":  5523,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5019",
+                        "x_retrieval_score":  "0.8227289424700189",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 19/19) Parking policy [variant 1]",
+                        "question":  "Paid parking",
+                        "http":  "200",
+                        "time_ms":  5879,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5019",
+                        "x_retrieval_score":  "0.9592614173889433",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 19/19) Parking policy [variant 2]",
+                        "question":  "What happens if there is paid parking?",
+                        "http":  "200",
+                        "time_ms":  5503,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_real",
+                        "x_top_faq_id":  "5019",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    }
+                ]
+}

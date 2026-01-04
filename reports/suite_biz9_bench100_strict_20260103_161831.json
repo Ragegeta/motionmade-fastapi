@@ -1,0 +1,1049 @@
+{
+    "tenantId":  "biz9_bench100",
+    "mode":  "strict",
+    "base":  "https://mm-client1-creator-backend-v1-0-0.abbedakbery14.workers.dev",
+    "origin":  "https://bench100.test",
+    "endpoint":  "/api/v2/widget/chat",
+    "generated_at":  "2026-01-03T16:23:46",
+    "hardFailCount":  12,
+    "score":  {
+                  "strict_required":  {
+                                          "hit":  44,
+                                          "total":  56
+                                      },
+                  "timeouts":  {
+                                   "hit":  0,
+                                   "total":  56
+                               },
+                  "stress_business":  {
+                                          "total":  0,
+                                          "hit":  0
+                                      },
+                  "stress_garbage":  {
+                                         "total":  0,
+                                         "hit":  0
+                                     }
+              },
+    "results":  [
+                    {
+                        "name":  "SMOKE) General knowledge stays general_ok",
+                        "question":  "Why is the sky blue?",
+                        "http":  "200",
+                        "time_ms":  63834,
+                        "x_debug_branch":  "general_ok",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4695",
+                        "x_retrieval_score":  "0.14687058329582636",
+                        "replyText":  "The sky appears blue due to a phenomenon called Rayleigh scattering. When sunlight enters the Earth\u0027s atmosphere, it collides with molecules and small particles, scattering shorter wavelengths of light, like blue, more than longer wavelengths, such as red. This scattering causes us to perceive a blue sky during the day.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "smoke"
+                    },
+                    {
+                        "name":  "SMOKE) Unknown capability must not become general_ok",
+                        "question":  "Do you do carpet steam cleaning?",
+                        "http":  "200",
+                        "time_ms":  8430,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4699",
+                        "x_retrieval_score":  "0.4723346514901319",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "smoke"
+                    },
+                    {
+                        "name":  "FAQ 1/25) Oven clean add-on [exact]",
+                        "question":  "Oven clean add-on",
+                        "http":  "200",
+                        "time_ms":  3705,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4691",
+                        "x_retrieval_score":  "0.9999995231629057",
+                        "replyText":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 1/25) Oven clean add-on [variant 1]",
+                        "question":  "Oven clean add-on",
+                        "http":  "200",
+                        "time_ms":  5404,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4691",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 1/25) Oven clean add-on [variant 2]",
+                        "question":  "How much extra is the oven add-on?",
+                        "http":  "200",
+                        "time_ms":  4500,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4691",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - oven cleaning is an optional add-on and costs $89.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 2/25) Fridge clean add-on [exact]",
+                        "question":  "Fridge clean add-on",
+                        "http":  "200",
+                        "time_ms":  3802,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4692",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Fridge cleaning is an optional add-on. Contact us for pricing based on size and condition.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 2/25) Fridge clean add-on [variant 1]",
+                        "question":  "Fridge clean add-on",
+                        "http":  "200",
+                        "time_ms":  4503,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4692",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Fridge cleaning is an optional add-on. Contact us for pricing based on size and condition.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 3/25) Standard clean inclusions [exact]",
+                        "question":  "Standard clean inclusions",
+                        "http":  "200",
+                        "time_ms":  3703,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4693",
+                        "x_retrieval_score":  "0.9999992847442698",
+                        "replyText":  "A standard clean includes bathrooms, kitchen surfaces, floors, dusting, and general tidying.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 3/25) Standard clean inclusions [variant 1]",
+                        "question":  "Standard clean inclusions",
+                        "http":  "200",
+                        "time_ms":  4168,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4693",
+                        "x_retrieval_score":  "0.9999992847442698",
+                        "replyText":  "A standard clean includes bathrooms, kitchen surfaces, floors, dusting, and general tidying.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 4/25) Deep clean inclusions [exact]",
+                        "question":  "Deep clean inclusions",
+                        "http":  "200",
+                        "time_ms":  4067,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4694",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "A deep clean focuses on heavy build-up and detailing such as skirting and extra attention to problem areas. Add-ons like oven/fridge can be included if selected.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 4/25) Deep clean inclusions [variant 1]",
+                        "question":  "Deep clean inclusions",
+                        "http":  "200",
+                        "time_ms":  3707,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4694",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "A deep clean focuses on heavy build-up and detailing such as skirting and extra attention to problem areas. Add-ons like oven/fridge can be included if selected.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 5/25) Bond clean availability [exact]",
+                        "question":  "Bond clean availability",
+                        "http":  "200",
+                        "time_ms":  3511,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4695",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we do bond/end-of-lease cleans using a checklist-style clean focused on kitchens, bathrooms, floors, skirting, and surfaces.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 5/25) Bond clean availability [variant 1]",
+                        "question":  "Bond clean availability",
+                        "http":  "200",
+                        "time_ms":  4187,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4695",
+                        "x_retrieval_score":  "0.9999995231627921",
+                        "replyText":  "Yes - we do bond/end-of-lease cleans using a checklist-style clean focused on kitchens, bathrooms, floors, skirting, and surfaces.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 6/25) Service area [exact]",
+                        "question":  "Service area",
+                        "http":  "200",
+                        "time_ms":  3456,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4696",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 6/25) Service area [variant 1]",
+                        "question":  "Service area",
+                        "http":  "200",
+                        "time_ms":  4795,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4696",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 6/25) Service area [variant 2]",
+                        "question":  "what suburbs do you cover",
+                        "http":  "200",
+                        "time_ms":  3496,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4696",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We service Brisbane inner north/south and nearby suburbs. For locations outside our usual area, contact us to confirm availability.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 7/25) Travel fee [exact]",
+                        "question":  "Travel fee",
+                        "http":  "200",
+                        "time_ms":  3595,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4697",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "There is no travel fee within our regular Brisbane service area. Outside areas may incur a travel fee - contact us to confirm.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 7/25) Travel fee [variant 1]",
+                        "question":  "Travel fee",
+                        "http":  "200",
+                        "time_ms":  3525,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4697",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "There is no travel fee within our regular Brisbane service area. Outside areas may incur a travel fee - contact us to confirm.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 8/25) Pets policy [exact]",
+                        "question":  "Pets policy",
+                        "http":  "200",
+                        "time_ms":  3513,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4698",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we can clean homes with pets. Please let us know in advance so we can plan safely.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 8/25) Pets policy [variant 1]",
+                        "question":  "Pets policy",
+                        "http":  "200",
+                        "time_ms":  3400,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4698",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we can clean homes with pets. Please let us know in advance so we can plan safely.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 9/25) Supplies and equipment [exact]",
+                        "question":  "Supplies and equipment",
+                        "http":  "200",
+                        "time_ms":  3914,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4699",
+                        "x_retrieval_score":  "0.9999992847443551",
+                        "replyText":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 9/25) Supplies and equipment [variant 1]",
+                        "question":  "Supplies and equipment",
+                        "http":  "200",
+                        "time_ms":  3558,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4699",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 9/25) Supplies and equipment [variant 2]",
+                        "question":  "do you bring cleaning supplies",
+                        "http":  "200",
+                        "time_ms":  3495,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4699",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we bring professional cleaning supplies and equipment. You don\u0027t need to provide anything unless you have special product requests.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 10/25) Eco-friendly products [exact]",
+                        "question":  "Eco-friendly products",
+                        "http":  "200",
+                        "time_ms":  3448,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4700",
+                        "x_retrieval_score":  "0.9999994039536304",
+                        "replyText":  "Eco-friendly or low-scent products can be used on request. Let us know your preference when booking.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 10/25) Eco-friendly products [variant 1]",
+                        "question":  "Eco-friendly products",
+                        "http":  "200",
+                        "time_ms":  3559,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4700",
+                        "x_retrieval_score":  "0.9999997615814085",
+                        "replyText":  "Eco-friendly or low-scent products can be used on request. Let us know your preference when booking.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 11/25) Windows add-on [exact]",
+                        "question":  "Windows add-on",
+                        "http":  "200",
+                        "time_ms":  3627,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4701",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Internal windows can be added on request. Exterior or high windows depend on safe access.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 11/25) Windows add-on [variant 1]",
+                        "question":  "Windows add-on",
+                        "http":  "200",
+                        "time_ms":  4337,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4701",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Internal windows can be added on request. Exterior or high windows depend on safe access.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 12/25) Laundry add-on [exact]",
+                        "question":  "Laundry add-on",
+                        "http":  "200",
+                        "time_ms":  3525,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4702",
+                        "x_retrieval_score":  "0.9999998211860657",
+                        "replyText":  "Laundry is available as an add-on (wash, dry, and fold). No ironing.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 12/25) Laundry add-on [variant 1]",
+                        "question":  "Laundry add-on",
+                        "http":  "200",
+                        "time_ms":  3607,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4702",
+                        "x_retrieval_score":  "0.9999998211860657",
+                        "replyText":  "Laundry is available as an add-on (wash, dry, and fold). No ironing.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 13/25) Linen change add-on [exact]",
+                        "question":  "Linen change add-on",
+                        "http":  "200",
+                        "time_ms":  4644,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4703",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - linen/beds can be changed as an add-on if clean sheets are left out.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 13/25) Linen change add-on [variant 1]",
+                        "question":  "Linen change add-on",
+                        "http":  "200",
+                        "time_ms":  3573,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4703",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - linen/beds can be changed as an add-on if clean sheets are left out.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 14/25) Arrival time window [exact]",
+                        "question":  "Arrival time window",
+                        "http":  "200",
+                        "time_ms":  3673,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4704",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We typically provide a 2-hour arrival window unless a fixed time is booked.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 14/25) Arrival time window [variant 1]",
+                        "question":  "Arrival time window",
+                        "http":  "200",
+                        "time_ms":  3500,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4704",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We typically provide a 2-hour arrival window unless a fixed time is booked.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 15/25) Cancellations policy [exact]",
+                        "question":  "Cancellations policy",
+                        "http":  "200",
+                        "time_ms":  3585,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4705",
+                        "x_retrieval_score":  "0.9999989867211152",
+                        "replyText":  "Cancellations with less than 24 hours\u0027 notice may incur a late cancellation fee.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 15/25) Cancellations policy [variant 1]",
+                        "question":  "Cancellations policy",
+                        "http":  "200",
+                        "time_ms":  3501,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4705",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Cancellations with less than 24 hours\u0027 notice may incur a late cancellation fee.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 16/25) Payments accepted [exact]",
+                        "question":  "Payments accepted",
+                        "http":  "200",
+                        "time_ms":  3852,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4706",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "We accept bank transfer and card payments. An invoice can be provided.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 16/25) Payments accepted [variant 1]",
+                        "question":  "Payments accepted",
+                        "http":  "200",
+                        "time_ms":  3616,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4706",
+                        "x_retrieval_score":  "0.9999995827675132",
+                        "replyText":  "We accept bank transfer and card payments. An invoice can be provided.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 17/25) Insurance [exact]",
+                        "question":  "Insurance",
+                        "http":  "200",
+                        "time_ms":  3558,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4707",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we carry appropriate insurance for cleaning work.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 17/25) Insurance [variant 1]",
+                        "question":  "Insurance",
+                        "http":  "200",
+                        "time_ms":  3537,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4707",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "Yes - we carry appropriate insurance for cleaning work.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 18/25) If the cleaner has to park in a paid spot, what happens? [exact]",
+                        "question":  "If the cleaner has to park in a paid spot, what happens?",
+                        "http":  "200",
+                        "time_ms":  3616,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4708",
+                        "x_retrieval_score":  "1.0",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 18/25) If the cleaner has to park in a paid spot, what happens? [variant 1]",
+                        "question":  "If the cleaner has to park in a paid spot, what happens?",
+                        "http":  "200",
+                        "time_ms":  3589,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "false",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4708",
+                        "x_retrieval_score":  "0.99999991059302",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 19/25) Parking policy [exact]",
+                        "question":  "Parking policy",
+                        "http":  "200",
+                        "time_ms":  3824,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4709",
+                        "x_retrieval_score":  "0.9999992847442627",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 19/25) Parking policy [variant 1]",
+                        "question":  "Parking policy",
+                        "http":  "200",
+                        "time_ms":  3476,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4709",
+                        "x_retrieval_score":  "0.9999992847442627",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 19/25) Parking policy [variant 2]",
+                        "question":  "Paid parking",
+                        "http":  "200",
+                        "time_ms":  3570,
+                        "x_debug_branch":  "fact_hit",
+                        "x_faq_hit":  "true",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4709",
+                        "x_retrieval_score":  "0.9999990165234602",
+                        "replyText":  "If paid parking is required, it is billed at cost, or you can provide a visitor spot.",
+                        "fails":  [
+
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 20/25) How much does benchmark item BENCH001 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH001 cost?",
+                        "http":  "200",
+                        "time_ms":  7065,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4710",
+                        "x_retrieval_score":  "0.9616302870732392",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027BENCH001\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 20/25) How much does benchmark item BENCH001 cost? [variant 1]",
+                        "question":  "How much does benchmark item BENCH001 cost?",
+                        "http":  "200",
+                        "time_ms":  7974,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4710",
+                        "x_retrieval_score":  "0.9616241764538274",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027BENCH001\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 21/25) How much does benchmark item BENCH002 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH002 cost?",
+                        "http":  "200",
+                        "time_ms":  7205,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4711",
+                        "x_retrieval_score":  "0.9615798879140587",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027BENCH002\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 21/25) How much does benchmark item BENCH002 cost? [variant 1]",
+                        "question":  "How much does benchmark item BENCH002 cost?",
+                        "http":  "200",
+                        "time_ms":  6625,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4711",
+                        "x_retrieval_score":  "0.9615798879140587",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027BENCH002\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 22/25) How much does benchmark item BENCH003 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH003 cost?",
+                        "http":  "200",
+                        "time_ms":  6639,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4712",
+                        "x_retrieval_score":  "0.9637231230736053",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027BENCH003\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 22/25) How much does benchmark item BENCH003 cost? [variant 1]",
+                        "question":  "How much does benchmark item BENCH003 cost?",
+                        "http":  "200",
+                        "time_ms":  6587,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4712",
+                        "x_retrieval_score":  "0.9637506669013517",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027BENCH003\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 23/25) How much does benchmark item BENCH004 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH004 cost?",
+                        "http":  "200",
+                        "time_ms":  6655,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4713",
+                        "x_retrieval_score":  "0.9619803383326951",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027BENCH004\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 23/25) How much does benchmark item BENCH004 cost? [variant 1]",
+                        "question":  "How much does benchmark item BENCH004 cost?",
+                        "http":  "200",
+                        "time_ms":  6981,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4713",
+                        "x_retrieval_score":  "0.9619803383326951",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027BENCH004\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 24/25) How much does benchmark item BENCH005 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH005 cost?",
+                        "http":  "200",
+                        "time_ms":  6615,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4714",
+                        "x_retrieval_score":  "0.9578499819129733",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027BENCH005\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 24/25) How much does benchmark item BENCH005 cost? [variant 1]",
+                        "question":  "How much does benchmark item BENCH005 cost?",
+                        "http":  "200",
+                        "time_ms":  6567,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4714",
+                        "x_retrieval_score":  "0.9578499819129733",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027BENCH005\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 25/25) How much does benchmark item BENCH006 cost? [exact]",
+                        "question":  "How much does benchmark item BENCH006 cost?",
+                        "http":  "200",
+                        "time_ms":  6565,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4715",
+                        "x_retrieval_score":  "0.9622051164860009",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027BENCH006\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    },
+                    {
+                        "name":  "FAQ 25/25) How much does benchmark item BENCH006 cost? [variant 1]",
+                        "question":  "How much does benchmark item BENCH006 cost?",
+                        "http":  "200",
+                        "time_ms":  6509,
+                        "x_debug_branch":  "fact_miss",
+                        "x_faq_hit":  "false",
+                        "x_fact_gate_hit":  "true",
+                        "x_tenantid":  "biz9_bench100",
+                        "x_top_faq_id":  "4715",
+                        "x_retrieval_score":  "0.9622051164860009",
+                        "replyText":  "For accurate details, please contact us directly and we\u0027ll be happy to help.",
+                        "fails":  [
+                                      "FAIL: expected x-debug-branch in [fact_hit, fact_rewrite_hit], got \u0027fact_miss\u0027",
+                                      "FAIL: missing token \u0027BENCH006\u0027 in replyText"
+                                  ],
+                        "severity":  "hard",
+                        "category":  "strict"
+                    }
+                ]
+}

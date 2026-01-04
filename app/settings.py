@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     EMBED_MODEL: str = "text-embedding-3-small"
     CHAT_MODEL: str = "gpt-4o-mini"
     BUILD_ID: str = "local-dev"
+    DEBUG: bool = False
 
     class Config:
         env_file = ".env"

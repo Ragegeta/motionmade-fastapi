@@ -1,0 +1,78 @@
+[
+  {
+    "name": "junk_emoji_only",
+    "category": "junk",
+    "input": "😀😀😀😀"
+  },
+  {
+    "name": "junk_punctuation_only",
+    "category": "junk",
+    "input": "???!!!"
+  },
+  {
+    "name": "junk_too_short",
+    "category": "junk",
+    "input": "hi"
+  },
+  {
+    "name": "typo_pricing",
+    "category": "typo",
+    "input": "wat r ur prces?"
+  },
+  {
+    "name": "typo_pets",
+    "category": "typo",
+    "input": "do u alow pets?"
+  },
+  {
+    "name": "fluff_pricing",
+    "category": "fluff",
+    "input": "Hey quick one - ur prices pls thanks so much!"
+  },
+  {
+    "name": "fluff_multi",
+    "category": "fluff",
+    "input": "Hi there! Just wondering, do you clean homes with pets? Also, what are your prices?"
+  },
+  {
+    "name": "multi_question",
+    "category": "multi",
+    "input": "What are your prices? And do you service Brisbane?"
+  },
+  {
+    "name": "short_valid",
+    "category": "short",
+    "input": "pets policy"
+  },
+  {
+    "name": "pricing_clean",
+    "category": "pricing",
+    "input": "How much do you charge for a standard clean?"
+  },
+  {
+    "name": "pets_policy_clean",
+    "category": "pets",
+    "input": "Do you clean homes with pets?"
+  },
+  {
+    "name": "slang_pricing",
+    "category": "slang",
+    "input": "ur prices pls"
+  },
+  {
+    "name": "contraction_pricing",
+    "category": "contraction",
+    "input": "what's your price for a bond clean?"
+  },
+  {
+    "name": "mixed_messy",
+    "category": "mixed",
+    "input": "hey so basically wat r ur prices 4 a clean? also do u do pets? thx!"
+  },
+  {
+    "name": "normalized_should_hit",
+    "category": "normal",
+    "input": "Pets policy"
+  }
+]
+

@@ -1,0 +1,543 @@
+[
+    {
+        "name":  "SMOKE) General knowledge stays general_ok",
+        "style":  "smoke",
+        "question":  "Why is the sky blue?",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "general_ok"
+                                    ]
+    },
+    {
+        "name":  "SMOKE) Unknown capability must not become general_ok",
+        "style":  "smoke",
+        "question":  "Do you do carpet steam cleaning?",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ]
+    },
+    {
+        "name":  "FAQ 1/19) Parking policy [exact]",
+        "style":  "exact",
+        "question":  "Parking policy",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "billed at cost"
+    },
+    {
+        "name":  "FAQ 1/19) Parking policy [variant 1]",
+        "style":  "variant",
+        "question":  "what happens if there is paid parking",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "billed at cost"
+    },
+    {
+        "name":  "FAQ 1/19) Parking policy [variant 2]",
+        "style":  "variant",
+        "question":  "Do you charge for parking if it is metered?",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "billed at cost"
+    },
+    {
+        "name":  "FAQ 1/19) Parking policy [variant 3]",
+        "style":  "variant",
+        "question":  "if parking is paid",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "billed at cost"
+    },
+    {
+        "name":  "FAQ 2/19) Fridge clean add-on [exact]",
+        "style":  "exact",
+        "question":  "Fridge clean add-on",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 2/19) Fridge clean add-on [variant 1]",
+        "style":  "variant",
+        "question":  "F",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 3/19) Pets policy [exact]",
+        "style":  "exact",
+        "question":  "Pets policy",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 3/19) Pets policy [variant 1]",
+        "style":  "variant",
+        "question":  "P",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 4/19) Travel fee [exact]",
+        "style":  "exact",
+        "question":  "Travel fee",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "Brisbane"
+    },
+    {
+        "name":  "FAQ 4/19) Travel fee [variant 1]",
+        "style":  "variant",
+        "question":  "T",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "Brisbane"
+    },
+    {
+        "name":  "FAQ 5/19) Windows add-on [exact]",
+        "style":  "exact",
+        "question":  "Windows add-on",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 5/19) Windows add-on [variant 1]",
+        "style":  "variant",
+        "question":  "W",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 6/19) Oven clean add-on [exact]",
+        "style":  "exact",
+        "question":  "Oven clean add-on",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "$89"
+    },
+    {
+        "name":  "FAQ 6/19) Oven clean add-on [variant 1]",
+        "style":  "variant",
+        "question":  "how much extra for oven cleaning",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "$89"
+    },
+    {
+        "name":  "FAQ 6/19) Oven clean add-on [variant 2]",
+        "style":  "variant",
+        "question":  "oven addon price",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "$89"
+    },
+    {
+        "name":  "FAQ 6/19) Oven clean add-on [variant 3]",
+        "style":  "variant",
+        "question":  "oven add on price",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "$89"
+    },
+    {
+        "name":  "FAQ 7/19) Insurance [exact]",
+        "style":  "exact",
+        "question":  "Insurance",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 7/19) Insurance [variant 1]",
+        "style":  "variant",
+        "question":  "I",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 8/19) Supplies and equipment [exact]",
+        "style":  "exact",
+        "question":  "Supplies and equipment",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 8/19) Supplies and equipment [variant 1]",
+        "style":  "variant",
+        "question":  "do you bring ya a vacuum",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 8/19) Supplies and equipment [variant 2]",
+        "style":  "variant",
+        "question":  "do you have a vac",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 8/19) Supplies and equipment [variant 3]",
+        "style":  "variant",
+        "question":  "do i need to supply anything or do you bring gear",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 9/19) Eco-friendly products [exact]",
+        "style":  "exact",
+        "question":  "Eco-friendly products",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 9/19) Eco-friendly products [variant 1]",
+        "style":  "variant",
+        "question":  "E",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 10/19) Laundry add-on [exact]",
+        "style":  "exact",
+        "question":  "Laundry add-on",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 10/19) Laundry add-on [variant 1]",
+        "style":  "variant",
+        "question":  "L",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 11/19) Bond clean availability [exact]",
+        "style":  "exact",
+        "question":  "Bond clean availability",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 11/19) Bond clean availability [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 12/19) If the cleaner has to park in a paid spot, what happens? [exact]",
+        "style":  "exact",
+        "question":  "If the cleaner has to park in a paid spot, what happens?",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "billed at cost"
+    },
+    {
+        "name":  "FAQ 12/19) If the cleaner has to park in a paid spot, what happens? [variant 1]",
+        "style":  "variant",
+        "question":  "I",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "billed at cost"
+    },
+    {
+        "name":  "FAQ 13/19) Payments accepted [exact]",
+        "style":  "exact",
+        "question":  "Payments accepted",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 13/19) Payments accepted [variant 1]",
+        "style":  "variant",
+        "question":  "P",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 14/19) Arrival time window [exact]",
+        "style":  "exact",
+        "question":  "Arrival time window",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 14/19) Arrival time window [variant 1]",
+        "style":  "variant",
+        "question":  "A",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 15/19) Linen change add-on [exact]",
+        "style":  "exact",
+        "question":  "Linen change add-on",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 15/19) Linen change add-on [variant 1]",
+        "style":  "variant",
+        "question":  "L",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 16/19) Cancellations policy [exact]",
+        "style":  "exact",
+        "question":  "Cancellations policy",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 16/19) Cancellations policy [variant 1]",
+        "style":  "variant",
+        "question":  "C",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 17/19) Service area [exact]",
+        "style":  "exact",
+        "question":  "Service area",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "Brisbane"
+    },
+    {
+        "name":  "FAQ 17/19) Service area [variant 1]",
+        "style":  "variant",
+        "question":  "do you cover brisb north",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "Brisbane"
+    },
+    {
+        "name":  "FAQ 17/19) Service area [variant 2]",
+        "style":  "variant",
+        "question":  "do you service brisb inner s",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "Brisbane"
+    },
+    {
+        "name":  "FAQ 17/19) Service area [variant 3]",
+        "style":  "variant",
+        "question":  "do you service inner north",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "Brisbane"
+    },
+    {
+        "name":  "FAQ 18/19) Standard clean inclusions [exact]",
+        "style":  "exact",
+        "question":  "Standard clean inclusions",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 18/19) Standard clean inclusions [variant 1]",
+        "style":  "variant",
+        "question":  "S",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 19/19) Deep clean inclusions [exact]",
+        "style":  "exact",
+        "question":  "Deep clean inclusions",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 19/19) Deep clean inclusions [variant 1]",
+        "style":  "variant",
+        "question":  "D",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    }
+]

@@ -1,0 +1,683 @@
+[
+    {
+        "name":  "SMOKE) General knowledge stays general_ok",
+        "style":  "smoke",
+        "question":  "Why is the sky blue?",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "general_ok"
+                                    ]
+    },
+    {
+        "name":  "SMOKE) Unknown capability must not become general_ok",
+        "style":  "smoke",
+        "question":  "Do you do carpet steam cleaning?",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_miss",
+                                        "general_fallback"
+                                    ]
+    },
+    {
+        "name":  "FAQ 1/30) Benchmark FAQ 38 - policy item BENCH038 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 38 - policy item BENCH038",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 1/30) Benchmark FAQ 38 - policy item BENCH038 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 2/30) Benchmark FAQ 44 - policy item BENCH044 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 44 - policy item BENCH044",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 2/30) Benchmark FAQ 44 - policy item BENCH044 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 3/30) Benchmark FAQ 27 - policy item BENCH027 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 27 - policy item BENCH027",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 3/30) Benchmark FAQ 27 - policy item BENCH027 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 4/30) Benchmark FAQ 21 - policy item BENCH021 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 21 - policy item BENCH021",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 4/30) Benchmark FAQ 21 - policy item BENCH021 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 5/30) Benchmark FAQ 81 - policy item BENCH081 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 81 - policy item BENCH081",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 5/30) Benchmark FAQ 81 - policy item BENCH081 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 6/30) Benchmark FAQ 80 - policy item BENCH080 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 80 - policy item BENCH080",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 6/30) Benchmark FAQ 80 - policy item BENCH080 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 7/30) Pets policy [exact]",
+        "style":  "exact",
+        "question":  "Pets policy",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 7/30) Pets policy [variant 1]",
+        "style":  "variant",
+        "question":  "P",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 8/30) Benchmark FAQ 32 - policy item BENCH032 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 32 - policy item BENCH032",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 8/30) Benchmark FAQ 32 - policy item BENCH032 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 9/30) Benchmark FAQ 57 - policy item BENCH057 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 57 - policy item BENCH057",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 9/30) Benchmark FAQ 57 - policy item BENCH057 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 10/30) Benchmark FAQ 93 - policy item BENCH093 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 93 - policy item BENCH093",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 10/30) Benchmark FAQ 93 - policy item BENCH093 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 11/30) Benchmark FAQ 35 - policy item BENCH035 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 35 - policy item BENCH035",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 11/30) Benchmark FAQ 35 - policy item BENCH035 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 12/30) Benchmark FAQ 65 - policy item BENCH065 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 65 - policy item BENCH065",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 12/30) Benchmark FAQ 65 - policy item BENCH065 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 13/30) Benchmark FAQ 61 - policy item BENCH061 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 61 - policy item BENCH061",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 13/30) Benchmark FAQ 61 - policy item BENCH061 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 14/30) Benchmark FAQ 87 - policy item BENCH087 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 87 - policy item BENCH087",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 14/30) Benchmark FAQ 87 - policy item BENCH087 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 15/30) Benchmark FAQ 86 - policy item BENCH086 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 86 - policy item BENCH086",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 15/30) Benchmark FAQ 86 - policy item BENCH086 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 16/30) Benchmark FAQ 8 - policy item BENCH008 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 8 - policy item BENCH008",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 16/30) Benchmark FAQ 8 - policy item BENCH008 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 17/30) Benchmark FAQ 7 - policy item BENCH007 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 7 - policy item BENCH007",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 17/30) Benchmark FAQ 7 - policy item BENCH007 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 18/30) If the cleaner has to park in a paid spot, what happens? [exact]",
+        "style":  "exact",
+        "question":  "If the cleaner has to park in a paid spot, what happens?",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "billed at cost"
+    },
+    {
+        "name":  "FAQ 18/30) If the cleaner has to park in a paid spot, what happens? [variant 1]",
+        "style":  "variant",
+        "question":  "I",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true,
+        "must_contain":  "billed at cost"
+    },
+    {
+        "name":  "FAQ 19/30) Benchmark FAQ 79 - policy item BENCH079 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 79 - policy item BENCH079",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 19/30) Benchmark FAQ 79 - policy item BENCH079 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 20/30) Benchmark FAQ 13 - policy item BENCH013 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 13 - policy item BENCH013",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 20/30) Benchmark FAQ 13 - policy item BENCH013 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 21/30) Benchmark FAQ 30 - policy item BENCH030 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 30 - policy item BENCH030",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 21/30) Benchmark FAQ 30 - policy item BENCH030 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 22/30) Benchmark FAQ 17 - policy item BENCH017 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 17 - policy item BENCH017",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 22/30) Benchmark FAQ 17 - policy item BENCH017 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 23/30) Benchmark FAQ 82 - policy item BENCH082 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 82 - policy item BENCH082",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 23/30) Benchmark FAQ 82 - policy item BENCH082 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 24/30) Benchmark FAQ 19 - policy item BENCH019 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 19 - policy item BENCH019",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 24/30) Benchmark FAQ 19 - policy item BENCH019 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 25/30) Cancellations policy [exact]",
+        "style":  "exact",
+        "question":  "Cancellations policy",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 25/30) Cancellations policy [variant 1]",
+        "style":  "variant",
+        "question":  "C",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 26/30) Benchmark FAQ 88 - policy item BENCH088 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 88 - policy item BENCH088",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 26/30) Benchmark FAQ 88 - policy item BENCH088 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 27/30) Benchmark FAQ 9 - policy item BENCH009 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 9 - policy item BENCH009",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 27/30) Benchmark FAQ 9 - policy item BENCH009 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 28/30) Benchmark FAQ 20 - policy item BENCH020 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 20 - policy item BENCH020",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 28/30) Benchmark FAQ 20 - policy item BENCH020 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 29/30) Benchmark FAQ 23 - policy item BENCH023 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 23 - policy item BENCH023",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 29/30) Benchmark FAQ 23 - policy item BENCH023 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 30/30) Benchmark FAQ 68 - policy item BENCH068 [exact]",
+        "style":  "exact",
+        "question":  "Benchmark FAQ 68 - policy item BENCH068",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    },
+    {
+        "name":  "FAQ 30/30) Benchmark FAQ 68 - policy item BENCH068 [variant 1]",
+        "style":  "variant",
+        "question":  "B",
+        "hard":  true,
+        "expect_debug_branch_any":  [
+                                        "fact_hit",
+                                        "fact_rewrite_hit"
+                                    ],
+        "expect_faq_hit":  true
+    }
+]
