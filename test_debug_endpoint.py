@@ -26,3 +26,4 @@ print("\nAdmin routes:")
 for route in admin_routes:
     print(f"  {route['method']} {route['path']}")
 
+

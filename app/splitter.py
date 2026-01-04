@@ -41,3 +41,4 @@ def split_intents(text: str) -> list:
 
     return unique[:MAX_INTENTS]
 
+

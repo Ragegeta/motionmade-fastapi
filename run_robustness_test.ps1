@@ -137,3 +137,4 @@ if ($hitScores.Count -gt 0) {
     Write-Host "  High (≥0.7): $high | Medium (0.5-0.7): $med | Low (<0.5): $low"
 }
 
+

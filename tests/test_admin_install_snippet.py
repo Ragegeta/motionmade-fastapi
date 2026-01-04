@@ -16,3 +16,4 @@ def test_admin_returns_html_with_widget_js():
     assert "widget.js" in html_content
     assert "data-api" in html_content
 
+

@@ -93,3 +93,4 @@ def test_admin_ui_page_loads():
     assert "text/html" in res.headers.get("content-type", "")
     assert "Tenant Management" in res.text or "admin" in res.text.lower()
 
+

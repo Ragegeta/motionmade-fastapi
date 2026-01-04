@@ -121,3 +121,4 @@ The system demonstrates **robust behavior** with a 50-FAQ set:
 
 The 45% pass rate is **expected and appropriate** given the strict thresholds. The system prioritizes precision over recall, which is correct for a production FAQ system.
 
+

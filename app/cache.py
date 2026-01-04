@@ -110,3 +110,4 @@ def get_cache_stats() -> Dict:
     """Get cache statistics."""
     return _retrieval_cache.stats()
 
+

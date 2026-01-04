@@ -51,3 +51,4 @@ def test_readiness_returns_structure():
     assert "ready" in data2
     assert "checks" in data2
 
+

@@ -99,3 +99,4 @@ try {
 Write-Host "`nWaiting 10 seconds for embeddings to generate..." -ForegroundColor Yellow
 Start-Sleep -Seconds 10
 
+

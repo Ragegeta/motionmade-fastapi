@@ -10,49 +10,61 @@
 
 ## Per-Tenant Onboarding
 
-### 1. Create Tenant
-- [ ] Add tenant record via Admin UI or API
-- [ ] Note the tenant ID (e.g., `acme_cleaning`)
+### Prerequisites
+- [ ] Tenant record created via Admin UI or API
+- [ ] Domain(s) registered in `tenant_domains` table (with `enabled = 1`)
+- [ ] FAQ JSON prepared at `tenants/{tenant_id}/faqs.json`
+- [ ] Test suite created at `tests/{tenant_id}.json`
 
-### 2. Register Domain(s)
-- [ ] Add customer's domain(s) to `tenant_domains` table
-- [ ] Include both `example.com` and `www.example.com` if needed
-- [ ] Set `enabled = 1`
+### Single Command Onboarding
 
-### 3. Upload FAQs
-- [ ] Prepare FAQ JSON with questions, answers, and variants
-- [ ] Upload to staging first: `PUT /admin/api/tenant/{id}/faqs/staged`
-- [ ] Verify staging upload succeeded
+Run the automated onboarding script (handles everything):
 
-### 4. Create Test Suite
-- [ ] Create `tests/{tenant_id}.json` with test cases
-- [ ] Include must-hit questions with `must_contain` assertions
-- [ ] Include smoke tests (general knowledge, unknown capability)
+```powershell
+.\new_tenant_onboard.ps1 `
+  -TenantId acme_cleaning `
+  -AdminBase https://motionmade-fastapi.onrender.com `
+  -PublicBase https://api.motionmadebne.com.au `
+  -Origin https://example.com
+```
 
-### 5. Promote FAQs
-- [ ] Run promote: `POST /admin/api/tenant/{id}/promote`
-- [ ] Verify all tests pass
-- [ ] Check `last_good` backup was created
+**What it does:**
+1. ✅ **Variant Expansion**: Automatically expands FAQ variants (mandatory)
+2. ✅ **Pipeline**: Runs full FAQ pipeline (apply library, patch variants, upload)
+3. ✅ **Suite Tests**: Runs tenant test suite (must pass)
+4. ✅ **Benchmark Gate**: Runs benchmark with thresholds:
+   - FAQ hit rate >= 70%
+   - Non-junk fallback rate == 0%
+   - At least 15 test cases
+5. ✅ **Promotion**: Promotes to `last_good` if all gates pass
 
-### 6. Readiness Check
+**If onboarding fails:**
+- Review benchmark results
+- Add more FAQ variants or improve coverage
+- Fix any suite test failures
+- Re-run the onboarding script
+
+### Post-Onboarding Steps
+
+### 1. Readiness Check
 - [ ] Call `GET /admin/api/tenant/{id}/readiness`
 - [ ] Verify all checks pass
 - [ ] Address any warnings
 
-### 7. Generate Install Snippet
+### 2. Generate Install Snippet
 - [ ] Get snippet from Admin UI "Install" section
 - [ ] Customize `data-greeting`, `data-header`, `data-color` if needed
 - [ ] Send to customer with installation instructions
 
-### 8. Customer Installation
+### 3. Customer Installation
 - [ ] Customer adds `<script>` to their site
 - [ ] Test widget appears and responds correctly
 - [ ] Verify domain routing works (no "domain not allowed" error)
 
-### 9. Go-Live Verification
+### 4. Go-Live Verification
 - [ ] Send test messages through live widget
 - [ ] Check telemetry shows requests
-- [ ] Verify hit rate is acceptable (>50%)
+- [ ] Verify hit rate is acceptable (>70% from benchmark gate)
 
 ## Ongoing Monitoring
 

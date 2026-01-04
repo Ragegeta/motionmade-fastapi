@@ -5,7 +5,8 @@ param(
   [Parameter(Mandatory=$true)][string]$PublicBase,           # Worker base (NOT FastAPI)
   [Parameter(Mandatory=$true)][string]$Origin,               # UI origin to test through widget
 
-  [int]$TimeoutSec = 600
+  [int]$TimeoutSec = 600,
+  [switch]$ExpandVariants = $false                           # Enable automated variant expansion
 )
 
 # Allow override of admin base URL via environment variable (for Render direct access)
@@ -155,12 +156,32 @@ if (-not (Test-Path (Join-Path $root "patch_parking_variants.py"))) { throw "Mis
 
 if (-not (Test-Path $faqsSource)) { throw "Missing tenant faqs.json: $faqsSource" }
 
+# Check for expand_variants.py if expansion is enabled
+if ($ExpandVariants) {
+  $expandScript = Join-Path (Join-Path $root "tools") "expand_variants.py"
+  if (-not (Test-Path $expandScript)) { throw "Missing expand_variants.py at $expandScript" }
+}
+
 # Ensure backups dir exists
 if (-not (Test-Path $backupsDir)) { New-Item -ItemType Directory -Path $backupsDir | Out-Null }
 
-# Always rebuild faqs_variants.json from canonical faqs.json (no surprises)
+# Optional: Expand variants if requested
+if ($ExpandVariants) {
+  Write-Host "Expanding variants (automated expansion)..." -ForegroundColor Cyan
+  $expandedPath = Join-Path $tenantDir "faqs_expanded.json"
+  $expandScript = Join-Path (Join-Path $root "tools") "expand_variants.py"
+  
+  & python "$expandScript" --input "$faqsSource" --output "$expandedPath" --overwrite
+  if ($LASTEXITCODE -ne 0) { throw "expand_variants.py failed" }
+  
+  # Use expanded file as source for pipeline
+  $faqsSource = $expandedPath
+  Write-Host "Using expanded FAQs as source: $expandedPath" -ForegroundColor Green
+}
+
+# Always rebuild faqs_variants.json from canonical source (faqs.json or faqs_expanded.json)
 Copy-Item $faqsSource $faqFile -Force
-Write-Host "Rebuilt faqs_variants.json from faqs.json" -ForegroundColor Yellow
+Write-Host "Rebuilt faqs_variants.json from source" -ForegroundColor Yellow
 
 # Backup this rebuilt artifact
 $ts = Get-Date -Format "yyyyMMdd_HHmmss"

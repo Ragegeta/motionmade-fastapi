@@ -47,3 +47,4 @@ def test_alerts_returns_keys():
     assert "tenant_id" in data2
     assert "alerts" in data2
 
+

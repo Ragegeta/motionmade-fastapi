@@ -83,3 +83,4 @@ The admin UI uses these tables:
 - Widget endpoints are not modified
 - All changes are minimal and test-covered
 
+
