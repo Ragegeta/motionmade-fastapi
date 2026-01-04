@@ -31,16 +31,17 @@ def run_test(api_url: str, tenant_id: str, question: str) -> dict:
             headers = {k.lower(): v for k, v in resp.getheaders()}
             body_text = resp.read().decode()
             
+            is_clarify = "rephrase" in body_text.lower()
             return {
                 "status": resp.status,
                 "faq_hit": headers.get("x-faq-hit", "false") == "true",
                 "score": float(headers.get("x-retrieval-score", 0)) if headers.get("x-retrieval-score") else None,
                 "branch": headers.get("x-debug-branch", "unknown"),
                 "normalized": headers.get("x-normalized-input", ""),
-                "is_clarify": "rephrase" in body_text.lower(),
+                "is_clarify": is_clarify,
             }
     except Exception as e:
-        return {"status": 0, "error": str(e), "faq_hit": False, "score": None, "branch": "error"}
+        return {"status": 0, "error": str(e), "faq_hit": False, "score": None, "branch": "error", "normalized": "", "is_clarify": False}
 
 
 def main():
@@ -99,13 +100,13 @@ def main():
             passed = False
             reason = f"Expected branch '{expected_branch}', got '{actual_branch}'"
         
-        icon = "✅" if passed else "❌"
+        icon = "[OK]" if passed else "[FAIL]"
         hit_str = "HIT" if actual_hit else "MISS"
         score_str = f"({result['score']:.3f})" if result['score'] else "(n/a)"
         
         print(f"  {icon} [{test['id']}] {hit_str} {score_str} - {test['question'][:50]}")
         if not passed:
-            print(f"       → {reason}")
+            print(f"       -> {reason}")
         
         results.append({"test": test, "result": result, "passed": passed})
     
@@ -143,9 +144,9 @@ def main():
     
     print(f"\n{'='*60}")
     if gate_pass:
-        print("✅ BENCHMARK GATE: PASS")
+        print("[PASS] BENCHMARK GATE: PASS")
     else:
-        print("❌ BENCHMARK GATE: FAIL")
+        print("[FAIL] BENCHMARK GATE: FAIL")
     print(f"{'='*60}")
     
     # Show worst misses for targeted fixes
@@ -162,7 +163,7 @@ def main():
             print(f"  Category: {miss['category']}")
             print(f"  Score: {miss['score']}")
             print(f"  Normalized: \"{miss['normalized']}\"")
-            print(f"  → Add as variant: \"{miss['normalized']}\" or \"{miss['question'].lower()}\"")
+            print(f"  -> Add as variant: \"{miss['normalized']}\" or \"{miss['question'].lower()}\"")
     
     return 0 if gate_pass else 1
 
