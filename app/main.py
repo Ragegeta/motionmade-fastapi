@@ -25,6 +25,73 @@ from .cache import get_cached_result, cache_result, get_cache_stats
 from .suite_runner import run_suite
 
 
+# ========================================
+# VARIANT EXPANSION (inline, no external script)
+# ========================================
+
+SLANG_EXPANSIONS = [
+    (r'\byou\b', ['u', 'ya']),
+    (r'\byour\b', ['ur', 'ya']),
+    (r'\bplease\b', ['pls', 'plz']),
+    (r'\bthanks\b', ['thx', 'ty']),
+    (r'\bwhat\b', ['wat', 'wut']),
+    (r'\bare\b', ['r']),
+    (r'\bto\b', ['2']),
+    (r'\bfor\b', ['4']),
+    (r'\bgoing to\b', ['gonna']),
+    (r'\bwant to\b', ['wanna']),
+    (r'\bgot to\b', ['gotta']),
+    (r'\bkind of\b', ['kinda']),
+    (r'\bsort of\b', ['sorta']),
+]
+
+QUESTION_STARTERS = [
+    "what is", "what are", "what's", "whats",
+    "how much", "how do", "how can", "how long", "how to",
+    "do you", "do u", "can you", "can u", "will you",
+    "are you", "is there", "is it",
+]
+
+def expand_variants_inline(faqs: list, max_per_faq: int = 40) -> list:
+    """Expand variants for a list of FAQs. Returns modified FAQ list."""
+    for faq in faqs:
+        question = faq.get("question", "").lower()
+        existing = set(v.lower() for v in faq.get("variants", []))
+        new_variants = set(existing)
+        
+        # Add the question itself
+        new_variants.add(question)
+        
+        # Extract key terms (words > 3 chars, not common words)
+        stop_words = {'what', 'your', 'about', 'does', 'have', 'this', 'that', 'with', 'the', 'and', 'for', 'are', 'you'}
+        words = re.findall(r'\b\w+\b', question)
+        key_terms = [w for w in words if len(w) > 3 and w.lower() not in stop_words]
+        
+        # Add short versions (just key terms)
+        if key_terms:
+            new_variants.add(" ".join(key_terms[:2]))
+            new_variants.add(key_terms[0])
+        
+        # Add question starter variations
+        for term in key_terms[:2]:
+            for starter in QUESTION_STARTERS[:8]:
+                new_variants.add(f"{starter} {term}")
+        
+        # Add slang versions
+        for variant in list(new_variants):
+            for pattern, replacements in SLANG_EXPANSIONS:
+                if re.search(pattern, variant, re.IGNORECASE):
+                    for repl in replacements:
+                        new_variant = re.sub(pattern, repl, variant, flags=re.IGNORECASE)
+                        new_variants.add(new_variant.lower())
+        
+        # Clean and dedupe
+        cleaned = sorted(set(v.strip().lower() for v in new_variants if v and len(v) >= 2))
+        faq["variants"] = cleaned[:max_per_faq]
+    
+    return faqs
+
+
 # -----------------------------
 # Rewrite safety (numbers/units must not be invented)
 # -----------------------------
@@ -1321,6 +1388,13 @@ def upload_staged_faqs(
                 DELETE FROM faq_variants 
                 WHERE faq_id IN (SELECT id FROM faq_items WHERE tenant_id=%s AND is_staged=true)
             """, (tenantId,))
+            
+            # Auto-expand variants
+            items_data = [{"question": it.question, "answer": it.answer, "variants": it.variants or []} for it in items]
+            items_data = expand_variants_inline(items_data, max_per_faq=40)
+            
+            # Create a mapping of question -> expanded variants
+            variants_map = {item_data["question"]: item_data["variants"] for item_data in items_data}
             
             for it in items:
                 q = (it.question or "").strip()

@@ -2,45 +2,115 @@ import re
 import unicodedata
 
 SLANG_MAP = [
+    # Pronouns
     (r'\bur\b', 'your'),
     (r'\bu\b', 'you'),
     (r'\bya\b', 'you'),
-    (r'\byeh\b', 'yes'),
+    (r'\by\b', 'you'),  # single 'y' as 'you'
+    (r'\byr\b', 'your'),
+    
+    # Common words
     (r'\bpls\b', 'please'),
+    (r'\bplz\b', 'please'),
     (r'\bthx\b', 'thanks'),
+    (r'\bty\b', 'thank you'),
     (r'\bcoz\b', 'because'),
+    (r'\bcuz\b', 'because'),
+    (r'\bcos\b', 'because'),
+    (r'\bbc\b', 'because'),
+    (r'\btho\b', 'though'),
+    (r'\bthru\b', 'through'),
+    (r'\bw/\b', 'with'),
+    (r'\bw/o\b', 'without'),
+    
+    # Questions
     (r'\bwat\b', 'what'),
+    (r'\bwut\b', 'what'),
     (r'\bhwo\b', 'how'),
+    (r'\bwhr\b', 'where'),
+    (r'\bwen\b', 'when'),
+    
+    # Contractions/shortcuts
+    (r'\bgonna\b', 'going to'),
+    (r'\bwanna\b', 'want to'),
+    (r'\bgotta\b', 'got to'),
+    (r'\bkinda\b', 'kind of'),
+    (r'\bsorta\b', 'sort of'),
+    (r'\bdunno\b', 'do not know'),
+    (r'\blemme\b', 'let me'),
+    (r'\bgimme\b', 'give me'),
+    
+    # Australian slang
     (r'\breckon\b', 'think'),
     (r'\barvo\b', 'afternoon'),
+    (r'\bbrekkie\b', 'breakfast'),
     (r'\bbrissy\b', 'brisbane'),
     (r'\bbris\b', 'brisbane'),
+    (r'\bmelb\b', 'melbourne'),
+    (r'\bsyd\b', 'sydney'),
     (r"\bg'day\b", 'hello'),
+    (r'\bgday\b', 'hello'),
     (r'\bmate\b', ''),
+    (r'\bno worries\b', 'okay'),
+    (r'\bheaps\b', 'very'),
+    
+    # Numbers as words
     (r'\b2\b', 'to'),
     (r'\b4\b', 'for'),
-    (r'\bprces\b', 'prices'),
-    (r'\bprce\b', 'price'),
+    (r'\b2day\b', 'today'),
+    (r'\b2moro\b', 'tomorrow'),
+    (r'\b2nite\b', 'tonight'),
+    (r'\bb4\b', 'before'),
+    
+    # Common misspellings
+    (r'\bprice?s\b', 'prices'),
+    (r'\bpriec\b', 'price'),
+    (r'\bpirce\b', 'price'),
+    (r'\bavail\b', 'available'),
+    (r'\bavialable\b', 'available'),
+    (r'\bclening\b', 'cleaning'),
+    (r'\bcleaing\b', 'cleaning'),
+    (r'\bservcie\b', 'service'),
+    (r'\bsrevice\b', 'service'),
 ]
 
 FLUFF_PREFIXES = [
-    r'^hey\s+(quick\s+one|there|so)\s*[-\u2013\u2014:]?\s*',
-    r'^just\s+wondering\s*[-\u2013\u2014,:]?\s*',
-    r'^(so\s+)?basically\s*[-\u2013\u2014,:]?\s*',
-    r'^hi\s+(there\s*)?[-\u2013\u2014!,:]?\s*',
+    r'^hey\s+(quick\s+one|there|so)\s*[-–—:]?\s*',
+    r'^just\s+wondering\s*[-–—,:]?\s*',
+    r'^(so\s+)?basically\s*[-–—,:]?\s*',
+    r'^hi\s+(there\s*)?[-–—!,:]?\s*',
+    r'^hello\s*[-–—!,:]?\s*',
     r'^sorry\s+to\s+bother\s+(you\s+)?but\s*',
     r'^okay\s+so\s+',
     r'^ok\s+so\s+',
-    r'^quick\s+(question|q)\s*[-\u2013\u2014:]?\s*',
+    r'^quick\s+(question|q)\s*[-–—:]?\s*',
+    r'^i\s+was\s+(just\s+)?wondering\s+(if\s+)?\s*',
+    r'^would\s+it\s+be\s+possible\s+to\s+',
+    r'^could\s+you\s+(please\s+)?tell\s+me\s+',
+    r'^can\s+you\s+(please\s+)?tell\s+me\s+',
+    r'^i\s+want(ed)?\s+to\s+(know|ask)\s+',
+    r'^i\s+need\s+to\s+(know|ask)\s+',
+    r"^g'?day\s*(mate\s*)?\s*[-–—,:]?\s*",
+    r'^yo\s+',
+    r'^oi\s+',
 ]
 
 FLUFF_SUFFIXES = [
     r'\s*thanks?\s*(so\s+much)?[!.]*$',
     r'\s*thx[!.]*$',
+    r'\s*ty[!.]*$',
     r'\s*cheers[!.]*$',
+    r'\s*ta[!.]*$',
     r'\s*please\s+advise[!.]*$',
     r"\s*i'?m\s+flexible[^.]*[!.]*$",
-    r'\s*just\s+tell\s+me[!.]*$',
+    r'\s*just\s+(let\s+me\s+know|tell\s+me)[!.]*$',
+    r'\s*if\s+poss(ible)?[!.]*$',
+    r'\s*when\s+you\s+(can|get\s+a\s+chance)[!.]*$',
+    r'\s*no\s+rush[!.]*$',
+    r'\s*no\s+worries\s+if\s+not[!.]*$',
+    r'\s*appreciate\s+it[!.]*$',
+    r'\s*\?\?+$',
+    r'\s*!+$',
 ]
 
 CONTRACTIONS = [
