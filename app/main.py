@@ -1410,7 +1410,8 @@ def upload_staged_faqs(
                 ).fetchone()
                 faq_id = row[0]
 
-                raw_variants = it.variants or []
+                # Use expanded variants if available, otherwise use original
+                raw_variants = variants_map.get(q, it.variants or [])
                 seen = set()
                 variants: List[str] = []
                 for v in [q, *raw_variants]:
