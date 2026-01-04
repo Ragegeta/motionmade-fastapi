@@ -1143,6 +1143,11 @@ class DomainAdd(BaseModel):
     domain: str
 
 
+@app.get("/admin/api/health")
+def admin_api_health():
+    """Health check for admin API routes."""
+    return {"ok": True, "routes": "available"}
+
 @app.get("/admin/api/tenants")
 def list_tenants(resp: Response, authorization: str = Header(default="")):
     """List all tenants."""
