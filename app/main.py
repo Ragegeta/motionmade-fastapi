@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import os
+import time
 from typing import List, Optional, Set
 
 from fastapi import FastAPI, Header, HTTPException, Response, Request
@@ -99,6 +100,23 @@ CREATE INDEX IF NOT EXISTS faq_variants_faq_id_idx ON faq_variants(faq_id);
 CREATE INDEX IF NOT EXISTS faq_variants_embedding_idx
 ON faq_variants USING ivfflat (variant_embedding vector_cosine_ops)
 WITH (lists = 100);
+
+CREATE TABLE IF NOT EXISTS telemetry (
+  id BIGSERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  query_text TEXT,
+  normalized_text TEXT,
+  intent_count INTEGER,
+  debug_branch TEXT,
+  faq_hit BOOLEAN,
+  top_faq_id BIGINT,
+  retrieval_score REAL,
+  rewrite_triggered BOOLEAN,
+  latency_ms INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS telemetry_tenant_idx ON telemetry(tenant_id, created_at DESC);
 """
 
 
@@ -121,6 +139,34 @@ def _base_payload():
         "jobSummaryShort": "",
         "disclaimer": "Prices are estimates and may vary based on condition and access.",
     }
+
+
+def _log_telemetry(
+    tenant_id: str,
+    query_text: str,
+    normalized_text: str,
+    intent_count: int,
+    debug_branch: str,
+    faq_hit: bool,
+    top_faq_id,
+    retrieval_score,
+    rewrite_triggered: bool,
+    latency_ms: int
+):
+    """Log request telemetry for analytics. Fails silently."""
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                """INSERT INTO telemetry 
+                   (tenant_id, query_text, normalized_text, intent_count, debug_branch, 
+                    faq_hit, top_faq_id, retrieval_score, rewrite_triggered, latency_ms)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (tenant_id, (query_text or "")[:500], (normalized_text or "")[:500], intent_count, 
+                 debug_branch, faq_hit, top_faq_id, retrieval_score, rewrite_triggered, latency_ms)
+            )
+            conn.commit()
+    except Exception:
+        pass  # Don't fail request if telemetry fails
 
 
 def _replica_fact_domain(msg: str) -> str:
@@ -281,6 +327,7 @@ def _should_fallback_after_miss(msg: str, domain: str) -> bool:
 
 @app.post("/api/v2/generate-quote-reply")
 def generate_quote_reply(req: QuoteRequest, resp: Response):
+    _start_time = time.time()
     tenant_id = (req.tenantId or "").strip()
     msg = (req.customerMessage or "").strip()
 
@@ -293,6 +340,19 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         resp.headers["X-Faq-Hit"] = "false"
         payload = _base_payload()
         payload["replyText"] = CLARIFY_RESPONSE
+        _latency_ms = int((time.time() - _start_time) * 1000)
+        _log_telemetry(
+            tenant_id=tenant_id,
+            query_text=msg,
+            normalized_text=msg,
+            intent_count=0,
+            debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+            faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
+            top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
+            retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
+            rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+            latency_ms=_latency_ms
+        )
         return payload
 
     # === NORMALIZE ===
@@ -330,10 +390,24 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             resp.headers["X-Debug-Branch"] = "fact_hit"
             resp.headers["X-Faq-Hit"] = "true"
             payload["replyText"] = str(ans).strip()
+            _latency_ms = int((time.time() - _start_time) * 1000)
+            _log_telemetry(
+                tenant_id=tenant_id,
+                query_text=msg,
+                normalized_text=normalized_msg,
+                intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+                debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+                faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
+                top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
+                retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
+                rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+                latency_ms=_latency_ms
+            )
             return payload
 
         # 2) Miss -> rewrite for retrieval only
         resp.headers["X-Debug-Branch"] = "fact_rewrite_try"
+        resp.headers["X-Rewrite-Triggered"] = "true"
 
         if "X-Retrieval-Score" in resp.headers:
             resp.headers["X-Retrieval-Score-Raw"] = resp.headers["X-Retrieval-Score"]
@@ -374,6 +448,19 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                 resp.headers["X-Debug-Branch"] = "fact_rewrite_hit"
                 resp.headers["X-Faq-Hit"] = "true"
                 payload["replyText"] = str(rw_ans).strip()
+                _latency_ms = int((time.time() - _start_time) * 1000)
+                _log_telemetry(
+                    tenant_id=tenant_id,
+                    query_text=msg,
+                    normalized_text=normalized_msg,
+                    intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+                    debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+                    faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
+                    top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
+                    retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
+                    rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+                    latency_ms=_latency_ms
+                )
                 return payload
 
     except Exception:
@@ -381,6 +468,19 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         resp.headers["X-Debug-Branch"] = "error"
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
+        _latency_ms = int((time.time() - _start_time) * 1000)
+        _log_telemetry(
+            tenant_id=tenant_id,
+            query_text=msg,
+            normalized_text=normalized_msg if 'normalized_msg' in locals() else msg,
+            intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+            debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+            faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
+            top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
+            retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
+            rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+            latency_ms=_latency_ms
+        )
         return payload
 
     # -----------------------------
@@ -390,6 +490,19 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         resp.headers["X-Debug-Branch"] = "fact_miss"
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
+        _latency_ms = int((time.time() - _start_time) * 1000)
+        _log_telemetry(
+            tenant_id=tenant_id,
+            query_text=msg,
+            normalized_text=normalized_msg,
+            intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+            debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+            faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
+            top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
+            retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
+            rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+            latency_ms=_latency_ms
+        )
         return payload
 
     # -----------------------------
@@ -406,17 +519,56 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         resp.headers["X-Debug-Branch"] = "error"
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
+        _latency_ms = int((time.time() - _start_time) * 1000)
+        _log_telemetry(
+            tenant_id=tenant_id,
+            query_text=msg,
+            normalized_text=normalized_msg if 'normalized_msg' in locals() else msg,
+            intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+            debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+            faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
+            top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
+            retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
+            rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+            latency_ms=_latency_ms
+        )
         return payload
 
     if violates_general_safety(reply):
         resp.headers["X-Debug-Branch"] = "general_fallback"
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
+        _latency_ms = int((time.time() - _start_time) * 1000)
+        _log_telemetry(
+            tenant_id=tenant_id,
+            query_text=msg,
+            normalized_text=normalized_msg,
+            intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+            debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+            faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
+            top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
+            retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
+            rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+            latency_ms=_latency_ms
+        )
         return payload
 
     resp.headers["X-Debug-Branch"] = "general_ok"
     resp.headers["X-Faq-Hit"] = "false"
     payload["replyText"] = reply
+    _latency_ms = int((time.time() - _start_time) * 1000)
+    _log_telemetry(
+        tenant_id=tenant_id,
+        query_text=msg,
+        normalized_text=normalized_msg,
+        intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+        debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+        faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
+        top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
+        retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
+        rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+        latency_ms=_latency_ms
+    )
     return payload
 
 @app.get("/api/health")
@@ -424,4 +576,41 @@ def health():
     git_sha = os.getenv("RENDER_GIT_COMMIT") or os.getenv("GIT_SHA") or "unknown"
     release = os.getenv("RENDER_GIT_BRANCH") or os.getenv("RELEASE") or "unknown"
     return {"ok": True, "gitSha": git_sha, "release": release}
+
+
+@app.get("/admin/tenant/{tenantId}/stats")
+def get_tenant_stats(tenantId: str, resp: Response, authorization: str = Header(default="")):
+    """Get telemetry stats for a tenant (last 24 hours)."""
+    _set_common_headers(resp, tenantId)
+    
+    if authorization != f"Bearer {settings.ADMIN_TOKEN}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    with get_conn() as conn:
+        row = conn.execute("""
+            SELECT 
+                COUNT(*) as total_queries,
+                COUNT(*) FILTER (WHERE faq_hit = true) as faq_hits,
+                COUNT(*) FILTER (WHERE debug_branch = 'clarify') as clarify_count,
+                COUNT(*) FILTER (WHERE debug_branch IN ('fact_miss', 'general_fallback')) as fallback_count,
+                COUNT(*) FILTER (WHERE debug_branch = 'general_ok') as general_ok_count,
+                COUNT(*) FILTER (WHERE rewrite_triggered = true) as rewrite_count,
+                COALESCE(AVG(latency_ms)::integer, 0) as avg_latency_ms
+            FROM telemetry 
+            WHERE tenant_id = %s 
+            AND created_at > now() - interval '24 hours'
+        """, (tenantId,)).fetchone()
+    
+    total = row[0] or 1  # Avoid division by zero
+    return {
+        "tenant_id": tenantId,
+        "period": "last_24_hours",
+        "total_queries": row[0] or 0,
+        "faq_hit_rate": round((row[1] or 0) / total, 3),
+        "clarify_rate": round((row[2] or 0) / total, 3),
+        "fallback_rate": round((row[3] or 0) / total, 3),
+        "general_ok_rate": round((row[4] or 0) / total, 3),
+        "rewrite_rate": round((row[5] or 0) / total, 3),
+        "avg_latency_ms": row[6] or 0,
+    }
 
