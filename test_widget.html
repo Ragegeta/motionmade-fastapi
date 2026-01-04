@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sparky's Electrical Brisbane - Widget Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #1a1a1a; }
+        .info {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-queries {
+            background: #e8f4e8;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-queries h3 { margin-top: 0; color: #2e7d32; }
+        .test-queries ul { margin-bottom: 0; }
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .note {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <h1>⚡ Sparky's Electrical Brisbane</h1>
+    
+    <div class="info">
+        <h2>Widget Test Page</h2>
+        <p>This page tests the chat widget for Sparky's Electrical.</p>
+        <p><strong>Domain:</strong> sparkys-electrical-test.com</p>
+        <p><strong>Tenant ID:</strong> sparkys_electrical</p>
+    </div>
+
+    <div class="note">
+        <strong>Note:</strong> This test page won't work locally because the domain 
+        <code>sparkys-electrical-test.com</code> isn't registered in DNS. 
+        The widget validates the Origin header against registered domains.
+        <br><br>
+        To test locally, you can:
+        <ol>
+            <li>Add <code>127.0.0.1 sparkys-electrical-test.com</code> to your hosts file</li>
+            <li>Serve this page on that domain</li>
+            <li>Or test via curl with the Origin header (see Task 9 output)</li>
+        </ol>
+    </div>
+
+    <div class="test-queries">
+        <h3>Test Queries to Try</h3>
+        <ul>
+            <li>"How much do you charge?"</li>
+            <li>"Do you do ceiling fans?"</li>
+            <li>"Can you come today?"</li>
+            <li>"I have no power" (emergency)</li>
+            <li>"Are you licensed?"</li>
+            <li>"ur prices pls" (slang test)</li>
+        </ul>
+    </div>
+
+    <div class="info">
+        <h3>Services We Offer</h3>
+        <p>Powerpoints • Lighting • Switchboard Upgrades • Ceiling Fans • Safety Switches • Smoke Alarms • Emergency Repairs</p>
+        
+        <h3>Service Area</h3>
+        <p>All of Brisbane metro - Redcliffe to Logan, west to Ipswich</p>
+        
+        <h3>Contact</h3>
+        <p>📞 0400 123 456 | 24/7 Emergency Service Available</p>
+    </div>
+
+    <!-- Widget embed code -->
+    <script 
+        src="https://mm-client1-creator-ui.pages.dev/widget.js"
+        data-greeting="Hi! Need an electrician? Ask me anything about our services, pricing, or availability."
+        data-header="Sparky's Electrical"
+        data-color="#f59e0b"
+    ></script>
+</body>
+</html>
+

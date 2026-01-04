@@ -1,0 +1,19 @@
+{
+  "name": "Sparky's Electrical Test Suite",
+  "tests": [
+    {"name": "Pricing clean", "question": "how much do you charge", "expect_faq_hit": true},
+    {"name": "Pricing slang", "question": "ur prices pls", "expect_faq_hit": true},
+    {"name": "Services clean", "question": "what services do you offer", "expect_faq_hit": true},
+    {"name": "Services specific", "question": "do you do ceiling fans", "expect_faq_hit": true},
+    {"name": "Area clean", "question": "what areas do you service", "expect_faq_hit": true},
+    {"name": "Area slang", "question": "do u come to brisbane", "expect_faq_hit": true},
+    {"name": "Booking clean", "question": "how do i book", "expect_faq_hit": true},
+    {"name": "Booking urgent", "question": "can u come today", "expect_faq_hit": true},
+    {"name": "Emergency", "question": "i have no power", "expect_faq_hit": true},
+    {"name": "Licensed", "question": "are you licensed", "expect_faq_hit": true},
+    {"name": "Powerpoint", "question": "how much for a new powerpoint", "expect_faq_hit": true},
+    {"name": "Unknown service", "question": "do you do plumbing", "expect_faq_hit": false},
+    {"name": "Junk", "question": "???", "expect_faq_hit": false}
+  ]
+}
+
