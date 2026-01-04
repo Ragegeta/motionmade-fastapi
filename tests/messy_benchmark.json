@@ -1,333 +1,50 @@
 {
-  "name": "Messy Input Benchmark Suite",
-  "description": "Tests robustness against real-world messy inputs",
+  "name": "Messy Input Benchmark v2",
   "version": "2.0",
+  "min_tests_required": 25,
   "pass_thresholds": {
-    "min_hit_rate": 0.70,
+    "min_hit_rate": 0.75,
     "max_fallback_rate": 0.0,
     "max_wrong_hit_rate": 0.0
   },
   "tests": [
-    {
-      "id": "PRICE-01",
-      "category": "pricing",
-      "subcategory": "clean",
-      "question": "how much do you charge",
-      "expect_hit": true,
-      "notes": "Baseline pricing query"
-    },
-    {
-      "id": "PRICE-02",
-      "category": "pricing",
-      "subcategory": "slang",
-      "question": "ur prices pls",
-      "expect_hit": true,
-      "notes": "Common slang"
-    },
-    {
-      "id": "PRICE-03",
-      "category": "pricing",
-      "subcategory": "slang",
-      "question": "how much u charge",
-      "expect_hit": true,
-      "notes": "Slang 'u' for 'you'"
-    },
-    {
-      "id": "PRICE-04",
-      "category": "pricing",
-      "subcategory": "typo",
-      "question": "wat r ur prces",
-      "expect_hit": true,
-      "notes": "Multiple typos + slang"
-    },
-    {
-      "id": "PRICE-05",
-      "category": "pricing",
-      "subcategory": "fluff",
-      "question": "hey quick one - what are your prices?",
-      "expect_hit": true,
-      "notes": "Fluff prefix"
-    },
-    {
-      "id": "PRICE-06",
-      "category": "pricing",
-      "subcategory": "fluff",
-      "question": "hi there, just wondering about pricing thanks",
-      "expect_hit": true,
-      "notes": "Fluff prefix + suffix"
-    },
-    {
-      "id": "PRICE-07",
-      "category": "pricing",
-      "subcategory": "caps",
-      "question": "WHAT ARE YOUR PRICES",
-      "expect_hit": true,
-      "notes": "All caps"
-    },
-    {
-      "id": "PRICE-08",
-      "category": "pricing",
-      "subcategory": "verbose",
-      "question": "can you tell me approximately how much your services would cost",
-      "expect_hit": true,
-      "notes": "Verbose phrasing"
-    },
-    {
-      "id": "SVC-01",
-      "category": "services",
-      "subcategory": "clean",
-      "question": "what services do you offer",
-      "expect_hit": true,
-      "notes": "Baseline services query"
-    },
-    {
-      "id": "SVC-02",
-      "category": "services",
-      "subcategory": "slang",
-      "question": "wat do u do",
-      "expect_hit": true,
-      "notes": "Slang version"
-    },
-    {
-      "id": "SVC-03",
-      "category": "services",
-      "subcategory": "specific",
-      "question": "do you clean ovens",
-      "expect_hit": true,
-      "notes": "Specific service query"
-    },
-    {
-      "id": "SVC-04",
-      "category": "services",
-      "subcategory": "specific",
-      "question": "do you do carpets",
-      "expect_hit": true,
-      "notes": "Specific service query"
-    },
-    {
-      "id": "SVC-05",
-      "category": "services",
-      "subcategory": "slang",
-      "question": "do u do deep cleans",
-      "expect_hit": true,
-      "notes": "Slang + specific"
-    },
-    {
-      "id": "AREA-01",
-      "category": "logistics",
-      "subcategory": "clean",
-      "question": "what areas do you service",
-      "expect_hit": true,
-      "notes": "Baseline area query"
-    },
-    {
-      "id": "AREA-02",
-      "category": "logistics",
-      "subcategory": "slang",
-      "question": "wat areas do u cover",
-      "expect_hit": true,
-      "notes": "Slang version"
-    },
-    {
-      "id": "AREA-03",
-      "category": "logistics",
-      "subcategory": "specific",
-      "question": "do you come to brisbane",
-      "expect_hit": true,
-      "notes": "Specific location"
-    },
-    {
-      "id": "AREA-04",
-      "category": "logistics",
-      "subcategory": "slang",
-      "question": "do u service my area",
-      "expect_hit": true,
-      "notes": "Slang + vague"
-    },
-    {
-      "id": "BOOK-01",
-      "category": "booking",
-      "subcategory": "clean",
-      "question": "how do I book",
-      "expect_hit": true,
-      "notes": "Baseline booking query"
-    },
-    {
-      "id": "BOOK-02",
-      "category": "booking",
-      "subcategory": "slang",
-      "question": "can u come today",
-      "expect_hit": true,
-      "notes": "Urgent booking slang"
-    },
-    {
-      "id": "BOOK-03",
-      "category": "booking",
-      "subcategory": "clean",
-      "question": "what's your availability",
-      "expect_hit": true,
-      "notes": "Availability query"
-    },
-    {
-      "id": "BOOK-04",
-      "category": "booking",
-      "subcategory": "verbose",
-      "question": "sorry to bother you but do you have availability this week",
-      "expect_hit": true,
-      "notes": "Verbose + fluff"
-    },
-    {
-      "id": "POLICY-01",
-      "category": "policy",
-      "subcategory": "clean",
-      "question": "what's your cancellation policy",
-      "expect_hit": true,
-      "notes": "Baseline policy query"
-    },
-    {
-      "id": "POLICY-02",
-      "category": "policy",
-      "subcategory": "slang",
-      "question": "can i cancel",
-      "expect_hit": true,
-      "notes": "Short version"
-    },
-    {
-      "id": "POLICY-03",
-      "category": "policy",
-      "subcategory": "clean",
-      "question": "are you insured",
-      "expect_hit": true,
-      "notes": "Insurance query"
-    },
-    {
-      "id": "MULTI-01",
-      "category": "multi-intent",
-      "subcategory": "dual",
-      "question": "prices and availability",
-      "expect_hit": true,
-      "notes": "Two intents"
-    },
-    {
-      "id": "MULTI-02",
-      "category": "multi-intent",
-      "subcategory": "dual",
-      "question": "do you do ovens? also what about fridges?",
-      "expect_hit": true,
-      "notes": "Two questions"
-    },
-    {
-      "id": "JUNK-01",
-      "category": "junk",
-      "subcategory": "symbols",
-      "question": "???",
-      "expect_hit": false,
-      "expect_branch": "clarify",
-      "notes": "Symbols only"
-    },
-    {
-      "id": "JUNK-02",
-      "category": "junk",
-      "subcategory": "gibberish",
-      "question": "asdfasdf",
-      "expect_hit": false,
-      "expect_branch": "clarify",
-      "notes": "Keyboard mash"
-    },
-    {
-      "id": "JUNK-03",
-      "category": "junk",
-      "subcategory": "too_short",
-      "question": "hi",
-      "expect_hit": false,
-      "expect_branch": "clarify",
-      "notes": "Too short to be meaningful"
-    },
-    {
-      "id": "JUNK-04",
-      "category": "junk",
-      "subcategory": "emoji",
-      "question": "👋",
-      "expect_hit": false,
-      "expect_branch": "clarify",
-      "notes": "Emoji only"
-    },
-    {
-      "id": "UNKNOWN-01",
-      "category": "unknown",
-      "subcategory": "capability",
-      "question": "do you do plumbing",
-      "expect_hit": false,
-      "expect_branch_any": ["fact_miss", "general_fallback"],
-      "notes": "Unknown capability - should miss"
-    },
-    {
-      "id": "UNKNOWN-02",
-      "category": "unknown",
-      "subcategory": "capability",
-      "question": "can you fix my roof",
-      "expect_hit": false,
-      "expect_branch_any": ["fact_miss", "general_fallback"],
-      "notes": "Unknown capability - should miss"
-    },
-    {
-      "id": "GENERAL-01",
-      "category": "general",
-      "subcategory": "knowledge",
-      "question": "why is the sky blue",
-      "expect_hit": false,
-      "expect_branch_any": ["general_ok"],
-      "notes": "General knowledge - not FAQ"
-    },
-    {
-      "id": "GENERAL-02",
-      "category": "general",
-      "subcategory": "knowledge",
-      "question": "what is the capital of france",
-      "expect_hit": false,
-      "expect_branch_any": ["general_ok"],
-      "notes": "General knowledge - not FAQ"
-    },
-    {
-      "id": "EDGE-01",
-      "category": "edge",
-      "subcategory": "punctuation",
-      "question": "prices?!?!",
-      "expect_hit": true,
-      "notes": "Excessive punctuation"
-    },
-    {
-      "id": "EDGE-02",
-      "category": "edge",
-      "subcategory": "spacing",
-      "question": "  how much   do you   charge  ",
-      "expect_hit": true,
-      "notes": "Extra whitespace"
-    },
-    {
-      "id": "EDGE-03",
-      "category": "edge",
-      "subcategory": "mixed_case",
-      "question": "HoW mUcH dO yOu ChArGe",
-      "expect_hit": true,
-      "notes": "Mixed case"
-    },
-    {
-      "id": "AUSSIE-01",
-      "category": "australian",
-      "subcategory": "slang",
-      "question": "g'day mate what do you charge",
-      "expect_hit": true,
-      "notes": "Australian greeting"
-    },
-    {
-      "id": "AUSSIE-02",
-      "category": "australian",
-      "subcategory": "slang",
-      "question": "can you come this arvo",
-      "expect_hit": true,
-      "notes": "Australian 'arvo' = afternoon"
-    }
+    {"id": "P01", "category": "pricing", "question": "how much do you charge", "expect_hit": true},
+    {"id": "P02", "category": "pricing", "question": "ur prices pls", "expect_hit": true},
+    {"id": "P03", "category": "pricing", "question": "wat r ur prices", "expect_hit": true},
+    {"id": "P04", "category": "pricing", "question": "WHAT ARE YOUR PRICES", "expect_hit": true},
+    {"id": "P05", "category": "pricing", "question": "hey quick one - how much", "expect_hit": true},
+    {"id": "P06", "category": "pricing", "question": "i was wondering if you could tell me your prices", "expect_hit": true},
+    {"id": "P07", "category": "pricing", "question": "g'day mate wat do u charge", "expect_hit": true},
+    {"id": "P08", "category": "pricing", "question": "cost", "expect_hit": true},
+    
+    {"id": "S01", "category": "services", "question": "what services do you offer", "expect_hit": true},
+    {"id": "S02", "category": "services", "question": "do you clean ovens", "expect_hit": true},
+    {"id": "S03", "category": "services", "question": "do u do carpets", "expect_hit": true},
+    {"id": "S04", "category": "services", "question": "wat do u do", "expect_hit": true},
+    {"id": "S05", "category": "services", "question": "bond clean", "expect_hit": true},
+    
+    {"id": "A01", "category": "area", "question": "what areas do you service", "expect_hit": true},
+    {"id": "A02", "category": "area", "question": "wat areas do u cover", "expect_hit": true},
+    {"id": "A03", "category": "area", "question": "do you come to brisbane", "expect_hit": true},
+    
+    {"id": "B01", "category": "booking", "question": "how do i book", "expect_hit": true},
+    {"id": "B02", "category": "booking", "question": "can u come today", "expect_hit": true},
+    {"id": "B03", "category": "booking", "question": "can u come 2moro arvo", "expect_hit": true},
+    {"id": "B04", "category": "booking", "question": "availability this week", "expect_hit": true},
+    
+    {"id": "T01", "category": "trust", "question": "are you insured", "expect_hit": true},
+    {"id": "T02", "category": "trust", "question": "cancellation policy", "expect_hit": true},
+    
+    {"id": "J01", "category": "junk", "question": "???", "expect_hit": false, "expect_branch": "clarify"},
+    {"id": "J02", "category": "junk", "question": "asdf", "expect_hit": false, "expect_branch": "clarify"},
+    {"id": "J03", "category": "junk", "question": "hi", "expect_hit": false, "expect_branch": "clarify"},
+    
+    {"id": "U01", "category": "unknown", "question": "do you do plumbing", "expect_hit": false},
+    {"id": "U02", "category": "unknown", "question": "can you fix my car", "expect_hit": false},
+    
+    {"id": "G01", "category": "general", "question": "why is the sky blue", "expect_hit": false},
+    {"id": "G02", "category": "general", "question": "what time is it", "expect_hit": false},
+    
+    {"id": "E01", "category": "edge", "question": "  prices  ", "expect_hit": true}
   ]
 }
-

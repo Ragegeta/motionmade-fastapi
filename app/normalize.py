@@ -186,6 +186,59 @@ def normalize_whitespace(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip()
 
 
+def extract_core_question(text: str) -> str:
+    """
+    Extract the core question from verbose/polite phrasing.
+    Examples:
+        "could you tell me your prices" → "your prices"
+        "i was wondering if you have availability" → "do you have availability"
+        "would it be possible to book" → "book"
+    """
+    t = text.strip().lower()
+    
+    # Patterns that wrap the actual question
+    WRAPPER_PATTERNS = [
+        # "could you tell me X" → "X"
+        (r'^could\s+you\s+(please\s+)?tell\s+me\s+(.+)$', r'\2'),
+        # "can you tell me X" → "X"
+        (r'^can\s+you\s+(please\s+)?tell\s+me\s+(.+)$', r'\2'),
+        # "i want to know X" → "X"
+        (r'^i\s+want(ed)?\s+to\s+know\s+(.+)$', r'\2'),
+        # "i need to know X" → "X"
+        (r'^i\s+need\s+to\s+know\s+(.+)$', r'\2'),
+        # "would like to know X" → "X"
+        (r'^(i\s+)?would\s+like\s+to\s+know\s+(.+)$', r'\2'),
+        # "wondering if you X" → "do you X"
+        (r'^(i\s+was\s+)?(just\s+)?wondering\s+if\s+you\s+(.+)$', r'do you \3'),
+        # "wondering about X" → "X"
+        (r'^(i\s+was\s+)?(just\s+)?wondering\s+about\s+(.+)$', r'\3'),
+        # "would it be possible to X" → "can you X"
+        (r'^would\s+it\s+be\s+possible\s+to\s+(.+)$', r'can you \1'),
+        # "is it possible to X" → "can you X"
+        (r'^is\s+it\s+possible\s+to\s+(.+)$', r'can you \1'),
+        # "do you think you could X" → "can you X"
+        (r'^do\s+you\s+think\s+you\s+could\s+(.+)$', r'can you \1'),
+        # "i was hoping to X" → "X"
+        (r'^i\s+was\s+hoping\s+to\s+(.+)$', r'\1'),
+        # "looking to X" → "X"
+        (r'^(i\'?m\s+)?looking\s+to\s+(.+)$', r'\2'),
+        # "trying to find out X" → "X"
+        (r'^(i\'?m\s+)?trying\s+to\s+find\s+out\s+(.+)$', r'\2'),
+    ]
+    
+    for pattern, replacement in WRAPPER_PATTERNS:
+        match = re.match(pattern, t, re.IGNORECASE)
+        if match:
+            result = re.sub(pattern, replacement, t, flags=re.IGNORECASE).strip()
+            # Clean up any leftover awkwardness
+            result = re.sub(r'^(about|if|whether)\s+', '', result)
+            result = re.sub(r'\s+(please|pls)$', '', result)
+            if len(result) >= 3:
+                return result
+    
+    return t
+
+
 def normalize_message(text: str) -> str:
     if not text:
         return ""
@@ -195,6 +248,7 @@ def normalize_message(text: str) -> str:
     t = expand_contractions(t)
     t = expand_slang(t)
     t = remove_fluff(t)
+    t = extract_core_question(t)  # Extract core question from verbose phrasing
     t = normalize_whitespace(t)
     return t
 

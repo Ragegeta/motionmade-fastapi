@@ -29,30 +29,7 @@ from .suite_runner import run_suite
 # VARIANT EXPANSION (inline, no external script)
 # ========================================
 
-SLANG_EXPANSIONS = [
-    (r'\byou\b', ['u', 'ya']),
-    (r'\byour\b', ['ur', 'ya']),
-    (r'\bplease\b', ['pls', 'plz']),
-    (r'\bthanks\b', ['thx', 'ty']),
-    (r'\bwhat\b', ['wat', 'wut']),
-    (r'\bare\b', ['r']),
-    (r'\bto\b', ['2']),
-    (r'\bfor\b', ['4']),
-    (r'\bgoing to\b', ['gonna']),
-    (r'\bwant to\b', ['wanna']),
-    (r'\bgot to\b', ['gotta']),
-    (r'\bkind of\b', ['kinda']),
-    (r'\bsort of\b', ['sorta']),
-]
-
-QUESTION_STARTERS = [
-    "what is", "what are", "what's", "whats",
-    "how much", "how do", "how can", "how long", "how to",
-    "do you", "do u", "can you", "can u", "will you",
-    "are you", "is there", "is it",
-]
-
-def expand_variants_inline(faqs: list, max_per_faq: int = 40) -> list:
+def expand_variants_inline(faqs: list, max_per_faq: int = 30) -> list:
     """Expand variants for a list of FAQs. Returns modified FAQ list."""
     for faq in faqs:
         question = faq.get("question", "").lower()
@@ -1389,12 +1366,8 @@ def upload_staged_faqs(
                 WHERE faq_id IN (SELECT id FROM faq_items WHERE tenant_id=%s AND is_staged=true)
             """, (tenantId,))
             
-            # Auto-expand variants
-            items_data = [{"question": it.question, "answer": it.answer, "variants": it.variants or []} for it in items]
-            items_data = expand_variants_inline(items_data, max_per_faq=40)
-            
-            # Create a mapping of question -> expanded variants
-            variants_map = {item_data["question"]: item_data["variants"] for item_data in items_data}
+            # Variant expansion moved to promote-time (keeps staged FAQs clean)
+            # items_data = expand_variants_inline(items_data, max_per_faq=40)
             
             for it in items:
                 q = (it.question or "").strip()
@@ -1410,8 +1383,8 @@ def upload_staged_faqs(
                 ).fetchone()
                 faq_id = row[0]
 
-                # Use expanded variants if available, otherwise use original
-                raw_variants = variants_map.get(q, it.variants or [])
+                # Use original variants (expansion happens at promote-time)
+                raw_variants = it.variants or []
                 seen = set()
                 variants: List[str] = []
                 for v in [q, *raw_variants]:
@@ -1479,10 +1452,40 @@ def promote_staged(
                 SET answer=EXCLUDED.answer, embedding=EXCLUDED.embedding, updated_at=now()
             """, (tenantId,))
             
+            # Expand variants at promote-time (keeps staged FAQs clean)
+            staged_faqs = conn.execute("""
+                SELECT id, question, answer FROM faq_items WHERE tenant_id=%s AND is_staged=true
+            """, (tenantId,)).fetchall()
+            
+            # Get existing variants for staged FAQs
+            items_to_promote = []
+            for faq_id, q, a in staged_faqs:
+                variants = conn.execute("""
+                    SELECT variant_question FROM faq_variants WHERE faq_id=%s
+                """, (faq_id,)).fetchall()
+                variant_list = [v[0] for v in variants]
+                items_to_promote.append({"question": q, "answer": a, "variants": variant_list})
+            
+            # Expand variants
+            items_to_promote = expand_variants_inline(items_to_promote, max_per_faq=30)
+            
             # Temporarily make staged FAQs live (for suite run)
             conn.execute("""
                 UPDATE faq_items SET is_staged=false WHERE tenant_id=%s AND is_staged=true
             """, (tenantId,))
+            
+            # Delete old variants and insert expanded ones
+            for faq_id, q, a in staged_faqs:
+                conn.execute("DELETE FROM faq_variants WHERE faq_id=%s", (faq_id,))
+                expanded_item = next((item for item in items_to_promote if item["question"] == q), None)
+                if expanded_item:
+                    for variant in expanded_item["variants"]:
+                        v_emb = embed_text(variant)
+                        conn.execute("""
+                            INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled)
+                            VALUES (%s, %s, %s, true)
+                        """, (faq_id, variant, Vector(v_emb)))
+            
             conn.commit()
         
         # 3. Run suite
