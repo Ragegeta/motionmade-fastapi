@@ -15,6 +15,9 @@ from .guardrails import FALLBACK, violates_general_safety, classify_fact_domain,
 from .openai_client import embed_text, chat_once
 from .retrieval import retrieve_faq_answer
 from .db import get_conn
+from .triage import triage_input, CLARIFY_RESPONSE
+from .normalize import normalize_message
+from .splitter import split_intents
 
 
 # -----------------------------
@@ -281,7 +284,31 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
     tenant_id = (req.tenantId or "").strip()
     msg = (req.customerMessage or "").strip()
 
-    domain = _init_debug_headers(resp, tenant_id, msg)
+    # === TRIAGE ===
+    triage_result, should_continue = triage_input(msg)
+    resp.headers["X-Triage-Result"] = triage_result
+    
+    if not should_continue:
+        resp.headers["X-Debug-Branch"] = "clarify"
+        resp.headers["X-Faq-Hit"] = "false"
+        payload = _base_payload()
+        payload["replyText"] = CLARIFY_RESPONSE
+        return payload
+
+    # === NORMALIZE ===
+    normalized_msg = normalize_message(msg)
+    resp.headers["X-Normalized-Input"] = (normalized_msg or "")[:80]
+
+    # === SPLIT INTENTS ===
+    intents = split_intents(normalized_msg)
+    if not intents:
+        intents = [normalized_msg] if normalized_msg else [msg]
+    resp.headers["X-Intent-Count"] = str(len(intents))
+    
+    # Use first intent for retrieval (multi-intent handling comes later)
+    primary_query = intents[0] if intents else normalized_msg or msg
+
+    domain = _init_debug_headers(resp, tenant_id, primary_query)
     payload = _base_payload()
 
     # -----------------------------
@@ -289,7 +316,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
     # -----------------------------
     try:
         # 1) Original retrieval
-        q_emb = embed_text(msg)
+        q_emb = embed_text(primary_query)
         hit, ans, score, delta, faq_id = retrieve_faq_answer(tenant_id, q_emb)
 
         if score is not None:
