@@ -300,6 +300,17 @@ def put_faqs(
         raise HTTPException(status_code=500, detail=f"admin_upload_failed: {e!s}")
 
 
+@app.put("/api/v2/admin/tenant/{tenantId}/faqs")
+def put_faqs_v2(
+    tenantId: str,
+    items: List[FaqItem],
+    resp: Response,
+    authorization: str = Header(default=""),
+):
+    """Admin FAQ upload endpoint (Cloudflare-compatible path)."""
+    return put_faqs(tenantId, items, resp, authorization)
+
+
 def _should_fallback_after_miss(msg: str, domain: str) -> bool:
     t = (msg or "").strip()
     if not t:
@@ -613,4 +624,26 @@ def get_tenant_stats(tenantId: str, resp: Response, authorization: str = Header(
         "rewrite_rate": round((row[5] or 0) / total, 3),
         "avg_latency_ms": row[6] or 0,
     }
+
+
+@app.get("/api/v2/admin/tenant/{tenantId}/stats")
+def get_tenant_stats_v2(tenantId: str, resp: Response, authorization: str = Header(default="")):
+    """Admin telemetry stats endpoint (Cloudflare-compatible path)."""
+    return get_tenant_stats(tenantId, resp, authorization)
+
+
+@app.get("/debug/routes")
+def debug_routes():
+    """Debug endpoint to list registered routes. Only available when DEBUG=true."""
+    if not settings.DEBUG:
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    routes = []
+    for route in app.routes:
+        if hasattr(route, "methods") and hasattr(route, "path"):
+            for method in route.methods:
+                if method != "HEAD":  # Skip HEAD, it's implicit
+                    routes.append({"method": method, "path": route.path})
+    
+    return {"routes": sorted(routes, key=lambda x: (x["path"], x["method"]))}
 

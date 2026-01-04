@@ -1,7 +1,10 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
   [Parameter(Mandatory=$true)][string]$TenantId,
-  [string]$Base = "https://motionmade-fastapi.onrender.com",
+  [Parameter(Mandatory=$true)][string]$AdminBase,            # where /api/v2/admin/tenant/{id}/faqs lives
+  [Parameter(Mandatory=$true)][string]$PublicBase,           # Worker base (NOT FastAPI)
+  [Parameter(Mandatory=$true)][string]$Origin,               # UI origin to test through widget
+
   [int]$TimeoutSec = 600
 )
 
@@ -21,12 +24,11 @@ $tenantDir   = Join-Path $root (Join-Path "tenants" $TenantId)
 $profilePath = Join-Path $tenantDir "variant_profile.json"
 $corePath    = Join-Path $root "variant_library_core.json"
 
-$faqsSource  = Join-Path $tenantDir "faqs.json"                # canonical input
-$faqFile     = Join-Path $tenantDir "faqs_variants.json"       # generated/upload artifact
+$faqsSource  = Join-Path $tenantDir "faqs.json"                  # canonical input
+$faqFile     = Join-Path $tenantDir "faqs_variants.json"         # generated/upload artifact
 $lastGood    = Join-Path $tenantDir "last_good_faqs_variants.json"
 $backupsDir  = Join-Path $tenantDir "backups"
 
-# ---- Helpers ----
 function FullPath([string]$p) { return [IO.Path]::GetFullPath($p) }
 
 function Assert-UnderTenant([string]$p) {
@@ -51,8 +53,9 @@ function Upload-Faqs {
   Assert-UnderTenant $Path
   if (-not (Test-Path $Path)) { throw "FAQ file not found: $Path" }
 
+  $uri = ($AdminBase.TrimEnd("/") + "/api/v2/admin/tenant/$TenantId/faqs")
   $resp = Invoke-WebRequest -UseBasicParsing `
-    -Uri "$Base/admin/tenant/$TenantId/faqs" `
+    -Uri $uri `
     -Method Put `
     -Headers @{ Authorization = "Bearer $Token" } `
     -ContentType "application/json" `
@@ -60,77 +63,78 @@ function Upload-Faqs {
     -TimeoutSec $TimeoutSec
 
   if ($resp.StatusCode -ne 200) { throw "Upload failed HTTP $($resp.StatusCode)" }
-  Write-Host "Upload OK (HTTP 200)" -ForegroundColor Green
-}
-
-function Run-SuiteText {
-  $suite = Join-Path $root "run_suite.ps1"
-  if (-not (Test-Path $suite)) { throw "Missing run_suite.ps1 at repo root: $suite" }
-  return (powershell -ExecutionPolicy Bypass -NoProfile -File $suite -TenantId $TenantId 2>&1 | Out-String)
+  Write-Host "Upload OK (HTTP 200) -> $uri" -ForegroundColor Green
 }
 
 # ---- Preconditions ----
-if (-not (Test-Path $tenantDir))   { throw "Missing tenant dir: $tenantDir (run .\new_tenant_profile.ps1 first)" }
+if (-not (Test-Path $tenantDir))   { throw "Missing tenant dir: $tenantDir" }
 if (-not (Test-Path $profilePath)) { throw "Missing tenant profile: $profilePath" }
 if (-not (Test-Path $corePath))    { throw "Missing core library: $corePath" }
 
 if (-not (Test-Path (Join-Path $root "apply_variant_library.py"))) { throw "Missing apply_variant_library.py at repo root" }
 if (-not (Test-Path (Join-Path $root "patch_must_variants.py")))   { throw "Missing patch_must_variants.py at repo root" }
+if (-not (Test-Path (Join-Path $root "patch_parking_variants.py"))) { throw "Missing patch_parking_variants.py at repo root" }
 
-if (-not (Test-Path $faqsSource)) { throw "Missing tenant faqs.json (canonical input): $faqsSource" }
+if (-not (Test-Path $faqsSource)) { throw "Missing tenant faqs.json: $faqsSource" }
 
 # Ensure backups dir exists
 if (-not (Test-Path $backupsDir)) { New-Item -ItemType Directory -Path $backupsDir | Out-Null }
 
-# If faqs_variants doesn't exist yet, create it from faqs.json (onboarding = data entry + one command)
-if (-not (Test-Path $faqFile)) {
-  Copy-Item $faqsSource $faqFile -Force
-  Write-Host "Created faqs_variants.json from faqs.json" -ForegroundColor Yellow
-} else {
-  # Backup current before mutating it
-  $ts = Get-Date -Format "yyyyMMdd_HHmmss"
-  $bak = Join-Path $backupsDir ("faqs_variants.$ts.json")
-  Copy-Item $faqFile $bak -Force
-  Write-Host "Backup saved: $bak" -ForegroundColor DarkGray
-}
+# Always rebuild faqs_variants.json from canonical faqs.json (no surprises)
+Copy-Item $faqsSource $faqFile -Force
+Write-Host "Rebuilt faqs_variants.json from faqs.json" -ForegroundColor Yellow
+
+# Backup this rebuilt artifact
+$ts = Get-Date -Format "yyyyMMdd_HHmmss"
+$bak = Join-Path $backupsDir ("faqs_variants.$ts.json")
+Copy-Item $faqFile $bak -Force
+Write-Host "Backup saved: $bak" -ForegroundColor DarkGray
 
 Assert-UnderTenant $faqFile
-Assert-UnderTenant $profilePath
 
-# ---- Pipeline ----
 try {
-  # 1) Apply variant library (core + tenant profile) in-place on faqs_variants.json
+  # 1) Apply variant library
   Write-Host "Applying variant library (core + tenant profile)..." -ForegroundColor Cyan
   python (Join-Path $root "apply_variant_library.py") --infile $faqFile --outfile $faqFile --core $corePath --profile $profilePath
   if ($LASTEXITCODE -ne 0) { throw "apply_variant_library.py failed" }
 
-  # 2) Patch must-hit variants (profile-driven)
+  # 2) Patch must-hit variants
   Write-Host "Patching must-hit variants..." -ForegroundColor Cyan
   python (Join-Path $root "patch_must_variants.py") --faqfile $faqFile --profile $profilePath
   if ($LASTEXITCODE -ne 0) { throw "patch_must_variants.py failed" }
 
-  # 3) Upload
-  Write-Host "Uploading FAQs..." -ForegroundColor Cyan
+  # 3) Patch parking variants
+  Write-Host "Patching parking variants..." -ForegroundColor Cyan
+  python (Join-Path $root "patch_parking_variants.py") -TenantId $TenantId
+  if ($LASTEXITCODE -ne 0) { throw "patch_parking_variants.py failed" }
+
+  # 4) Upload
+  Write-Host "Uploading FAQs (ADMIN)..." -ForegroundColor Cyan
   $token = Get-AdminToken
   Upload-Faqs -Path $faqFile -Token $token | Out-Null
 
-  # 4) Run suite
-  Write-Host "Running suite..." -ForegroundColor Cyan
-  $out = Run-SuiteText
-  Write-Host $out
+  # 5) Run widget suite explicitly and trust its exit code
+  Write-Host "Running suite (PUBLIC widget)..." -ForegroundColor Cyan
+  $suite = Join-Path $root "run_suite_widget.ps1"
+  if (-not (Test-Path $suite)) { throw "Missing run_suite_widget.ps1 at repo root: $suite" }
 
-  if ($out -match "FAIL:") { throw "Suite failed" }
+  & powershell -ExecutionPolicy Bypass -NoProfile -File $suite `
+    -TenantId $TenantId `
+    -Base $PublicBase `
+    -Origin $Origin
 
-  # Promote last_good on PASS
+  $code = $LASTEXITCODE
+  if ($code -ne 0) { throw "Suite failed" }
+
+  # Promote last_good
   Copy-Item $faqFile $lastGood -Force
   Write-Host "✅ Suite PASS. Promoted to last_good." -ForegroundColor Green
 }
 catch {
   Write-Host "❌ Pipeline failed: $($_.Exception.Message)" -ForegroundColor Red
 
-  # Roll back if possible
   if (Test-Path $lastGood) {
-    Write-Host "Rolling back by re-uploading last_good..." -ForegroundColor Yellow
+    Write-Host "Rolling back by re-uploading last_good (ADMIN)..." -ForegroundColor Yellow
     $token = Get-AdminToken
     Upload-Faqs -Path $lastGood -Token $token | Out-Null
     Copy-Item $lastGood $faqFile -Force

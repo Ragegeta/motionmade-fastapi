@@ -42,7 +42,7 @@ Order is always:
 1) Backup current `faqs_variants.json` into `tenants/<id>/backups/`
 2) Apply core variant library + tenant profile
 3) Patch must-hit variants
-4) Upload to `/admin/tenant/<id>/faqs`
+4) Upload to `/api/v2/admin/tenant/<id>/faqs`
 5) Run suite from `tests/<id>.json`
 6) If FAIL → re-upload `last_good_faqs_variants.json` and stop
 7) If PASS → promote `faqs_variants.json` to `last_good_faqs_variants.json`
