@@ -10,6 +10,7 @@ from typing import List, Optional, Set
 from fastapi import FastAPI, Header, HTTPException, Response, Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict
 from pgvector import Vector
 
@@ -107,6 +108,19 @@ def is_rewrite_safe(rewritten: str, original: str) -> bool:
 # -----------------------------
 app = FastAPI()
 
+# Mount static files with no-store cache control
+static_app = StaticFiles(directory="app/static")
+app.mount("/static", static_app, name="static")
+
+# Add Cache-Control header for static files
+@app.middleware("http")
+async def add_static_cache_control(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Content-Type"] = "application/javascript"
+    return response
+
 
 @app.middleware("http")
 async def add_release_headers(request: Request, call_next):
@@ -115,6 +129,15 @@ async def add_release_headers(request: Request, call_next):
     release = os.getenv("RENDER_GIT_BRANCH") or os.getenv("RELEASE") or "unknown"
     resp.headers["x-git-sha"] = git_sha
     resp.headers["x-release"] = release
+    
+    # Add Cache-Control for admin and static files
+    if request.url.path.startswith("/admin") or request.url.path.startswith("/static/"):
+        resp.headers["Cache-Control"] = "no-store"
+    
+    # Set Content-Type for static JS files
+    if request.url.path.startswith("/static/") and request.url.path.endswith(".js"):
+        resp.headers["Content-Type"] = "application/javascript"
+    
     return resp
 
 
@@ -932,7 +955,10 @@ def admin_ui():
     """Serve admin UI."""
     html_path = Path(__file__).parent.parent / "app" / "templates" / "admin.html"
     if html_path.exists():
-        return html_path.read_text(encoding="utf-8")
+        html = html_path.read_text(encoding="utf-8")
+        response = HTMLResponse(content=html)
+        response.headers["Cache-Control"] = "no-store"
+        return response
     return "<h1>Admin UI not found</h1>"
 
 

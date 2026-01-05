@@ -1,6 +1,7 @@
 """Test that admin routes are accessible and properly protected."""
 from fastapi.testclient import TestClient
 from app.main import app
+from app.settings import settings
 
 
 def test_admin_faqs_route_exists_and_requires_auth():
