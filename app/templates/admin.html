@@ -369,6 +369,68 @@
         const API_BASE = window.location.origin;
         let adminToken = '';
         
+        // ========================================
+        // UI DEBUG - ALWAYS RUNS FIRST
+        // ========================================
+        
+        // Mark JS as running immediately
+        (function() {
+            const jsRunningEl = document.getElementById('debugJsRunning');
+            if (jsRunningEl) {
+                jsRunningEl.textContent = 'yes';
+                jsRunningEl.style.color = '#28a745';
+            }
+        })();
+        
+        // Update time every second
+        function updateDebugTime() {
+            const timeEl = document.getElementById('debugTime');
+            if (timeEl) {
+                timeEl.textContent = new Date().toLocaleTimeString();
+            }
+        }
+        setInterval(updateDebugTime, 1000);
+        updateDebugTime(); // Initial update
+        
+        // Track all clicks
+        document.addEventListener('click', function(e) {
+            const clickEl = document.getElementById('debugLastClick');
+            if (clickEl) {
+                const target = e.target.id || e.target.className || e.target.tagName;
+                clickEl.textContent = `${new Date().toLocaleTimeString()} - ${target}`;
+            }
+        }, true); // Use capture phase to catch all clicks
+        
+        // Global error capture
+        window.onerror = function(message, source, lineno, colno, error) {
+            const errorEl = document.getElementById('uiErrors');
+            const errorText = `[${new Date().toLocaleTimeString()}] ERROR: ${message}\n  Source: ${source}:${lineno}:${colno}\n  Stack: ${error ? error.stack : 'No stack'}\n\n`;
+            if (errorEl) {
+                errorEl.textContent = errorText + errorEl.textContent;
+            }
+            console.error('UI Error:', message, source, lineno, colno, error);
+            return false; // Don't prevent default error handling
+        };
+        
+        window.onunhandledrejection = function(event) {
+            const errorEl = document.getElementById('uiErrors');
+            const errorText = `[${new Date().toLocaleTimeString()}] UNHANDLED REJECTION: ${event.reason}\n  Stack: ${event.reason && event.reason.stack ? event.reason.stack : 'No stack'}\n\n`;
+            if (errorEl) {
+                errorEl.textContent = errorText + errorEl.textContent;
+            }
+            console.error('Unhandled Rejection:', event.reason);
+        };
+        
+        // Test button handler
+        function handleTestButton() {
+            alert("JS works!");
+            const banner = document.getElementById('uiDebugBanner');
+            if (banner) {
+                const currentBg = banner.style.background;
+                banner.style.background = currentBg === '#d4edda' ? '#fff3cd' : '#d4edda';
+            }
+        }
+        
         function getHeaders() {
             return {
                 'Content-Type': 'application/json',

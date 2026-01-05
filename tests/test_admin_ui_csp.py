@@ -85,8 +85,8 @@ def test_admin_ui_has_diagnostic_banner():
     response = client.get("/admin")
     html = response.text
     
-    assert 'id="diagnosticBanner"' in html, "Diagnostic banner should exist"
-    assert 'id="jsStatus"' in html, "JS status element should exist"
+    assert 'id="uiDebugBanner"' in html, "UI DEBUG banner should exist"
+    assert 'id="debugTime"' in html, "Debug time element should exist"
     assert 'id="apiBaseDisplay"' in html, "API base display should exist"
     assert 'id="healthStatus"' in html, "Health status element should exist"
     assert 'id="gitShaDisplay"' in html, "Git SHA display should exist"
