@@ -191,7 +191,7 @@
         <div class="auth-section" id="authSection">
             <h2>Login</h2>
             <input type="password" id="adminToken" placeholder="Enter admin token" />
-            <button onclick="login()">Login</button>
+            <button id="loginButton">Login</button>
             <div id="authError" class="error"></div>
         </div>
         
@@ -200,8 +200,8 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2>Tenants</h2>
                 <div style="display: flex; gap: 10px;">
-                    <button class="primary" onclick="showOnboarding()">Onboarding</button>
-                    <button class="primary" onclick="showCreateTenant()">+ New Tenant</button>
+                    <button class="primary" id="showOnboardingButton">Onboarding</button>
+                    <button class="primary" id="showCreateTenantButton">+ New Tenant</button>
                 </div>
             </div>
             <div class="tenants-list">
@@ -221,13 +221,13 @@
         
         <!-- Tenant Detail Page -->
         <div class="page" id="tenantDetailPage">
-            <a href="#" class="back-link" onclick="showTenantsList()">← Back to Tenants</a>
+            <a href="#" class="back-link" id="backToTenantsLink1">← Back to Tenants</a>
             <div class="tenant-detail" id="tenantDetail"></div>
         </div>
         
         <!-- Create Tenant Modal -->
         <div class="page" id="createTenantPage">
-            <a href="#" class="back-link" onclick="showTenantsList()">← Back to Tenants</a>
+            <a href="#" class="back-link" id="backToTenantsLink1">← Back to Tenants</a>
             <div class="tenant-detail">
                 <h2>Create New Tenant</h2>
                 <div class="form-group">
@@ -238,7 +238,7 @@
                     <label>Tenant Name</label>
                     <input type="text" id="newTenantName" placeholder="My Business Name" />
                 </div>
-                <button class="primary" onclick="createTenant()">Create Tenant</button>
+                <button class="primary" id="createTenantButton">Create Tenant</button>
                 <div id="createError" class="error"></div>
             </div>
         </div>
@@ -247,7 +247,7 @@
         <div class="page" id="onboardingPage">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2>Tenant Onboarding</h2>
-                <button class="primary" onclick="showTenantsList()">← Back to Tenants</button>
+                <button class="primary" id="backToTenantsButton">← Back to Tenants</button>
             </div>
             <div class="tenant-detail">
                 <!-- Step 1: Select/Create Tenant -->
@@ -259,7 +259,7 @@
                             <select id="onboardTenantSelect" style="flex: 1; padding: 8px;">
                                 <option value="">-- Select Tenant --</option>
                             </select>
-                            <button onclick="showCreateTenant()">+ New</button>
+                            <button id="onboardShowCreateButton">+ New</button>
                         </div>
                     </div>
                     <div id="onboardTenantInfo" style="display: none; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
@@ -274,7 +274,7 @@
                         <label>Add Domain</label>
                         <div style="display: flex; gap: 10px;">
                             <input type="text" id="onboardDomain" placeholder="example.com" style="flex: 1;" />
-                            <button onclick="onboardAddDomain()">Add Domain</button>
+                            <button id="onboardAddDomainButton">Add Domain</button>
                         </div>
                     </div>
                     <ul id="onboardDomainsList" class="domains-list"></ul>
@@ -288,41 +288,41 @@
                         <textarea id="onboardFaqsJson" rows="10" style="width: 100%; font-family: monospace; font-size: 12px;" placeholder='[{"question": "...", "answer": "...", "variants": [...]}]'></textarea>
                         <input type="file" id="onboardFaqsFile" accept=".json" style="margin-top: 10px;" />
                     </div>
-                    <button class="primary" onclick="onboardUploadStaged()">Upload to Staging</button>
+                    <button class="primary" id="onboardUploadStagedButton">Upload to Staging</button>
                     <div id="onboardUploadStatus" style="margin-top: 10px;"></div>
                 </div>
                 
                 <!-- Step 4: Promote -->
                 <div class="section">
                     <h2>4. Promote (Runs Suite + Auto-Expands Variants)</h2>
-                    <button class="primary" onclick="onboardPromote()" id="onboardPromoteBtn">Promote to Live</button>
+                    <button class="primary" id="onboardPromoteBtn">Promote to Live</button>
                     <div id="onboardPromoteStatus" style="margin-top: 10px;"></div>
                 </div>
                 
                 <!-- Step 5: Benchmark -->
                 <div class="section">
                     <h2>5. Run Benchmark</h2>
-                    <button class="primary" onclick="onboardRunBenchmark()" id="onboardBenchmarkBtn">Run Benchmark</button>
+                    <button class="primary" id="onboardBenchmarkBtn">Run Benchmark</button>
                     <div id="onboardBenchmarkStatus" style="margin-top: 10px;"></div>
                 </div>
                 
                 <!-- Step 6: Sync Worker Domains -->
                 <div class="section">
                     <h2>6. Sync Worker Domains</h2>
-                    <button onclick="onboardSyncWorker()" id="onboardSyncBtn">Sync to Worker D1</button>
+                    <button id="onboardSyncBtn">Sync to Worker D1</button>
                     <div id="onboardSyncStatus" style="margin-top: 10px;"></div>
                 </div>
                 
                 <!-- Step 7: Readiness & Install Snippet -->
                 <div class="section">
                     <h2>7. Readiness & Install Snippet</h2>
-                    <button onclick="onboardCheckReadiness()">Check Readiness</button>
+                    <button id="onboardCheckReadinessButton">Check Readiness</button>
                     <div id="onboardReadinessStatus" style="margin-top: 10px;"></div>
                     <div id="onboardInstallSnippet" style="margin-top: 20px; display: none;">
                         <h3>Install Snippet</h3>
                         <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; position: relative;">
                             <pre id="onboardSnippetCode" style="margin: 0; white-space: pre-wrap; word-wrap: break-word;"></pre>
-                            <button onclick="copyOnboardSnippet()" style="position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 12px;">Copy</button>
+                            <button id="copyOnboardSnippetButton" style="position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 12px;">Copy</button>
                         </div>
                         <div id="onboardCopySuccess" style="display: none; color: #28a745; margin-top: 5px;">✓ Copied!</div>
                     </div>
@@ -376,7 +376,7 @@
                         <td>${escapeHtml(t.id)}</td>
                         <td>${escapeHtml(t.name)}</td>
                         <td>${t.created_at ? new Date(t.created_at).toLocaleDateString() : ''}</td>
-                        <td><button onclick="showTenantDetail('${escapeHtml(t.id)}')">View</button></td>
+                        <td><button class="viewTenantButton" data-tenant-id="${escapeHtml(t.id)}">View</button></td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -408,13 +408,13 @@
                         <h2>Domains</h2>
                         <div class="form-group" style="display: flex; gap: 10px;">
                             <input type="text" id="newDomain" placeholder="example.com" style="flex: 1;" />
-                            <button class="primary" onclick="addDomain('${escapeHtml(tenant.id)}')">Add Domain</button>
+                            <button class="primary" id="addDomainButton" data-tenant-id="${escapeHtml(tenant.id)}">Add Domain</button>
                         </div>
                         <ul class="domains-list" id="domainsList">
                             ${tenant.domains.map(d => `
                                 <li>
                                     <span>${escapeHtml(d.domain)} ${d.enabled ? '✓' : '✗'}</span>
-                                    <button onclick="removeDomain('${escapeHtml(tenant.id)}', '${escapeHtml(d.domain)}')">Remove</button>
+                                    <button class="removeDomainButton" data-tenant-id="${escapeHtml(tenant.id)}" data-domain="${escapeHtml(d.domain)}">Remove</button>
                                 </li>
                             `).join('')}
                         </ul>
@@ -443,10 +443,10 @@
                             <textarea id="stagedFaqsJson" placeholder='[{"question": "Q1", "answer": "A1", "variants": ["v1"]}]'></textarea>
                         </div>
                         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                            <button class="primary" onclick="uploadStagedFaqs('${escapeHtml(tenant.id)}')">Upload Staged</button>
-                            <button class="secondary" onclick="runSuite('${escapeHtml(tenant.id)}')">Run Suite</button>
-                            <button class="primary" onclick="promoteStaged('${escapeHtml(tenant.id)}')" ${tenant.staged_faq_count == 0 ? 'disabled' : ''}>Promote</button>
-                            <button class="secondary" onclick="rollbackTenant('${escapeHtml(tenant.id)}')" ${tenant.last_good_count == 0 ? 'disabled' : ''}>Rollback</button>
+                            <button class="primary" id="uploadStagedFaqsButton" data-tenant-id="${escapeHtml(tenant.id)}">Upload Staged</button>
+                            <button class="secondary" id="runSuiteButton" data-tenant-id="${escapeHtml(tenant.id)}">Run Suite</button>
+                            <button class="primary" id="promoteStagedButton" data-tenant-id="${escapeHtml(tenant.id)}" ${tenant.staged_faq_count == 0 ? 'disabled' : ''}>Promote</button>
+                            <button class="secondary" id="rollbackTenantButton" data-tenant-id="${escapeHtml(tenant.id)}" ${tenant.last_good_count == 0 ? 'disabled' : ''}>Rollback</button>
                         </div>
                         <div id="faqsError" class="error"></div>
                         <div id="faqsSuccess" class="success"></div>
@@ -490,23 +490,23 @@
                         
                         <div class="form-group">
                             <label>Widget URL</label>
-                            <input type="text" id="installApiBase" value="https://api.motionmadebne.com.au" placeholder="API base URL" oninput="updateInstallSnippet()" />
+                            <input type="text" id="installApiBase" value="https://api.motionmadebne.com.au" placeholder="API base URL" />
                         </div>
                         <div class="form-group">
                             <label>Greeting Message</label>
-                            <input type="text" id="installGreeting" value="Hi! How can I help you today?" placeholder="Initial greeting" oninput="updateInstallSnippet()" />
+                            <input type="text" id="installGreeting" value="Hi! How can I help you today?" placeholder="Initial greeting" />
                         </div>
                         <div class="form-group">
                             <label>Header Text</label>
-                            <input type="text" id="installHeader" value="Chat with us" placeholder="Chat header" oninput="updateInstallSnippet()" />
+                            <input type="text" id="installHeader" value="Chat with us" placeholder="Chat header" />
                         </div>
                         <div class="form-group">
                             <label>Color (hex)</label>
-                            <input type="text" id="installColor" value="#2563eb" placeholder="#2563eb" oninput="updateInstallSnippet()" />
+                            <input type="text" id="installColor" value="#2563eb" placeholder="#2563eb" />
                         </div>
                         <div class="form-group">
                             <label>Position</label>
-                            <select id="installPosition" onchange="updateInstallSnippet()">
+                            <select id="installPosition">
                                 <option value="bottom-right" selected>Bottom Right</option>
                                 <option value="bottom-left">Bottom Left</option>
                                 <option value="top-right">Top Right</option>
@@ -517,7 +517,7 @@
                         <div style="margin-top: 15px; margin-bottom: 10px;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                                 <code id="installSnippet" style="background: #f8f9fa; padding: 12px; display: block; flex: 1; border-radius: 4px; font-family: monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all;"></code>
-                                <button id="copyButton" class="primary" onclick="copyInstallSnippet()" style="white-space: nowrap;">Copy</button>
+                                <button id="copyButton" class="primary" style="white-space: nowrap;">Copy</button>
                             </div>
                             <div id="copySuccess" style="color: #28a745; font-size: 12px; display: none;">✓ Copied!</div>
                         </div>
@@ -845,7 +845,7 @@
                 if (data.domains && data.domains.length > 0) {
                     data.domains.forEach(d => {
                         const li = document.createElement('li');
-                        li.innerHTML = `<span>${escapeHtml(d.domain)}</span> <button onclick="onboardRemoveDomain('${escapeHtml(tenantId)}', '${escapeHtml(d.domain)}')" style="font-size: 12px;">Remove</button>`;
+                        li.innerHTML = `<span>${escapeHtml(d.domain)}</span> <button class="onboardRemoveDomainButton" data-tenant-id="${escapeHtml(tenantId)}" data-domain="${escapeHtml(d.domain)}" style="font-size: 12px;">Remove</button>`;
                         list.appendChild(li);
                     });
                 }
@@ -896,14 +896,116 @@
             }
         }
         
-        document.getElementById('onboardFaqsFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('onboardFaqsJson').value = e.target.result;
-                };
-                reader.readAsText(file);
+        // Initialize event listeners after DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Login button
+            const loginButton = document.getElementById('loginButton');
+            if (loginButton) {
+                loginButton.addEventListener('click', function() {
+                    login();
+                });
+            }
+            
+            // Navigation buttons
+            const showOnboardingButton = document.getElementById('showOnboardingButton');
+            if (showOnboardingButton) {
+                showOnboardingButton.addEventListener('click', showOnboarding);
+            }
+            
+            const showCreateTenantButton = document.getElementById('showCreateTenantButton');
+            if (showCreateTenantButton) {
+                showCreateTenantButton.addEventListener('click', showCreateTenant);
+            }
+            
+            const backToTenantsLink1 = document.getElementById('backToTenantsLink1');
+            if (backToTenantsLink1) {
+                backToTenantsLink1.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showTenantsList();
+                });
+            }
+            
+            const backToTenantsButton = document.getElementById('backToTenantsButton');
+            if (backToTenantsButton) {
+                backToTenantsButton.addEventListener('click', showTenantsList);
+            }
+            
+            // Create tenant button
+            const createTenantButton = document.getElementById('createTenantButton');
+            if (createTenantButton) {
+                createTenantButton.addEventListener('click', createTenant);
+            }
+            
+            // Onboarding buttons
+            const onboardShowCreateButton = document.getElementById('onboardShowCreateButton');
+            if (onboardShowCreateButton) {
+                onboardShowCreateButton.addEventListener('click', showCreateTenant);
+            }
+            
+            const onboardAddDomainButton = document.getElementById('onboardAddDomainButton');
+            if (onboardAddDomainButton) {
+                onboardAddDomainButton.addEventListener('click', onboardAddDomain);
+            }
+            
+            const onboardUploadStagedButton = document.getElementById('onboardUploadStagedButton');
+            if (onboardUploadStagedButton) {
+                onboardUploadStagedButton.addEventListener('click', onboardUploadStaged);
+            }
+            
+            const onboardPromoteBtn = document.getElementById('onboardPromoteBtn');
+            if (onboardPromoteBtn) {
+                onboardPromoteBtn.addEventListener('click', onboardPromote);
+            }
+            
+            const onboardBenchmarkBtn = document.getElementById('onboardBenchmarkBtn');
+            if (onboardBenchmarkBtn) {
+                onboardBenchmarkBtn.addEventListener('click', onboardRunBenchmark);
+            }
+            
+            const onboardSyncBtn = document.getElementById('onboardSyncBtn');
+            if (onboardSyncBtn) {
+                onboardSyncBtn.addEventListener('click', onboardSyncWorker);
+            }
+            
+            const onboardCheckReadinessButton = document.getElementById('onboardCheckReadinessButton');
+            if (onboardCheckReadinessButton) {
+                onboardCheckReadinessButton.addEventListener('click', onboardCheckReadiness);
+            }
+            
+            const copyOnboardSnippetButton = document.getElementById('copyOnboardSnippetButton');
+            if (copyOnboardSnippetButton) {
+                copyOnboardSnippetButton.addEventListener('click', copyOnboardSnippet);
+            }
+            
+            // Install snippet inputs (for live updates)
+            const installInputs = ['installApiBase', 'installGreeting', 'installHeader', 'installColor', 'installPosition'];
+            installInputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', updateInstallSnippet);
+                    el.addEventListener('change', updateInstallSnippet);
+                }
+            });
+            
+            // Copy install snippet button
+            const copyButton = document.getElementById('copyButton');
+            if (copyButton) {
+                copyButton.addEventListener('click', copyInstallSnippet);
+            }
+            
+            // File upload for onboarding FAQs
+            const onboardFaqsFile = document.getElementById('onboardFaqsFile');
+            if (onboardFaqsFile) {
+                onboardFaqsFile.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            document.getElementById('onboardFaqsJson').value = e.target.result;
+                        };
+                        reader.readAsText(file);
+                    }
+                });
             }
         });
         
