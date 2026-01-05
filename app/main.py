@@ -712,7 +712,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             # Cache the result (only for FAQ hits)
             cache_result(tenant_id, primary_query, {
                 "replyText": payload["replyText"],
-                "debug_branch": "fact_hit",
+                "debug_branch": "disambiguate_hit" if disambiguated else "fact_hit",
                 "retrieval_score": score,
                 "top_faq_id": faq_id
             })
