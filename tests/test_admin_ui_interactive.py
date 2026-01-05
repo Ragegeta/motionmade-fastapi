@@ -28,10 +28,11 @@ def test_admin_ui_has_debug_banner():
 
 def test_admin_ui_has_error_capture():
     """Admin UI should have global error capture (window.onerror)."""
-    response = client.get("/admin")
-    html = response.text
-    
-    assert 'window.onerror' in html, "Should have window.onerror handler"
+    # Check that external JS file contains error capture
+    response = client.get("/static/admin.js")
+    assert response.status_code == 200
+    js_content = response.text
+    assert 'window.onerror' in js_content, "Should have window.onerror handler"
     assert 'window.onunhandledrejection' in html, "Should have unhandled rejection handler"
 
 
@@ -54,9 +55,10 @@ def test_admin_ui_has_copy_curl_button():
 
 def test_admin_ui_has_domcontentloaded():
     """Admin UI should use DOMContentLoaded for initialization."""
-    response = client.get("/admin")
-    html = response.text
-    
-    assert 'DOMContentLoaded' in html, "Should use DOMContentLoaded event"
+    # Check that external JS file contains DOMContentLoaded
+    response = client.get("/static/admin.js")
+    assert response.status_code == 200
+    js_content = response.text
+    assert 'DOMContentLoaded' in js_content, "Should use DOMContentLoaded event"
     assert 'addEventListener' in html, "Should use addEventListener"
 

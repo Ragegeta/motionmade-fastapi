@@ -64,19 +64,21 @@ def test_admin_ui_no_inline_onclick_on_login_button():
 
 def test_admin_ui_uses_event_listeners():
     """Admin UI should use addEventListener (DOMContentLoaded)."""
-    response = client.get("/admin")
-    html = response.text
-    
-    assert 'addEventListener' in html, "Should use addEventListener for event binding"
+    # Check that external JS file exists and contains addEventListener
+    response = client.get("/static/admin.js")
+    assert response.status_code == 200
+    js_content = response.text
+    assert 'addEventListener' in js_content, "Should use addEventListener for event binding"
     assert 'DOMContentLoaded' in html, "Should wait for DOMContentLoaded before binding events"
 
 
 def test_admin_ui_has_login_function():
     """Admin UI should have login() function defined."""
-    response = client.get("/admin")
-    html = response.text
-    
-    assert 'function login()' in html, "login() function should be defined"
+    # Check that external JS file contains login function
+    response = client.get("/static/admin.js")
+    assert response.status_code == 200
+    js_content = response.text
+    assert 'function login()' in js_content, "login() function should be defined"
     assert 'adminToken' in html, "Should use adminToken variable"
 
 
