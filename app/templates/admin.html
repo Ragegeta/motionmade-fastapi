@@ -185,25 +185,30 @@
 </head>
 <body>
     <div class="container">
-        <!-- Diagnostic Banner -->
-        <div id="diagnosticBanner" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px; margin-bottom: 20px; font-family: monospace; font-size: 12px;">
-            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                <div>
-                    <strong>JS Status:</strong> 
-                    <span id="jsStatus" style="color: #6c757d;">Loading...</span>
+        <!-- UI DEBUG Banner (ALWAYS VISIBLE) -->
+        <div id="uiDebugBanner" style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 4px; padding: 15px; margin-bottom: 20px; font-family: monospace; font-size: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+                <div style="flex: 1; min-width: 200px;">
+                    <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">🔍 UI DEBUG</div>
+                    <div><strong>Current Time:</strong> <span id="debugTime">-</span></div>
+                    <div><strong>DOM Ready:</strong> <span id="debugDomReady" style="color: #6c757d;">no</span></div>
+                    <div><strong>JS Running:</strong> <span id="debugJsRunning" style="color: #6c757d;">no</span></div>
+                    <div><strong>Last Click:</strong> <span id="debugLastClick">(none)</span></div>
                 </div>
-                <div>
-                    <strong>API Base:</strong> 
-                    <span id="apiBaseDisplay">-</span>
+                <div style="flex: 1; min-width: 200px;">
+                    <button id="debugTestButton" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; margin-bottom: 10px;">TEST JS</button>
+                    <div>
+                        <button id="copyCurlButton" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy curl</button>
+                    </div>
                 </div>
-                <div>
-                    <strong>Health Check:</strong> 
-                    <span id="healthStatus">-</span>
+                <div style="flex: 2; min-width: 300px;">
+                    <div><strong>API Base:</strong> <span id="apiBaseDisplay">-</span></div>
+                    <div><strong>Health:</strong> <span id="healthStatus">-</span> | <strong>Git SHA:</strong> <span id="gitShaDisplay">-</span></div>
                 </div>
-                <div>
-                    <strong>Git SHA:</strong> 
-                    <span id="gitShaDisplay">-</span>
-                </div>
+            </div>
+            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #dee2e6;">
+                <div><strong>Errors:</strong></div>
+                <pre id="uiErrors" style="background: #f8f9fa; padding: 8px; border-radius: 4px; max-height: 150px; overflow-y: auto; font-size: 11px; margin-top: 5px; white-space: pre-wrap; word-wrap: break-word;"></pre>
             </div>
         </div>
         
@@ -214,9 +219,8 @@
             <h2>Login</h2>
             <input type="password" id="adminToken" placeholder="Enter admin token" />
             <button id="loginButton">Login</button>
-            <button id="copyCurlButton" style="margin-left: 10px; padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy curl</button>
             <div id="authError" class="error"></div>
-            <div id="loginDiagnostics" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 11px; display: none;">
+            <div id="loginDiagnostics" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 11px;">
                 <div><strong>Login Diagnostics:</strong></div>
                 <div id="loginClickStatus" style="margin-top: 5px;"></div>
                 <div id="loginTestStatus" style="margin-top: 5px;"></div>
@@ -378,17 +382,37 @@
         }
         
         function login() {
+            // IMMEDIATE VISUAL FEEDBACK
+            const loginButton = document.getElementById('loginButton');
+            if (loginButton) {
+                loginButton.textContent = 'Clicked ✓';
+                setTimeout(() => {
+                    loginButton.textContent = 'Login';
+                }, 2000);
+            }
+            
+            // Append to diagnostics immediately
+            const diagnosticsEl = document.getElementById('loginDiagnostics');
+            const timestamp = new Date().toLocaleTimeString();
+            const clickStatusEl = document.getElementById('loginClickStatus');
+            if (clickStatusEl) {
+                clickStatusEl.textContent = `[${timestamp}] ✓ Login button clicked`;
+            }
+            
             const token = document.getElementById('adminToken').value;
             if (!token) {
+                const tokenMissingMsg = `[${new Date().toLocaleTimeString()}] ✗ Token missing - input field is empty`;
+                if (clickStatusEl) {
+                    clickStatusEl.textContent = tokenMissingMsg;
+                    clickStatusEl.style.color = '#dc3545';
+                }
                 document.getElementById('authError').textContent = 'Token required';
+                document.getElementById('loginTestStatus').textContent = 'Skipped - no token';
                 return;
             }
             
-            // Show diagnostics
-            const diagnosticsEl = document.getElementById('loginDiagnostics');
-            diagnosticsEl.style.display = 'block';
-            document.getElementById('loginClickStatus').textContent = '✓ Login clicked at ' + new Date().toLocaleTimeString();
-            document.getElementById('loginTestStatus').textContent = 'Testing GET /admin/api/tenants...';
+            // Clear previous errors
+            document.getElementById('loginTestStatus').textContent = `[${new Date().toLocaleTimeString()}] Testing GET /admin/api/tenants...`;
             document.getElementById('loginResponse').textContent = '';
             document.getElementById('loginError').textContent = '';
             
@@ -399,37 +423,43 @@
                 headers: getHeaders()
             })
             .then(async res => {
-                const statusText = `Status: ${res.status} ${res.statusText}`;
-                document.getElementById('loginTestStatus').textContent = statusText;
+                const statusText = `[${new Date().toLocaleTimeString()}] Status: ${res.status} ${res.statusText}`;
+                const statusEl = document.getElementById('loginTestStatus');
+                if (statusEl) {
+                    statusEl.textContent = statusText;
+                }
                 
                 const bodyText = await res.text();
                 const preview = bodyText.length > 200 ? bodyText.substring(0, 200) + '...' : bodyText;
                 document.getElementById('loginResponse').textContent = `Response (first 200 chars): ${preview}`;
                 
                 if (res.ok) {
-                    document.getElementById('loginTestStatus').style.color = '#28a745';
+                    if (statusEl) {
+                        statusEl.style.color = '#28a745';
+                    }
                     document.getElementById('authSection').style.display = 'none';
                     loadTenants();
                 } else {
-                    document.getElementById('loginTestStatus').style.color = '#dc3545';
+                    if (statusEl) {
+                        statusEl.style.color = '#dc3545';
+                    }
                     document.getElementById('authError').textContent = `Login failed: ${res.status} ${res.statusText}`;
                 }
             })
             .catch(err => {
-                document.getElementById('loginTestStatus').textContent = `Error: ${err.message}`;
-                document.getElementById('loginTestStatus').style.color = '#dc3545';
+                const errorMsg = `[${new Date().toLocaleTimeString()}] Error: ${err.message}`;
+                const statusEl = document.getElementById('loginTestStatus');
+                if (statusEl) {
+                    statusEl.textContent = errorMsg;
+                    statusEl.style.color = '#dc3545';
+                }
                 document.getElementById('loginError').textContent = `Stack: ${err.stack || 'No stack trace'}`;
                 document.getElementById('authError').textContent = `Login failed: ${err.message}`;
             });
         }
         
         function copyCurlCommand() {
-            const token = document.getElementById('adminToken').value;
-            if (!token) {
-                alert('Enter a token first');
-                return;
-            }
-            
+            const token = document.getElementById('adminToken').value || '';
             const curlCmd = `curl.exe -i "${API_BASE}/admin/api/tenants" -H "Authorization: Bearer ${token}"`;
             
             // Copy to clipboard
@@ -988,13 +1018,6 @@
         
         // Initialize diagnostic banner
         function updateDiagnosticBanner() {
-            // Mark JS as loaded
-            const jsStatusEl = document.getElementById('jsStatus');
-            if (jsStatusEl) {
-                jsStatusEl.textContent = '✓ Loaded';
-                jsStatusEl.style.color = '#28a745';
-            }
-            
             // Show API base
             const apiBaseEl = document.getElementById('apiBaseDisplay');
             if (apiBaseEl) {
@@ -1026,15 +1049,36 @@
         
         // Initialize event listeners after DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
+            // Mark DOM as ready
+            const domReadyEl = document.getElementById('debugDomReady');
+            if (domReadyEl) {
+                domReadyEl.textContent = 'yes';
+                domReadyEl.style.color = '#28a745';
+            }
+            
             // Update diagnostic banner
             updateDiagnosticBanner();
             
-            // Login button
+            // Test button
+            const testButton = document.getElementById('debugTestButton');
+            if (testButton) {
+                testButton.addEventListener('click', handleTestButton);
+            }
+            
+            // Login button - BULLETPROOF WIRING
             const loginButton = document.getElementById('loginButton');
             if (loginButton) {
-                loginButton.addEventListener('click', function() {
+                loginButton.addEventListener('click', function(e) {
+                    e.preventDefault();
                     login();
                 });
+            } else {
+                // Log error if button not found
+                const errorEl = document.getElementById('uiErrors');
+                if (errorEl) {
+                    errorEl.textContent = '[ERROR] loginButton not found in DOM!\n' + errorEl.textContent;
+                }
+                console.error('loginButton not found!');
             }
             
             // Copy curl button
