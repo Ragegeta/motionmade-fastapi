@@ -1729,12 +1729,26 @@ def promote_staged(
                 SET answer=EXCLUDED.answer, embedding=EXCLUDED.embedding, updated_at=now()
             """, (tenantId,))
             
+            # 3. Delete ALL current live FAQs and their variants FIRST (prevents duplicate key error)
+            conn.execute('''
+                DELETE FROM faq_variants 
+                WHERE faq_id IN (
+                    SELECT id FROM faq_items 
+                    WHERE tenant_id = %s AND (is_staged = false OR is_staged IS NULL)
+                )
+            ''', (tenantId,))
+            
+            conn.execute('''
+                DELETE FROM faq_items 
+                WHERE tenant_id = %s AND (is_staged = false OR is_staged IS NULL)
+            ''', (tenantId,))
+            
             # Get staged FAQs with variants_json
             staged_faqs = conn.execute("""
                 SELECT id, question, answer, variants_json FROM faq_items WHERE tenant_id=%s AND is_staged=true
             """, (tenantId,)).fetchall()
             
-            # Temporarily make staged FAQs live (for suite run)
+            # NOW promote staged to live (no conflicts possible)
             conn.execute("""
                 UPDATE faq_items SET is_staged=false WHERE tenant_id=%s AND is_staged=true
             """, (tenantId,))
