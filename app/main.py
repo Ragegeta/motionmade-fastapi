@@ -844,9 +844,59 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
 
 @app.get("/api/health")
 def health():
-    git_sha = os.getenv("RENDER_GIT_COMMIT") or os.getenv("GIT_SHA") or "unknown"
-    release = os.getenv("RENDER_GIT_BRANCH") or os.getenv("RELEASE") or "unknown"
-    return {"ok": True, "gitSha": git_sha, "release": release}
+    """Health check endpoint with git SHA detection."""
+    # Try multiple sources for git SHA (in order of preference)
+    git_sha = (
+        os.getenv("RENDER_GIT_COMMIT") or
+        os.getenv("GIT_SHA") or
+        _get_git_sha_from_file() or
+        "unknown"
+    )
+    
+    release = (
+        os.getenv("RENDER_GIT_BRANCH") or
+        os.getenv("RELEASE") or
+        _get_git_branch_from_file() or
+        "unknown"
+    )
+    
+    return {
+        "ok": True,
+        "gitSha": git_sha,
+        "release": release,
+        "deployed": git_sha != "unknown"
+    }
+
+
+def _get_git_sha_from_file() -> str:
+    """Read git SHA from build-time generated file."""
+    try:
+        from pathlib import Path
+        build_info_path = Path(__file__).parent.parent / ".build-info.py"
+        if build_info_path.exists():
+            # Read the file and extract GIT_SHA
+            content = build_info_path.read_text(encoding="utf-8")
+            for line in content.split("\n"):
+                if line.startswith("GIT_SHA = "):
+                    return line.split('"')[1] if '"' in line else line.split("'")[1]
+    except Exception:
+        pass
+    return ""
+
+
+def _get_git_branch_from_file() -> str:
+    """Read git branch from build-time generated file."""
+    try:
+        from pathlib import Path
+        build_info_path = Path(__file__).parent.parent / ".build-info.py"
+        if build_info_path.exists():
+            content = build_info_path.read_text(encoding="utf-8")
+            for line in content.split("\n"):
+                if line.startswith("GIT_BRANCH = "):
+                    return line.split('"')[1] if '"' in line else line.split("'")[1]
+    except Exception:
+        pass
+    return ""
 
 
 @app.get("/admin", response_class=HTMLResponse)
