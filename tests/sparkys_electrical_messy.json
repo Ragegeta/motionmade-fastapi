@@ -1,0 +1,42 @@
+{
+  "name": "Sparky's Electrical Messy Benchmark",
+  "version": "1.0",
+  "pass_thresholds": {
+    "min_hit_rate": 0.75,
+    "max_fallback_rate": 0.0,
+    "max_wrong_hit_rate": 0.0
+  },
+  "tests": [
+    {"id": "P01", "category": "pricing", "question": "how much do you charge", "expect_hit": true},
+    {"id": "P02", "category": "pricing", "question": "ur prices pls", "expect_hit": true},
+    {"id": "P03", "category": "pricing", "question": "wat do u charge", "expect_hit": true},
+    {"id": "P04", "category": "pricing", "question": "hey quick one - how much", "expect_hit": true},
+    {"id": "P05", "category": "pricing", "question": "call out fee", "expect_hit": true},
+    
+    {"id": "S01", "category": "services", "question": "what services do you offer", "expect_hit": true},
+    {"id": "S02", "category": "services", "question": "wat do u do", "expect_hit": true},
+    {"id": "S03", "category": "services", "question": "do you do ceiling fans", "expect_hit": true},
+    {"id": "S04", "category": "services", "question": "do u do powerpoints", "expect_hit": true},
+    
+    {"id": "A01", "category": "area", "question": "what areas do you service", "expect_hit": true},
+    {"id": "A02", "category": "area", "question": "wat areas do u cover", "expect_hit": true},
+    {"id": "A03", "category": "area", "question": "do you come to brisbane", "expect_hit": true},
+    
+    {"id": "B01", "category": "booking", "question": "how do i book", "expect_hit": true},
+    {"id": "B02", "category": "booking", "question": "can u come today", "expect_hit": true},
+    {"id": "B03", "category": "booking", "question": "availability this week", "expect_hit": true},
+    
+    {"id": "E01", "category": "emergency", "question": "i have no power", "expect_hit": true},
+    {"id": "E02", "category": "emergency", "question": "emergency electrician", "expect_hit": true},
+    
+    {"id": "T01", "category": "trust", "question": "are you licensed", "expect_hit": true},
+    {"id": "T02", "category": "trust", "question": "r u insured", "expect_hit": true},
+    
+    {"id": "J01", "category": "junk", "question": "???", "expect_hit": false, "expect_branch": "clarify"},
+    {"id": "J02", "category": "junk", "question": "asdf", "expect_hit": false, "expect_branch": "clarify"},
+    
+    {"id": "U01", "category": "unknown", "question": "do you do plumbing", "expect_hit": false},
+    {"id": "U02", "category": "unknown", "question": "can you fix my car", "expect_hit": false}
+  ]
+}
+

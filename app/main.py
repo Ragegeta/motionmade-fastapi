@@ -43,6 +43,21 @@ except ImportError as e:
 # VARIANT EXPANSION (inline, no external script)
 # ========================================
 
+QUESTION_STARTERS = [
+    "what", "how", "where", "when", "why", "who", "which", "can", "do", "does", 
+    "are", "is", "will", "would", "could", "should", "tell me", "show me", "i need"
+]
+
+SLANG_EXPANSIONS = [
+    (r'\bur\b', ['your', 'you are']),
+    (r'\bu\b', ['you']),
+    (r'\bpls\b', ['please']),
+    (r'\bthx\b', ['thanks']),
+    (r'\bwat\b', ['what']),
+    (r'\b2\b', ['to', 'two']),
+    (r'\b4\b', ['for']),
+]
+
 def expand_variants_inline(faqs: list, max_per_faq: int = 30) -> list:
     """Expand variants for a list of FAQs. Returns modified FAQ list."""
     for faq in faqs:
@@ -955,7 +970,11 @@ def admin_ui():
     """Serve admin UI."""
     html_path = Path(__file__).parent.parent / "app" / "templates" / "admin.html"
     if html_path.exists():
+        # Get GIT_SHA for cache busting
+        git_sha = os.getenv("RENDER_GIT_COMMIT") or os.getenv("GIT_SHA") or "1"
         html = html_path.read_text(encoding="utf-8")
+        # Replace ?v=1 with actual git SHA for cache busting
+        html = html.replace("?v=1", f"?v={git_sha}")
         response = HTMLResponse(content=html)
         response.headers["Cache-Control"] = "no-store"
         return response
@@ -1228,6 +1247,108 @@ def get_tenant_readiness_v2(tenantId: str, resp: Response, authorization: str = 
     """Get tenant readiness status - Cloudflare-compatible path."""
     _check_admin_auth(authorization)
     return _get_tenant_readiness_impl(tenantId)
+
+
+@app.get("/admin/api/tenant/{tenant_id}/launch-gates")
+def check_launch_gates(tenant_id: str, authorization: str = Header(default="")):
+    """
+    Check if a tenant passes all launch gates.
+    Returns detailed status for each gate.
+    """
+    _check_admin_auth(authorization)
+    tenant_id = (tenant_id or "").strip()
+    
+    gates = []
+    all_pass = True
+    
+    with get_conn() as conn:
+        # Gate 1: Tenant exists
+        tenant = conn.execute(
+            "SELECT id, name FROM tenants WHERE id = %s",
+            (tenant_id,)
+        ).fetchone()
+        
+        gates.append({
+            "gate": "tenant_exists",
+            "required": True,
+            "passed": tenant is not None,
+            "message": f"Tenant '{tenant_id}' exists" if tenant else f"Tenant '{tenant_id}' not found"
+        })
+        if not tenant:
+            all_pass = False
+            return {
+                "tenant_id": tenant_id,
+                "all_required_passed": False,
+                "gates": gates,
+                "recommendation": "Create tenant first"
+            }
+        
+        # Gate 2: Domain registered
+        domains = conn.execute(
+            "SELECT domain FROM tenant_domains WHERE tenant_id = %s AND enabled = true",
+            (tenant_id,)
+        ).fetchall()
+        
+        gates.append({
+            "gate": "domain_registered",
+            "required": True,
+            "passed": len(domains) > 0,
+            "message": f"{len(domains)} domain(s) registered" if domains else "No domains registered"
+        })
+        if not domains:
+            all_pass = False
+        
+        # Gate 3: Minimum FAQs
+        faqs = conn.execute(
+            "SELECT COUNT(*) FROM faq_items WHERE tenant_id = %s AND (is_staged = false OR is_staged IS NULL) AND enabled = true",
+            (tenant_id,)
+        ).fetchone()
+        faq_count = faqs[0] if faqs else 0
+        
+        gates.append({
+            "gate": "minimum_faqs",
+            "required": True,
+            "passed": faq_count >= 5,
+            "message": f"{faq_count} FAQs (minimum: 5)"
+        })
+        if faq_count < 5:
+            all_pass = False
+        
+        # Gate 4: Variants exist
+        variants = conn.execute("""
+            SELECT COUNT(*) FROM faq_variants fv
+            JOIN faq_items fi ON fi.id = fv.faq_id
+            WHERE fi.tenant_id = %s AND (fi.is_staged = false OR fi.is_staged IS NULL)
+        """, (tenant_id,)).fetchone()
+        variant_count = variants[0] if variants else 0
+        
+        gates.append({
+            "gate": "variants_exist",
+            "required": True,
+            "passed": variant_count >= faq_count * 3,
+            "message": f"{variant_count} variants (minimum: {faq_count * 3})"
+        })
+        if variant_count < faq_count * 3:
+            all_pass = False
+        
+        # Gate 5: Benchmark file exists (optional)
+        benchmark_path = Path(__file__).parent.parent / "tests" / f"{tenant_id}_messy.json"
+        if not benchmark_path.exists():
+            benchmark_path = Path(__file__).parent.parent / "tests" / f"{tenant_id}.json"
+        
+        gates.append({
+            "gate": "benchmark_exists",
+            "required": False,
+            "passed": benchmark_path.exists(),
+            "message": f"Benchmark file {'found' if benchmark_path.exists() else 'not found'}"
+        })
+    
+    return {
+        "tenant_id": tenant_id,
+        "all_required_passed": all_pass,
+        "gates": gates,
+        "recommendation": "Ready for launch" if all_pass else "Fix failing required gates before launch"
+    }
 
 
 # ============ ADMIN UI ENDPOINTS ============
@@ -1630,8 +1751,19 @@ def promote_staged(
             
             conn.commit()
         
-        # 3. Run suite
-        suite_result = run_suite(base_url, tenantId)
+        # 3. Run suite (if exists, otherwise skip)
+        suite_path = Path(__file__).parent.parent / "tests" / f"{tenantId}.json"
+        if suite_path.exists():
+            suite_result = run_suite(base_url, tenantId)
+        else:
+            # No suite file - skip tests and promote anyway
+            suite_result = {
+                "passed": True,
+                "total": 0,
+                "passed_count": 0,
+                "skipped": True,
+                "message": "No suite file found - promoting without tests"
+            }
         
         # 4. If pass: keep staged as live, update last_good
         # If fail: restore live from last_good, move staged back

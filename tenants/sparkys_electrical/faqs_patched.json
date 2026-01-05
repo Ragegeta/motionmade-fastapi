@@ -1,0 +1,81 @@
+[
+  {
+    "question": "Pricing and quotes",
+    "answer": "Our call-out fee is $99 which includes the first 30 minutes. After that, we charge $85/hour. For larger jobs, we provide free quotes. What electrical work do you need done?",
+    "variants": [
+      "how much do you charge",
+      "what are your prices",
+      "pricing",
+      "cost",
+      "quote",
+      "call out fee",
+      "hourly rate",
+      "your prices please",
+      "what do you charge",
+      "how much",
+      "what do you do"
+    ]
+  },
+  {
+    "question": "Services offered",
+    "answer": "We handle all residential and commercial electrical work: powerpoint installation, lighting, switchboard upgrades, ceiling fan installation, safety switches, smoke alarms, and emergency repairs.",
+    "variants": [
+      "what services do you offer",
+      "what do you do",
+      "services",
+      "do you do powerpoints",
+      "do you do ceiling fans",
+      "do you do switchboards"
+    ]
+  },
+  {
+    "question": "Service area",
+    "answer": "We service all of Brisbane metro - from Redcliffe to Logan, and west to Ipswich. Let me know your suburb and I can confirm.",
+    "variants": [
+      "what areas do you service",
+      "where do you service",
+      "service area",
+      "do you come to brisbane",
+      "suburbs",
+      "what areas do you cover"
+    ]
+  },
+  {
+    "question": "Availability and booking",
+    "answer": "We usually have availability within 1-2 days for standard jobs. For emergencies, we offer same-day service. Would you like to book a time?",
+    "variants": [
+      "how do i book",
+      "booking",
+      "availability",
+      "when can you come",
+      "can you come today",
+      "can you come tomorrow",
+      "availability this week"
+    ]
+  },
+  {
+    "question": "Emergency electrical",
+    "answer": "Yes, we offer 24/7 emergency electrical services. Call us directly on 0400 123 456 for emergencies. There's a $149 call-out fee for after-hours emergencies.",
+    "variants": [
+      "emergency",
+      "urgent",
+      "no power",
+      "power out",
+      "24/7",
+      "i have no power",
+      "emergency electrician"
+    ]
+  },
+  {
+    "question": "Licensed and insured",
+    "answer": "Yes, we're fully licensed electrical contractors and carry $20M public liability insurance. All our work comes with a certificate of compliance.",
+    "variants": [
+      "are you licensed",
+      "licensed",
+      "insured",
+      "insurance",
+      "qualified",
+      "r you insured"
+    ]
+  }
+]

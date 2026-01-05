@@ -2,12 +2,23 @@ import re
 import unicodedata
 
 SLANG_MAP = [
-    # Pronouns
+    # === CRITICAL: Single-letter shortcuts (must be first, word-boundary) ===
+    (r'\br\b', 'are'),           # "r u" -> "are you"
+    (r'\bu\b', 'you'),           # "u" -> "you"
+    (r'\by\b', 'why'),           # "y" at word boundary -> "why" (context: "y not")
+    (r'\bc\b', 'see'),           # "c u" -> "see you"
+    (r'\bn\b', 'and'),           # "fish n chips" -> "fish and chips"
+    (r'\bk\b', 'okay'),          # "k" -> "okay"
+    (r'\bm\b', 'am'),            # "i m" -> "i am" (rare but happens)
+    
+    # === Two-letter shortcuts ===
     (r'\bur\b', 'your'),
-    (r'\bu\b', 'you'),
-    (r'\bya\b', 'you'),
-    (r'\by\b', 'you'),  # single 'y' as 'you'
     (r'\byr\b', 'your'),
+    (r'\bya\b', 'you'),
+    (r'\bda\b', 'the'),
+    (r'\bma\b', 'my'),
+    (r'\bim\b', 'i am'),
+    (r'\biv\b', 'i have'),
     
     # Common words
     (r'\bpls\b', 'please'),
