@@ -2264,7 +2264,7 @@ def debug_routes():
 
 
 @app.post("/admin/api/tenant/{tenantId}/debug-query")
-def debug_query(
+async def debug_query(
     tenantId: str,
     request: Request,
     resp: Response,
