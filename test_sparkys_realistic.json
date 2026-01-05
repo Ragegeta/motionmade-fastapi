@@ -1,0 +1,123 @@
+[
+  {
+    "id": "T01",
+    "question": "how much do you charge",
+    "expect_hit": true,
+    "expected_topic": "pricing"
+  },
+  {
+    "id": "T02",
+    "question": "ur prices pls",
+    "expect_hit": true,
+    "expected_topic": "pricing"
+  },
+  {
+    "id": "T03",
+    "question": "what's your call out fee",
+    "expect_hit": true,
+    "expected_topic": "pricing"
+  },
+  {
+    "id": "T04",
+    "question": "do you do powerpoints",
+    "expect_hit": true,
+    "expected_topic": "services"
+  },
+  {
+    "id": "T05",
+    "question": "can u install ceiling fans",
+    "expect_hit": true,
+    "expected_topic": "services"
+  },
+  {
+    "id": "T06",
+    "question": "what areas do you service",
+    "expect_hit": true,
+    "expected_topic": "area"
+  },
+  {
+    "id": "T07",
+    "question": "do u come to brisbane",
+    "expect_hit": true,
+    "expected_topic": "area"
+  },
+  {
+    "id": "T08",
+    "question": "how do i book",
+    "expect_hit": true,
+    "expected_topic": "booking"
+  },
+  {
+    "id": "T09",
+    "question": "can u come 2day",
+    "expect_hit": true,
+    "expected_topic": "booking"
+  },
+  {
+    "id": "T10",
+    "question": "i have no power",
+    "expect_hit": true,
+    "expected_topic": "emergency"
+  },
+  {
+    "id": "T11",
+    "question": "are you licensed",
+    "expect_hit": true,
+    "expected_topic": "licensing"
+  },
+  {
+    "id": "T12",
+    "question": "r u insured",
+    "expect_hit": true,
+    "expected_topic": "licensing"
+  },
+  {
+    "id": "T13",
+    "question": "g'day mate, wat do u charge for a new powerpoint",
+    "expect_hit": true,
+    "expected_topic": "pricing"
+  },
+  {
+    "id": "T14",
+    "question": "hey quick one - how much is your hourly rate",
+    "expect_hit": true,
+    "expected_topic": "pricing"
+  },
+  {
+    "id": "T15",
+    "question": "do you service logan",
+    "expect_hit": true,
+    "expected_topic": "area"
+  },
+  {
+    "id": "T16",
+    "question": "can you come this arvo",
+    "expect_hit": true,
+    "expected_topic": "booking"
+  },
+  {
+    "id": "T17",
+    "question": "do you do plumbing",
+    "expect_hit": false,
+    "expected_topic": "none"
+  },
+  {
+    "id": "T18",
+    "question": "can you fix my car",
+    "expect_hit": false,
+    "expected_topic": "none"
+  },
+  {
+    "id": "T19",
+    "question": "???",
+    "expect_hit": false,
+    "expected_topic": "none"
+  },
+  {
+    "id": "T20",
+    "question": "hi",
+    "expect_hit": false,
+    "expected_topic": "none"
+  }
+]
+

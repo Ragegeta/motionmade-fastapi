@@ -1,0 +1,33 @@
+[
+  {
+    "question": "Pricing and quotes",
+    "answer": "Our call-out fee is $99 which includes the first 30 minutes. After that, we charge $85/hour. For larger jobs, we provide free quotes. What electrical work do you need done?",
+    "variants": ["pricing", "how much", "cost", "quote"]
+  },
+  {
+    "question": "Services we offer",
+    "answer": "We handle all residential and commercial electrical work: powerpoint installation, lighting, switchboard upgrades, ceiling fan installation, safety switches, smoke alarms, and emergency repairs.",
+    "variants": ["services", "what do you do"]
+  },
+  {
+    "question": "Service area",
+    "answer": "We service all of Brisbane metro - from Redcliffe to Logan, and west to Ipswich. Let me know your suburb and I can confirm.",
+    "variants": ["service area", "where", "suburbs", "brisbane"]
+  },
+  {
+    "question": "Booking and availability",
+    "answer": "We usually have availability within 1-2 days for standard jobs. For emergencies, we offer same-day service. Would you like to book a time?",
+    "variants": ["booking", "availability", "when can you come"]
+  },
+  {
+    "question": "Emergency electrical",
+    "answer": "Yes, we offer 24/7 emergency electrical services. Call us directly on 0400 123 456 for emergencies. There's a $149 call-out fee for after-hours emergencies.",
+    "variants": ["emergency", "urgent", "no power"]
+  },
+  {
+    "question": "Licensed and insured",
+    "answer": "Yes, we're fully licensed electrical contractors and carry $20M public liability insurance. All our work comes with a certificate of compliance.",
+    "variants": ["licensed", "insured", "qualified"]
+  }
+]
+

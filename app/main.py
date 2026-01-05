@@ -661,58 +661,61 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         return payload
 
     # -----------------------------
-    # Retrieval-first (ALWAYS runs)
+    # Two-Stage Retrieval (ALWAYS runs)
     # -----------------------------
     try:
-        # 1) Original retrieval
-        _t0 = time.time()
-        q_emb = embed_text(primary_query)
-        timings["embedding_ms"] = int((time.time() - _t0) * 1000)
+        # === TWO-STAGE RETRIEVAL ===
+        from app.retriever import retrieve as two_stage_retrieve
         
         _t0 = time.time()
-        hit, ans, score, delta, faq_id = retrieve_faq_answer(tenant_id, q_emb)
+        retrieval_result, retrieval_trace = two_stage_retrieve(
+            tenant_id=tenant_id,
+            query=msg,
+            normalized_query=primary_query,
+            use_cache=True
+        )
         timings["retrieval_ms"] = int((time.time() - _t0) * 1000)
-
-        if score is not None:
-            resp.headers["X-Retrieval-Score"] = str(score)
-        if delta is not None:
-            resp.headers["X-Retrieval-Delta"] = str(delta)
+        
+        # Set debug headers from trace
+        resp.headers["X-Retrieval-Stage"] = retrieval_trace.get("stage", "unknown")
+        if retrieval_trace.get("top_score") is not None:
+            resp.headers["X-Retrieval-Score"] = str(retrieval_trace.get("top_score", 0))
+        resp.headers["X-Cache-Hit"] = str(retrieval_trace.get("cache_hit", False)).lower()
+        resp.headers["X-Rerank-Triggered"] = str(retrieval_trace.get("rerank_triggered", False)).lower()
+        resp.headers["X-Retrieval-Ms"] = str(retrieval_trace.get("total_ms", 0))
+        
+        if retrieval_trace.get("rerank_trace"):
+            rt = retrieval_trace["rerank_trace"]
+            resp.headers["X-Rerank-Gate"] = rt.get("safety_gate", "")[:50]
+            if rt.get("duration_ms"):
+                resp.headers["X-Rerank-Ms"] = str(rt["duration_ms"])
+        
+        # Convert to hit/answer format
+        hit = retrieval_result is not None
+        ans = retrieval_result["answer"] if retrieval_result else None
+        faq_id = retrieval_result["faq_id"] if retrieval_result else None
+        score = retrieval_result["score"] if retrieval_result else retrieval_trace.get("top_score", 0)
+        
         if faq_id is not None:
             resp.headers["X-Top-Faq-Id"] = str(faq_id)
-
-        # === DISAMBIGUATION: If uncertain, ask LLM to pick best match ===
-        disambiguated = False
-        if not hit and score is not None and score >= 0.65:  # Narrow band: 0.65-0.82
-            from app.disambiguate import disambiguate_faq, should_disambiguate
-            from app.retrieval import get_top_faq_candidates
-            
-            runner_up_score = (score - delta) if delta else 0
-            if should_disambiguate(score, runner_up_score):
-                candidates = get_top_faq_candidates(tenant_id, q_emb, limit=5)
-                
-                if candidates and len(candidates) >= 2:
-                    best_match = disambiguate_faq(primary_query, candidates)
-                    
-                    if best_match:
-                        hit = True
-                        ans = best_match["answer"]
-                        faq_id = best_match["faq_id"]
-                        score = best_match["score"]
-                        disambiguated = True
-                        resp.headers["X-Disambiguated"] = "true"
+        
+        resp.headers["X-Faq-Hit"] = str(hit).lower()
 
         if hit and ans:
-            if disambiguated:
-                resp.headers["X-Debug-Branch"] = "disambiguate_hit"
+            stage = retrieval_result.get("stage", "embedding")
+            if stage == "rerank":
+                resp.headers["X-Debug-Branch"] = "rerank_hit"
+            elif stage == "cache":
+                resp.headers["X-Debug-Branch"] = "cache_hit"
             else:
                 resp.headers["X-Debug-Branch"] = "fact_hit"
-            resp.headers["X-Faq-Hit"] = "true"
+            
             payload["replyText"] = str(ans).strip()
             
-            # Cache the result (only for FAQ hits)
+            # Cache the result (only for FAQ hits) - already cached by retriever
             cache_result(tenant_id, primary_query, {
                 "replyText": payload["replyText"],
-                "debug_branch": "disambiguate_hit" if disambiguated else "fact_hit",
+                "debug_branch": resp.headers.get("X-Debug-Branch", "fact_hit"),
                 "retrieval_score": score,
                 "top_faq_id": faq_id
             })
@@ -1656,41 +1659,28 @@ def upload_staged_faqs(
             # Variant expansion moved to promote-time (keeps staged FAQs clean)
             # items_data = expand_variants_inline(items_data, max_per_faq=40)
             
+            import json as json_lib
+            
             for it in items:
                 q = (it.question or "").strip()
                 a = (it.answer or "").strip()
                 if not q or not a:
                     continue
 
+                # Store variants in variants_json (embeddings created at promote time)
+                raw_variants = it.variants or []
+                variants_json = json_lib.dumps(raw_variants)
+                
                 emb_q = embed_text(q)
                 row = conn.execute(
-                    "INSERT INTO faq_items (tenant_id, question, answer, embedding, enabled, is_staged) "
-                    "VALUES (%s,%s,%s,%s,true,true) RETURNING id",
-                    (tenantId, q, a, Vector(emb_q)),
+                    "INSERT INTO faq_items (tenant_id, question, answer, embedding, enabled, is_staged, variants_json) "
+                    "VALUES (%s,%s,%s,%s,true,true,%s) RETURNING id",
+                    (tenantId, q, a, Vector(emb_q), variants_json),
                 ).fetchone()
                 faq_id = row[0]
 
-                # Use original variants (expansion happens at promote-time)
-                raw_variants = it.variants or []
-                seen = set()
-                variants: List[str] = []
-                for v in [q, *raw_variants]:
-                    vv = (v or "").strip()
-                    if not vv:
-                        continue
-                    key = vv.lower()
-                    if key in seen:
-                        continue
-                    seen.add(key)
-                    variants.append(vv)
-
-                for vq in variants:
-                    v_emb = embed_text(vq)
-                    conn.execute(
-                        "INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled) "
-                        "VALUES (%s,%s,%s,true)",
-                        (faq_id, vq, Vector(v_emb)),
-                    )
+                # Don't create variant embeddings here - done at promote time
+                # This keeps staged upload fast
 
                 count += 1
 
@@ -1739,39 +1729,45 @@ def promote_staged(
                 SET answer=EXCLUDED.answer, embedding=EXCLUDED.embedding, updated_at=now()
             """, (tenantId,))
             
-            # Expand variants at promote-time (keeps staged FAQs clean)
+            # Get staged FAQs with variants_json
             staged_faqs = conn.execute("""
-                SELECT id, question, answer FROM faq_items WHERE tenant_id=%s AND is_staged=true
+                SELECT id, question, answer, variants_json FROM faq_items WHERE tenant_id=%s AND is_staged=true
             """, (tenantId,)).fetchall()
-            
-            # Get existing variants for staged FAQs
-            items_to_promote = []
-            for faq_id, q, a in staged_faqs:
-                variants = conn.execute("""
-                    SELECT variant_question FROM faq_variants WHERE faq_id=%s
-                """, (faq_id,)).fetchall()
-                variant_list = [v[0] for v in variants]
-                items_to_promote.append({"question": q, "answer": a, "variants": variant_list})
-            
-            # Expand variants
-            items_to_promote = expand_variants_inline(items_to_promote, max_per_faq=30)
             
             # Temporarily make staged FAQs live (for suite run)
             conn.execute("""
                 UPDATE faq_items SET is_staged=false WHERE tenant_id=%s AND is_staged=true
             """, (tenantId,))
             
-            # Delete old variants and insert expanded ones
-            for faq_id, q, a in staged_faqs:
+            # Embed variants for each FAQ
+            for faq_id, q, a, variants_json in staged_faqs:
+                # Parse variants from JSON
+                variants = []
+                try:
+                    variants = json_lib.loads(variants_json) if variants_json else []
+                except:
+                    pass
+                
+                # Always include question itself, plus variants
+                all_variants = [q] + [v for v in variants if v and v.lower() != q.lower()]
+                
+                # Delete old variants
                 conn.execute("DELETE FROM faq_variants WHERE faq_id=%s", (faq_id,))
-                expanded_item = next((item for item in items_to_promote if item["question"] == q), None)
-                if expanded_item:
-                    for variant in expanded_item["variants"]:
+                
+                # Embed all variants (limit to 50 per FAQ)
+                for variant in all_variants[:50]:
+                    variant = variant.strip()
+                    if not variant:
+                        continue
+                    
+                    try:
                         v_emb = embed_text(variant)
                         conn.execute("""
-                            INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled)
+                            INSERT INTO faq_variants (faq_id, variant_text, variant_embedding, enabled)
                             VALUES (%s, %s, %s, true)
                         """, (faq_id, variant, Vector(v_emb)))
+                    except Exception as e:
+                        print(f"Embed error for '{variant[:30]}': {e}")
             
             conn.commit()
         
@@ -1829,6 +1825,9 @@ def promote_staged(
                     ON CONFLICT (tenant_id, question) DO UPDATE
                     SET answer=EXCLUDED.answer, embedding=EXCLUDED.embedding, updated_at=now()
                 """, (tenantId,))
+                
+                # Clear retrieval cache for this tenant (new FAQs = new embeddings)
+                conn.execute("DELETE FROM retrieval_cache WHERE tenant_id=%s", (tenantId,))
                 
                 # Log success
                 conn.execute("""
