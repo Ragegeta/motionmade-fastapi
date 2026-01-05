@@ -1146,7 +1146,40 @@ class DomainAdd(BaseModel):
 @app.get("/admin/api/health")
 def admin_api_health():
     """Health check for admin API routes."""
-    return {"ok": True, "routes": "available"}
+    # Verify key routes exist
+    route_paths = [
+        "/admin/api/tenants",
+        "/admin/api/tenant/{tenantId}/domains",
+        "/admin/api/tenant/{tenantId}/faqs/staged",
+        "/admin/api/tenant/{tenantId}/promote",
+        "/admin/api/tenant/{tenantId}/readiness",
+        "/admin/api/tenant/{tenantId}/alerts",
+        "/admin/api/tenant/{tenantId}/stats",
+        "/admin/api/tenant/{tenantId}/benchmark",
+        "/admin/api/tenant/{tenantId}/domains/sync-worker",
+    ]
+    
+    existing_routes = []
+    for route in app.routes:
+        if hasattr(route, "path"):
+            existing_routes.append(route.path)
+    
+    verified = []
+    for pattern in route_paths:
+        # Check if route exists (exact or with parameter)
+        found = any(
+            r == pattern or 
+            (pattern.replace("{tenantId}", "") in r.replace("{tenantId}", ""))
+            for r in existing_routes
+        )
+        verified.append({"pattern": pattern, "exists": found})
+    
+    return {
+        "ok": True,
+        "routes": "available",
+        "verified": verified,
+        "timestamp": time.time()
+    }
 
 @app.get("/admin/api/tenants")
 def list_tenants(resp: Response, authorization: str = Header(default="")):
@@ -1662,6 +1695,209 @@ def rollback_tenant(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Rollback failed: {str(e)}")
+
+
+@app.post("/admin/api/tenant/{tenantId}/benchmark")
+def run_benchmark(
+    tenantId: str,
+    resp: Response,
+    authorization: str = Header(default="")
+):
+    """Run messy benchmark for a tenant and return results."""
+    _check_admin_auth(authorization)
+    
+    import json as json_lib
+    from pathlib import Path
+    
+    # Load benchmark suite
+    benchmark_path = Path(__file__).parent.parent / "tests" / "messy_benchmark.json"
+    if not benchmark_path.exists():
+        raise HTTPException(status_code=404, detail="Benchmark suite not found")
+    
+    with open(benchmark_path, "r") as f:
+        benchmark = json_lib.load(f)
+    
+    tests = benchmark["tests"]
+    thresholds = benchmark["pass_thresholds"]
+    
+    # Get base URL for API calls
+    base_url = os.getenv("PUBLIC_BASE_URL") or "https://api.motionmadebne.com.au"
+    
+    results = []
+    worst_misses = []
+    
+    # Run each test
+    for test in tests:
+        question = test["question"]
+        url = f"{base_url}/api/v2/generate-quote-reply"
+        body = json_lib.dumps({"tenantId": tenantId, "customerMessage": question}).encode()
+        
+        try:
+            import urllib.request
+            req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=30) as response:
+                headers = {k.lower(): v for k, v in response.getheaders()}
+                body_text = response.read().decode()
+                
+                is_clarify = "rephrase" in body_text.lower()
+                faq_hit = headers.get("x-faq-hit", "false") == "true"
+                score = float(headers.get("x-retrieval-score", 0)) if headers.get("x-retrieval-score") else None
+                branch = "clarify" if is_clarify else headers.get("x-debug-branch", "unknown")
+                normalized = headers.get("x-normalized-input", "")
+                
+                expected_hit = test.get("expect_hit", False)
+                expected_branch = test.get("expect_branch")
+                
+                actual_hit = faq_hit
+                actual_branch = branch
+                
+                passed = True
+                if expected_hit and not actual_hit:
+                    passed = False
+                    worst_misses.append({
+                        "question": question,
+                        "category": test.get("category", "unknown"),
+                        "score": score,
+                        "normalized": normalized,
+                    })
+                elif not expected_hit and actual_hit:
+                    passed = False
+                elif expected_branch and actual_branch != expected_branch:
+                    passed = False
+                
+                results.append({
+                    "test": test,
+                    "faq_hit": faq_hit,
+                    "score": score,
+                    "branch": branch,
+                    "normalized": normalized,
+                    "passed": passed
+                })
+        except Exception as e:
+            results.append({
+                "test": test,
+                "error": str(e),
+                "passed": False
+            })
+    
+    # Calculate metrics
+    expect_hit_tests = [r for r in results if r.get("test", {}).get("expect_hit")]
+    actual_hits = sum(1 for r in expect_hit_tests if r.get("faq_hit"))
+    hit_rate = actual_hits / len(expect_hit_tests) if expect_hit_tests else 0
+    
+    expect_miss_tests = [r for r in results if not r.get("test", {}).get("expect_hit")]
+    wrong_hits = sum(1 for r in expect_miss_tests if r.get("faq_hit"))
+    wrong_hit_rate = wrong_hits / len(expect_miss_tests) if expect_miss_tests else 0
+    
+    fallbacks = [r for r in expect_hit_tests if r.get("branch") in ("general_fallback", "fact_miss") and not r.get("branch") == "clarify"]
+    fallback_rate = len(fallbacks) / len(expect_hit_tests) if expect_hit_tests else 0
+    
+    gate_pass = (
+        hit_rate >= thresholds["min_hit_rate"] and
+        fallback_rate <= thresholds["max_fallback_rate"] and
+        wrong_hit_rate <= thresholds["max_wrong_hit_rate"]
+    )
+    
+    # Sort worst misses by score
+    worst_misses.sort(key=lambda x: x.get("score") or 0, reverse=True)
+    
+    return {
+        "tenant_id": tenantId,
+        "total_tests": len(results),
+        "passed_tests": sum(1 for r in results if r.get("passed")),
+        "hit_rate": hit_rate,
+        "fallback_rate": fallback_rate,
+        "wrong_hit_rate": wrong_hit_rate,
+        "gate_pass": gate_pass,
+        "thresholds": thresholds,
+        "worst_misses": worst_misses[:10],
+        "results": results
+    }
+
+
+@app.post("/admin/api/tenant/{tenantId}/domains/sync-worker")
+def sync_worker_domains(
+    tenantId: str,
+    resp: Response,
+    authorization: str = Header(default="")
+):
+    """Sync tenant domains to Worker D1 database via Cloudflare API."""
+    _check_admin_auth(authorization)
+    
+    import json as json_lib
+    
+    # Get Cloudflare config from environment
+    cf_api_token = os.getenv("CLOUDFLARE_API_TOKEN")
+    cf_account_id = os.getenv("CLOUDFLARE_ACCOUNT_ID")
+    worker_db_name = os.getenv("WORKER_D1_DB_NAME", "motionmade_creator_enquiries")
+    worker_db_id = os.getenv("WORKER_D1_DB_ID")
+    
+    if not cf_api_token or not cf_account_id or not worker_db_id:
+        return {
+            "tenant_id": tenantId,
+            "synced": False,
+            "message": "Cloudflare API configuration missing. Set CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, and WORKER_D1_DB_ID environment variables. For now, use wrangler CLI manually.",
+            "manual_instructions": f"Run: wrangler d1 execute <db_name> --remote --command \"INSERT INTO tenant_domains (domain, tenant_id, enabled) VALUES ('<domain>', '{tenantId}', 1) ON CONFLICT(domain) DO UPDATE SET tenant_id=excluded.tenant_id, enabled=1;\""
+        }
+    
+    # Get domains from FastAPI database
+    with get_conn() as conn:
+        domains = conn.execute(
+            "SELECT domain FROM tenant_domains WHERE tenant_id=%s AND enabled=true",
+            (tenantId,)
+        ).fetchall()
+    
+    domain_list = [row[0] for row in domains]
+    
+    if not domain_list:
+        return {
+            "tenant_id": tenantId,
+            "synced": False,
+            "message": "No domains found for tenant"
+        }
+    
+    # Sync each domain to Worker D1 via Cloudflare API
+    synced = []
+    errors = []
+    
+    for domain in domain_list:
+        # Use Cloudflare API to execute D1 SQL
+        url = f"https://api.cloudflare.com/client/v4/accounts/{cf_account_id}/d1/database/{worker_db_id}/query"
+        
+        sql = f"""
+        INSERT INTO tenant_domains (domain, tenant_id, enabled, notes)
+        VALUES ('{domain}', '{tenantId}', 1, 'admin_api_sync')
+        ON CONFLICT(domain) DO UPDATE SET tenant_id=excluded.tenant_id, enabled=1, notes=excluded.notes;
+        """
+        
+        try:
+            import urllib.request
+            req = urllib.request.Request(
+                url,
+                data=json_lib.dumps({"sql": sql}).encode(),
+                headers={
+                    "Authorization": f"Bearer {cf_api_token}",
+                    "Content-Type": "application/json"
+                },
+                method="POST"
+            )
+            
+            with urllib.request.urlopen(req, timeout=30) as response:
+                result = json_lib.loads(response.read().decode())
+                if result.get("success"):
+                    synced.append(domain)
+                else:
+                    errors.append({"domain": domain, "error": result.get("errors", [])})
+        except Exception as e:
+            errors.append({"domain": domain, "error": str(e)})
+    
+    return {
+        "tenant_id": tenantId,
+        "synced": len(synced) > 0,
+        "synced_domains": synced,
+        "errors": errors,
+        "message": f"Synced {len(synced)}/{len(domain_list)} domains to Worker D1"
+    }
 
 
 @app.get("/debug/routes")

@@ -10,6 +10,35 @@
 | Widget JS | https://mm-client1-creator-ui.pages.dev/widget.js |
 | Admin UI | https://motionmade-fastapi.onrender.com/admin |
 
+## How to Onboard a Tenant (3 Steps)
+
+### Option 1: Admin UI (Recommended)
+
+1. **Go to Admin UI**: https://motionmade-fastapi.onrender.com/admin
+2. **Click "Onboarding"** tab
+3. **Follow the steps:**
+   - Select/Create tenant
+   - Add domain(s)
+   - Paste/upload FAQ JSON to staging
+   - Click "Promote" (runs suite + auto-expands variants)
+   - Click "Run Benchmark" (verifies quality)
+   - Click "Sync Worker Domains" (enables widget routing)
+   - Check readiness and copy install snippet
+
+### Option 2: Command Line
+
+```powershell
+.\tools\onboard_tenant.ps1 `
+    -TenantId "acme_clean" `
+    -Domains @("acmecleaning.com.au") `
+    -FaqPath "tenants\acme_clean\faqs.json" `
+    -AdminBase "https://motionmade-fastapi.onrender.com" `
+    -WorkerDbName "motionmade_creator_enquiries" `
+    -WorkerBackendPath "C:\MM\10__CLIENTS\client1\backend"
+```
+
+**Note:** Variant expansion happens automatically during promote. No manual step needed.
+
 ## Key Endpoints
 
 ### Public (no auth)
@@ -38,6 +67,12 @@ Body: {
 ```
 GET /api/health
 ```
+
+#### Admin API Health Check
+```
+GET /admin/api/health
+```
+Returns route verification status.
 
 ### Admin (requires `Authorization: Bearer {ADMIN_TOKEN}`)
 
@@ -87,6 +122,18 @@ GET /admin/api/tenant/{tenantId}/alerts
 ```
 GET /admin/api/tenant/{tenantId}/readiness
 ```
+
+#### Run Benchmark
+```
+POST /admin/api/tenant/{tenantId}/benchmark
+```
+Runs messy benchmark suite and returns results with worst misses.
+
+#### Sync Worker Domains
+```
+POST /admin/api/tenant/{tenantId}/domains/sync-worker
+```
+Syncs tenant domains from FastAPI DB to Worker D1 database (requires Cloudflare API config).
 
 ### Alternative Admin Paths (Cloudflare-compatible)
 
@@ -182,14 +229,29 @@ All `/admin/api/...` endpoints also available at `/api/v2/admin/...`:
 
 ## Common Tasks
 
-### Onboard New Tenant
+### Onboard New Tenant (Admin UI - Recommended)
+
+1. Go to: https://motionmade-fastapi.onrender.com/admin
+2. Click "Onboarding" tab
+3. Follow the 7-step wizard:
+   - Select/Create tenant
+   - Add domain(s)
+   - Upload FAQ JSON to staging
+   - Promote (runs suite + auto-expands variants)
+   - Run benchmark (verifies quality)
+   - Sync Worker domains (enables widget routing)
+   - Check readiness and copy install snippet
+
+### Onboard New Tenant (API/CLI)
+
 1. Create tenant: `POST /admin/api/tenants` with `{"id": "new_tenant", "name": "New Tenant"}`
 2. Add domain: `POST /admin/api/tenant/new_tenant/domains` with `{"domain": "example.com"}`
 3. Upload FAQs: `PUT /admin/api/tenant/new_tenant/faqs/staged`
-4. Create test suite: `tests/new_tenant.json`
-5. Promote: `POST /admin/api/tenant/new_tenant/promote`
-6. Check readiness: `GET /admin/api/tenant/new_tenant/readiness`
-7. Get install snippet from Admin UI
+4. Promote: `POST /admin/api/tenant/new_tenant/promote` (auto-expands variants, runs suite)
+5. Run benchmark: `POST /admin/api/tenant/new_tenant/benchmark`
+6. Sync Worker: `POST /admin/api/tenant/new_tenant/domains/sync-worker`
+7. Check readiness: `GET /admin/api/tenant/new_tenant/readiness`
+8. Get install snippet from Admin UI
 
 ### Update FAQs
 1. Upload new FAQs to staging: `PUT /admin/api/tenant/{id}/faqs/staged`

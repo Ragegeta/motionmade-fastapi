@@ -199,7 +199,10 @@
         <div class="page" id="tenantsPage">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2>Tenants</h2>
-                <button class="primary" onclick="showCreateTenant()">+ New Tenant</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="primary" onclick="showOnboarding()">Onboarding</button>
+                    <button class="primary" onclick="showCreateTenant()">+ New Tenant</button>
+                </div>
             </div>
             <div class="tenants-list">
                 <table>
@@ -237,6 +240,93 @@
                 </div>
                 <button class="primary" onclick="createTenant()">Create Tenant</button>
                 <div id="createError" class="error"></div>
+            </div>
+        </div>
+        
+        <!-- Onboarding Page -->
+        <div class="page" id="onboardingPage">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Tenant Onboarding</h2>
+                <button class="primary" onclick="showTenantsList()">← Back to Tenants</button>
+            </div>
+            <div class="tenant-detail">
+                <!-- Step 1: Select/Create Tenant -->
+                <div class="section">
+                    <h2>1. Tenant</h2>
+                    <div class="form-group">
+                        <label>Select or Create Tenant</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="onboardTenantSelect" style="flex: 1; padding: 8px;">
+                                <option value="">-- Select Tenant --</option>
+                            </select>
+                            <button onclick="showCreateTenant()">+ New</button>
+                        </div>
+                    </div>
+                    <div id="onboardTenantInfo" style="display: none; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                        <strong>Tenant:</strong> <span id="onboardTenantName"></span>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Add Domains -->
+                <div class="section">
+                    <h2>2. Domains</h2>
+                    <div class="form-group">
+                        <label>Add Domain</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="onboardDomain" placeholder="example.com" style="flex: 1;" />
+                            <button onclick="onboardAddDomain()">Add Domain</button>
+                        </div>
+                    </div>
+                    <ul id="onboardDomainsList" class="domains-list"></ul>
+                </div>
+                
+                <!-- Step 3: Upload FAQs -->
+                <div class="section">
+                    <h2>3. Upload FAQs (Staged)</h2>
+                    <div class="form-group">
+                        <label>Paste FAQ JSON or Upload File</label>
+                        <textarea id="onboardFaqsJson" rows="10" style="width: 100%; font-family: monospace; font-size: 12px;" placeholder='[{"question": "...", "answer": "...", "variants": [...]}]'></textarea>
+                        <input type="file" id="onboardFaqsFile" accept=".json" style="margin-top: 10px;" />
+                    </div>
+                    <button class="primary" onclick="onboardUploadStaged()">Upload to Staging</button>
+                    <div id="onboardUploadStatus" style="margin-top: 10px;"></div>
+                </div>
+                
+                <!-- Step 4: Promote -->
+                <div class="section">
+                    <h2>4. Promote (Runs Suite + Auto-Expands Variants)</h2>
+                    <button class="primary" onclick="onboardPromote()" id="onboardPromoteBtn">Promote to Live</button>
+                    <div id="onboardPromoteStatus" style="margin-top: 10px;"></div>
+                </div>
+                
+                <!-- Step 5: Benchmark -->
+                <div class="section">
+                    <h2>5. Run Benchmark</h2>
+                    <button class="primary" onclick="onboardRunBenchmark()" id="onboardBenchmarkBtn">Run Benchmark</button>
+                    <div id="onboardBenchmarkStatus" style="margin-top: 10px;"></div>
+                </div>
+                
+                <!-- Step 6: Sync Worker Domains -->
+                <div class="section">
+                    <h2>6. Sync Worker Domains</h2>
+                    <button onclick="onboardSyncWorker()" id="onboardSyncBtn">Sync to Worker D1</button>
+                    <div id="onboardSyncStatus" style="margin-top: 10px;"></div>
+                </div>
+                
+                <!-- Step 7: Readiness & Install Snippet -->
+                <div class="section">
+                    <h2>7. Readiness & Install Snippet</h2>
+                    <button onclick="onboardCheckReadiness()">Check Readiness</button>
+                    <div id="onboardReadinessStatus" style="margin-top: 10px;"></div>
+                    <div id="onboardInstallSnippet" style="margin-top: 20px; display: none;">
+                        <h3>Install Snippet</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; position: relative;">
+                            <pre id="onboardSnippetCode" style="margin: 0; white-space: pre-wrap; word-wrap: break-word;"></pre>
+                            <button onclick="copyOnboardSnippet()" style="position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 12px;">Copy</button>
+                        </div>
+                        <div id="onboardCopySuccess" style="display: none; color: #28a745; margin-top: 5px;">✓ Copied!</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -701,6 +791,354 @@
                     alert('Failed to copy. Please select and copy manually.');
                 }
                 document.body.removeChild(textArea);
+            }
+        }
+        
+        // Onboarding functions
+        function showOnboarding() {
+            showPage('onboardingPage');
+            loadOnboardingTenants();
+        }
+        
+        async function loadOnboardingTenants() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/api/tenants`, {
+                    headers: getHeaders()
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                
+                const select = document.getElementById('onboardTenantSelect');
+                select.innerHTML = '<option value="">-- Select Tenant --</option>';
+                data.tenants.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = `${t.id} (${t.name || t.id})`;
+                    select.appendChild(opt);
+                });
+                
+                select.onchange = function() {
+                    const tenantId = this.value;
+                    if (tenantId) {
+                        document.getElementById('onboardTenantInfo').style.display = 'block';
+                        document.getElementById('onboardTenantName').textContent = tenantId;
+                        loadOnboardingDomains(tenantId);
+                    } else {
+                        document.getElementById('onboardTenantInfo').style.display = 'none';
+                    }
+                };
+            } catch (e) {
+                alert(`Error loading tenants: ${e.message}`);
+            }
+        }
+        
+        async function loadOnboardingDomains(tenantId) {
+            try {
+                const res = await fetch(`${API_BASE}/admin/api/tenant/${tenantId}`, {
+                    headers: getHeaders()
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                
+                const list = document.getElementById('onboardDomainsList');
+                list.innerHTML = '';
+                if (data.domains && data.domains.length > 0) {
+                    data.domains.forEach(d => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<span>${escapeHtml(d.domain)}</span> <button onclick="onboardRemoveDomain('${escapeHtml(tenantId)}', '${escapeHtml(d.domain)}')" style="font-size: 12px;">Remove</button>`;
+                        list.appendChild(li);
+                    });
+                }
+            } catch (e) {
+                console.error('Error loading domains:', e);
+            }
+        }
+        
+        async function onboardAddDomain() {
+            const tenantId = document.getElementById('onboardTenantSelect').value;
+            const domain = document.getElementById('onboardDomain').value.trim();
+            
+            if (!tenantId) {
+                alert('Please select a tenant first');
+                return;
+            }
+            if (!domain) {
+                alert('Please enter a domain');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/api/tenant/${tenantId}/domains`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ domain })
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                document.getElementById('onboardDomain').value = '';
+                loadOnboardingDomains(tenantId);
+            } catch (e) {
+                alert(`Error adding domain: ${e.message}`);
+            }
+        }
+        
+        async function onboardRemoveDomain(tenantId, domain) {
+            if (!confirm(`Remove domain ${domain}?`)) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/api/tenant/${tenantId}/domains/${encodeURIComponent(domain)}`, {
+                    method: 'DELETE',
+                    headers: getHeaders()
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                loadOnboardingDomains(tenantId);
+            } catch (e) {
+                alert(`Error removing domain: ${e.message}`);
+            }
+        }
+        
+        document.getElementById('onboardFaqsFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('onboardFaqsJson').value = e.target.result;
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        async function onboardUploadStaged() {
+            const tenantId = document.getElementById('onboardTenantSelect').value;
+            const faqsJson = document.getElementById('onboardFaqsJson').value.trim();
+            
+            if (!tenantId) {
+                alert('Please select a tenant first');
+                return;
+            }
+            if (!faqsJson) {
+                alert('Please paste or upload FAQ JSON');
+                return;
+            }
+            
+            let faqs;
+            try {
+                faqs = JSON.parse(faqsJson);
+            } catch (e) {
+                alert(`Invalid JSON: ${e.message}`);
+                return;
+            }
+            
+            const statusEl = document.getElementById('onboardUploadStatus');
+            statusEl.innerHTML = 'Uploading...';
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/api/tenant/${tenantId}/faqs/staged`, {
+                    method: 'PUT',
+                    headers: getHeaders(),
+                    body: JSON.stringify(faqs)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || `HTTP ${res.status}`);
+                }
+                const result = await res.json();
+                statusEl.innerHTML = `<span style="color: #28a745;">✓ Staged ${result.staged_count} FAQs</span>`;
+            } catch (e) {
+                statusEl.innerHTML = `<span style="color: #dc3545;">✗ Error: ${e.message}</span>`;
+            }
+        }
+        
+        async function onboardPromote() {
+            const tenantId = document.getElementById('onboardTenantSelect').value;
+            if (!tenantId) {
+                alert('Please select a tenant first');
+                return;
+            }
+            
+            const btn = document.getElementById('onboardPromoteBtn');
+            const statusEl = document.getElementById('onboardPromoteStatus');
+            btn.disabled = true;
+            btn.textContent = 'Promoting...';
+            statusEl.innerHTML = 'Running suite and promoting...';
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/api/tenant/${tenantId}/promote`, {
+                    method: 'POST',
+                    headers: getHeaders()
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || `HTTP ${res.status}`);
+                }
+                const result = await res.json();
+                
+                if (result.status === 'success') {
+                    statusEl.innerHTML = `<span style="color: #28a745;">✓ Promoted successfully</span>`;
+                    if (result.suite_result) {
+                        const suite = result.suite_result;
+                        statusEl.innerHTML += `<br><small>Suite: ${suite.passed}/${suite.total} tests passed</small>`;
+                    }
+                } else {
+                    statusEl.innerHTML = `<span style="color: #dc3545;">✗ Promote failed: ${result.message}</span>`;
+                    if (result.first_failure) {
+                        statusEl.innerHTML += `<br><small>First failure: ${result.first_failure.name}</small>`;
+                    }
+                }
+            } catch (e) {
+                statusEl.innerHTML = `<span style="color: #dc3545;">✗ Error: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Promote to Live';
+            }
+        }
+        
+        async function onboardRunBenchmark() {
+            const tenantId = document.getElementById('onboardTenantSelect').value;
+            if (!tenantId) {
+                alert('Please select a tenant first');
+                return;
+            }
+            
+            const btn = document.getElementById('onboardBenchmarkBtn');
+            const statusEl = document.getElementById('onboardBenchmarkStatus');
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            statusEl.innerHTML = 'Running benchmark...';
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/api/tenant/${tenantId}/benchmark`, {
+                    method: 'POST',
+                    headers: getHeaders()
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || `HTTP ${res.status}`);
+                }
+                const result = await res.json();
+                
+                let html = `<div style="background: ${result.gate_pass ? '#d4edda' : '#f8d7da'}; padding: 15px; border-radius: 4px;">`;
+                html += `<strong>Results:</strong><br>`;
+                html += `Hit rate: ${(result.hit_rate * 100).toFixed(1)}% (threshold: ${(result.thresholds.min_hit_rate * 100)}%)<br>`;
+                html += `Fallback rate: ${(result.fallback_rate * 100).toFixed(1)}% (threshold: ${(result.thresholds.max_fallback_rate * 100)}%)<br>`;
+                html += `Wrong hit rate: ${(result.wrong_hit_rate * 100).toFixed(1)}% (threshold: ${(result.thresholds.max_wrong_hit_rate * 100)}%)<br>`;
+                html += `<strong>Gate: ${result.gate_pass ? 'PASS' : 'FAIL'}</strong><br>`;
+                
+                if (result.worst_misses && result.worst_misses.length > 0) {
+                    html += `<br><strong>Worst misses:</strong><ul>`;
+                    result.worst_misses.slice(0, 5).forEach(miss => {
+                        html += `<li>"${escapeHtml(miss.question)}" (score: ${miss.score?.toFixed(3) || 'n/a'})</li>`;
+                    });
+                    html += `</ul>`;
+                }
+                html += `</div>`;
+                
+                statusEl.innerHTML = html;
+            } catch (e) {
+                statusEl.innerHTML = `<span style="color: #dc3545;">✗ Error: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Run Benchmark';
+            }
+        }
+        
+        async function onboardSyncWorker() {
+            const tenantId = document.getElementById('onboardTenantSelect').value;
+            if (!tenantId) {
+                alert('Please select a tenant first');
+                return;
+            }
+            
+            const btn = document.getElementById('onboardSyncBtn');
+            const statusEl = document.getElementById('onboardSyncStatus');
+            btn.disabled = true;
+            btn.textContent = 'Syncing...';
+            statusEl.innerHTML = 'Syncing domains to Worker D1...';
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/api/tenant/${tenantId}/domains/sync-worker`, {
+                    method: 'POST',
+                    headers: getHeaders()
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || `HTTP ${res.status}`);
+                }
+                const result = await res.json();
+                
+                if (result.synced) {
+                    statusEl.innerHTML = `<span style="color: #28a745;">✓ ${result.message}</span>`;
+                    if (result.synced_domains) {
+                        statusEl.innerHTML += `<br><small>Synced: ${result.synced_domains.join(', ')}</small>`;
+                    }
+                } else {
+                    statusEl.innerHTML = `<span style="color: #ffc107;">⚠ ${result.message}</span>`;
+                }
+                if (result.errors && result.errors.length > 0) {
+                    statusEl.innerHTML += `<br><small style="color: #dc3545;">Errors: ${result.errors.map(e => e.domain).join(', ')}</small>`;
+                }
+            } catch (e) {
+                statusEl.innerHTML = `<span style="color: #dc3545;">✗ Error: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Sync to Worker D1';
+            }
+        }
+        
+        async function onboardCheckReadiness() {
+            const tenantId = document.getElementById('onboardTenantSelect').value;
+            if (!tenantId) {
+                alert('Please select a tenant first');
+                return;
+            }
+            
+            const statusEl = document.getElementById('onboardReadinessStatus');
+            statusEl.innerHTML = 'Checking...';
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/api/tenant/${tenantId}/readiness`, {
+                    headers: getHeaders()
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const result = await res.json();
+                
+                let html = `<div style="background: ${result.ready ? '#d4edda' : '#fff3cd'}; padding: 15px; border-radius: 4px;">`;
+                html += `<strong>Ready: ${result.ready ? '✓ YES' : '✗ NO'}</strong><br><br>`;
+                result.checks.forEach(check => {
+                    html += `${check.passed ? '✓' : '✗'} ${check.check}: ${check.message}<br>`;
+                });
+                html += `</div>`;
+                
+                statusEl.innerHTML = html;
+                
+                // Show install snippet if ready
+                if (result.ready) {
+                    const snippetEl = document.getElementById('onboardInstallSnippet');
+                    const codeEl = document.getElementById('onboardSnippetCode');
+                    snippetEl.style.display = 'block';
+                    codeEl.textContent = `<script 
+  src="https://mm-client1-creator-ui.pages.dev/widget.js"
+  data-greeting="Hi! How can I help you today?"
+  data-header="${tenantId}"
+  data-color="#2563eb"
+></script>`;
+                }
+            } catch (e) {
+                statusEl.innerHTML = `<span style="color: #dc3545;">✗ Error: ${e.message}</span>`;
+            }
+        }
+        
+        async function copyOnboardSnippet() {
+            const codeEl = document.getElementById('onboardSnippetCode');
+            const successEl = document.getElementById('onboardCopySuccess');
+            
+            try {
+                await navigator.clipboard.writeText(codeEl.textContent);
+                successEl.style.display = 'block';
+                setTimeout(() => {
+                    successEl.style.display = 'none';
+                }, 2000);
+            } catch (e) {
+                alert('Failed to copy. Please select and copy manually.');
             }
         }
     </script>
