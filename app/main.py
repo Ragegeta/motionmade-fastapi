@@ -1669,7 +1669,13 @@ def upload_staged_faqs(
 
                 # Store variants in variants_json (embeddings created at promote time)
                 raw_variants = it.variants or []
-                variants_json = json_lib.dumps(raw_variants)
+                # Ensure it's a list and convert to JSON string
+                if isinstance(raw_variants, str):
+                    try:
+                        raw_variants = json_lib.loads(raw_variants)
+                    except:
+                        raw_variants = []
+                variants_json = json_lib.dumps(raw_variants) if raw_variants else '[]'
                 
                 emb_q = embed_text(q)
                 row = conn.execute(
