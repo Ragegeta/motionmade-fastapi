@@ -185,6 +185,28 @@
 </head>
 <body>
     <div class="container">
+        <!-- Diagnostic Banner -->
+        <div id="diagnosticBanner" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px; margin-bottom: 20px; font-family: monospace; font-size: 12px;">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div>
+                    <strong>JS Status:</strong> 
+                    <span id="jsStatus" style="color: #6c757d;">Loading...</span>
+                </div>
+                <div>
+                    <strong>API Base:</strong> 
+                    <span id="apiBaseDisplay">-</span>
+                </div>
+                <div>
+                    <strong>Health Check:</strong> 
+                    <span id="healthStatus">-</span>
+                </div>
+                <div>
+                    <strong>Git SHA:</strong> 
+                    <span id="gitShaDisplay">-</span>
+                </div>
+            </div>
+        </div>
+        
         <h1>FAQ Admin - Tenant Management</h1>
         
         <!-- Auth Section -->
@@ -192,7 +214,15 @@
             <h2>Login</h2>
             <input type="password" id="adminToken" placeholder="Enter admin token" />
             <button id="loginButton">Login</button>
+            <button id="copyCurlButton" style="margin-left: 10px; padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy curl</button>
             <div id="authError" class="error"></div>
+            <div id="loginDiagnostics" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 11px; display: none;">
+                <div><strong>Login Diagnostics:</strong></div>
+                <div id="loginClickStatus" style="margin-top: 5px;"></div>
+                <div id="loginTestStatus" style="margin-top: 5px;"></div>
+                <div id="loginResponse" style="margin-top: 5px; word-break: break-all;"></div>
+                <div id="loginError" style="margin-top: 5px; color: #dc3545;"></div>
+            </div>
         </div>
         
         <!-- Tenants List Page -->
@@ -896,14 +926,61 @@
             }
         }
         
+        // Initialize diagnostic banner
+        function updateDiagnosticBanner() {
+            // Mark JS as loaded
+            const jsStatusEl = document.getElementById('jsStatus');
+            if (jsStatusEl) {
+                jsStatusEl.textContent = '✓ Loaded';
+                jsStatusEl.style.color = '#28a745';
+            }
+            
+            // Show API base
+            const apiBaseEl = document.getElementById('apiBaseDisplay');
+            if (apiBaseEl) {
+                apiBaseEl.textContent = API_BASE;
+            }
+            
+            // Test health endpoint
+            fetch(`${API_BASE}/api/health`)
+                .then(res => res.json())
+                .then(data => {
+                    const healthEl = document.getElementById('healthStatus');
+                    const gitShaEl = document.getElementById('gitShaDisplay');
+                    if (healthEl) {
+                        healthEl.textContent = `✓ ${data.ok ? 'OK' : 'Error'}`;
+                        healthEl.style.color = data.ok ? '#28a745' : '#dc3545';
+                    }
+                    if (gitShaEl && data.gitSha) {
+                        gitShaEl.textContent = data.gitSha;
+                    }
+                })
+                .catch(err => {
+                    const healthEl = document.getElementById('healthStatus');
+                    if (healthEl) {
+                        healthEl.textContent = `✗ Error: ${err.message}`;
+                        healthEl.style.color = '#dc3545';
+                    }
+                });
+        }
+        
         // Initialize event listeners after DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
+            // Update diagnostic banner
+            updateDiagnosticBanner();
+            
             // Login button
             const loginButton = document.getElementById('loginButton');
             if (loginButton) {
                 loginButton.addEventListener('click', function() {
                     login();
                 });
+            }
+            
+            // Copy curl button
+            const copyCurlButton = document.getElementById('copyCurlButton');
+            if (copyCurlButton) {
+                copyCurlButton.addEventListener('click', copyCurlCommand);
             }
             
             // Navigation buttons
