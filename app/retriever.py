@@ -172,6 +172,15 @@ def llm_rerank(question: str, candidates: list[Dict], timeout: float = 3.0) -> T
     trace = {
         "stage": "llm_rerank",
         "candidates_count": len(candidates),
+        "candidates_seen": [  # Store what LLM saw
+            {
+                "index": i + 1,
+                "faq_id": c["faq_id"],
+                "question": c["question"],
+                "score": round(c["score"], 4)
+            }
+            for i, c in enumerate(candidates)
+        ],
         "llm_response": None,
         "pick": None,
         "reason": None,
@@ -294,6 +303,7 @@ def retrieve(
         "stage": None,
         "top_score": None,
         "candidates_count": 0,
+        "candidates": [],  # Top candidates with scores
         "cache_hit": False,
         "rerank_triggered": False,
         "rerank_trace": None,
@@ -322,6 +332,16 @@ def retrieve(
     
     candidates = get_top_candidates(tenant_id, query_embedding, limit=5)
     trace["candidates_count"] = len(candidates)
+    
+    # Store top candidates for debugging
+    trace["candidates"] = [
+        {
+            "faq_id": c["faq_id"],
+            "question": c["question"],
+            "score": round(c["score"], 4)
+        }
+        for c in candidates[:5]
+    ]
     
     if not candidates:
         trace["stage"] = "no_candidates"

@@ -676,6 +676,9 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         )
         timings["retrieval_ms"] = int((time.time() - _t0) * 1000)
         
+        # Store trace for debug endpoint access
+        resp._retrieval_trace = retrieval_trace
+        
         # Set debug headers from trace
         resp.headers["X-Retrieval-Stage"] = retrieval_trace.get("stage", "unknown")
         if retrieval_trace.get("top_score") is not None:
@@ -2297,6 +2300,9 @@ async def debug_query(
         result_payload = generate_quote_reply(quote_req, resp)
         
         # Extract debug info from response headers
+        # Get retrieval trace for candidate info
+        retrieval_trace = getattr(resp, "_retrieval_trace", None)
+        
         debug_info = {
             "tenant_id": tenantId,
             "customer_message": customer_message,
@@ -2310,8 +2316,19 @@ async def debug_query(
             "cache_hit": resp.headers.get("X-Cache-Hit", "false").lower() == "true",
             "replyText": result_payload.get("replyText", ""),
             "top_faq_id": resp.headers.get("X-Top-Faq-Id"),
-            "normalized_input": resp.headers.get("X-Normalized-Input", "")
+            "normalized_input": resp.headers.get("X-Normalized-Input", ""),
+            "candidates": retrieval_trace.get("candidates", []) if retrieval_trace else [],
+            "rerank_candidates": None,
+            "rerank_reason": None
         }
+        
+        # Add rerank-specific info if available
+        if retrieval_trace and retrieval_trace.get("rerank_trace"):
+            rt = retrieval_trace["rerank_trace"]
+            debug_info["rerank_candidates"] = rt.get("candidates_seen", [])
+            debug_info["rerank_reason"] = rt.get("reason")
+            if rt.get("safety_gate") != "passed":
+                debug_info["rerank_failure_reason"] = rt.get("safety_gate")
         
         return debug_info
         
