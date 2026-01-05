@@ -33,7 +33,7 @@ def test_admin_ui_has_error_capture():
     assert response.status_code == 200
     js_content = response.text
     assert 'window.onerror' in js_content, "Should have window.onerror handler"
-    assert 'window.onunhandledrejection' in html, "Should have unhandled rejection handler"
+    assert 'window.onunhandledrejection' in js_content, "Should have unhandled rejection handler"
 
 
 def test_admin_ui_has_login_button():
@@ -60,5 +60,5 @@ def test_admin_ui_has_domcontentloaded():
     assert response.status_code == 200
     js_content = response.text
     assert 'DOMContentLoaded' in js_content, "Should use DOMContentLoaded event"
-    assert 'addEventListener' in html, "Should use addEventListener"
+    assert 'addEventListener' in js_content, "Should use addEventListener"
 

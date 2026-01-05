@@ -69,7 +69,7 @@ def test_admin_ui_uses_event_listeners():
     assert response.status_code == 200
     js_content = response.text
     assert 'addEventListener' in js_content, "Should use addEventListener for event binding"
-    assert 'DOMContentLoaded' in html, "Should wait for DOMContentLoaded before binding events"
+    assert 'DOMContentLoaded' in js_content, "Should wait for DOMContentLoaded before binding events"
 
 
 def test_admin_ui_has_login_function():
@@ -79,7 +79,7 @@ def test_admin_ui_has_login_function():
     assert response.status_code == 200
     js_content = response.text
     assert 'function login()' in js_content, "login() function should be defined"
-    assert 'adminToken' in html, "Should use adminToken variable"
+    assert 'adminToken' in js_content, "Should use adminToken variable"
 
 
 def test_admin_ui_has_diagnostic_banner():
