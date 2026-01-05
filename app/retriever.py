@@ -125,7 +125,7 @@ def get_top_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[
                     fi.question,
                     fi.answer,
                     fi.tenant_id,
-                    COALESCE(fv.variant_text, fv.variant_question, '') AS matched_variant,
+                    fv.variant_question AS matched_variant,
                     (1 - (fv.variant_embedding <=> %s)) AS score
                 FROM faq_variants fv
                 JOIN faq_items fi ON fi.id = fv.faq_id
