@@ -69,3 +69,50 @@ def retrieve_faq_answer(tenant_id: str, query_embedding):
     # Otherwise require separation
     hit = delta >= DELTA
     return (hit, top_answer if hit else None, top_score, delta, top_faq_id)
+
+
+def get_top_faq_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[dict]:
+    """
+    Get top FAQ candidates with their scores for disambiguation.
+    Returns list of {faq_id, question, answer, score}.
+    """
+    if not tenant_id or query_embedding is None:
+        return []
+    
+    qv = Vector(query_embedding)
+    
+    sql = """
+    SELECT DISTINCT ON (fi.id)
+        fi.id AS faq_id, 
+        fi.question, 
+        fi.answer,
+        (1 - (fv.variant_embedding <=> %s)) AS score
+    FROM faq_variants fv
+    JOIN faq_items fi ON fi.id = fv.faq_id
+    WHERE fi.tenant_id = %s
+      AND fi.enabled = true
+      AND fv.enabled = true
+      AND (fi.is_staged = false OR fi.is_staged IS NULL)
+    ORDER BY fi.id, fv.variant_embedding <=> %s
+    """
+    
+    with get_conn() as conn:
+        # Get best score per FAQ
+        rows = conn.execute(sql, (qv, tenant_id, qv)).fetchall()
+    
+    if not rows:
+        return []
+    
+    # Sort by score descending and limit
+    candidates = [
+        {
+            "faq_id": int(row[0]),
+            "question": str(row[1]),
+            "answer": str(row[2]),
+            "score": float(row[3])
+        }
+        for row in rows
+    ]
+    candidates.sort(key=lambda x: x["score"], reverse=True)
+    
+    return candidates[:limit]

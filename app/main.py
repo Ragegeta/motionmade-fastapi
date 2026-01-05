@@ -680,8 +680,32 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         if faq_id is not None:
             resp.headers["X-Top-Faq-Id"] = str(faq_id)
 
+        # === DISAMBIGUATION: If uncertain, ask LLM to pick best match ===
+        disambiguated = False
+        if not hit and score is not None and score >= 0.50:
+            from app.disambiguate import disambiguate_faq, should_disambiguate
+            from app.retrieval import get_top_faq_candidates
+            
+            runner_up_score = (score - delta) if delta else 0
+            if should_disambiguate(score, runner_up_score):
+                candidates = get_top_faq_candidates(tenant_id, q_emb, limit=5)
+                
+                if candidates and len(candidates) >= 2:
+                    best_match = disambiguate_faq(primary_query, candidates)
+                    
+                    if best_match:
+                        hit = True
+                        ans = best_match["answer"]
+                        faq_id = best_match["faq_id"]
+                        score = best_match["score"]
+                        disambiguated = True
+                        resp.headers["X-Disambiguated"] = "true"
+
         if hit and ans:
-            resp.headers["X-Debug-Branch"] = "fact_hit"
+            if disambiguated:
+                resp.headers["X-Debug-Branch"] = "disambiguate_hit"
+            else:
+                resp.headers["X-Debug-Branch"] = "fact_hit"
             resp.headers["X-Faq-Hit"] = "true"
             payload["replyText"] = str(ans).strip()
             
