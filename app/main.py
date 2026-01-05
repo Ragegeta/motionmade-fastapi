@@ -1900,6 +1900,27 @@ def sync_worker_domains(
     }
 
 
+@app.get("/admin/api/routes")
+def list_routes(
+    resp: Response,
+    authorization: str = Header(default="")
+):
+    """List all registered routes (admin token required)."""
+    _check_admin_auth(authorization)
+    
+    routes = []
+    for route in app.routes:
+        if hasattr(route, "methods") and hasattr(route, "path"):
+            for method in route.methods:
+                if method != "HEAD":  # Skip HEAD, it's implicit
+                    routes.append({"method": method, "path": route.path})
+    
+    return {
+        "total": len(routes),
+        "routes": sorted(routes, key=lambda x: (x["path"], x["method"]))
+    }
+
+
 @app.get("/debug/routes")
 def debug_routes():
     """Debug endpoint to list registered routes. Only available when DEBUG=true."""
