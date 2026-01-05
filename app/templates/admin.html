@@ -384,9 +384,69 @@
                 return;
             }
             
+            // Show diagnostics
+            const diagnosticsEl = document.getElementById('loginDiagnostics');
+            diagnosticsEl.style.display = 'block';
+            document.getElementById('loginClickStatus').textContent = '✓ Login clicked at ' + new Date().toLocaleTimeString();
+            document.getElementById('loginTestStatus').textContent = 'Testing GET /admin/api/tenants...';
+            document.getElementById('loginResponse').textContent = '';
+            document.getElementById('loginError').textContent = '';
+            
+            // Test the token with a real API call
             adminToken = token;
-            document.getElementById('authSection').style.display = 'none';
-            loadTenants();
+            
+            fetch(`${API_BASE}/admin/api/tenants`, {
+                headers: getHeaders()
+            })
+            .then(async res => {
+                const statusText = `Status: ${res.status} ${res.statusText}`;
+                document.getElementById('loginTestStatus').textContent = statusText;
+                
+                const bodyText = await res.text();
+                const preview = bodyText.length > 200 ? bodyText.substring(0, 200) + '...' : bodyText;
+                document.getElementById('loginResponse').textContent = `Response (first 200 chars): ${preview}`;
+                
+                if (res.ok) {
+                    document.getElementById('loginTestStatus').style.color = '#28a745';
+                    document.getElementById('authSection').style.display = 'none';
+                    loadTenants();
+                } else {
+                    document.getElementById('loginTestStatus').style.color = '#dc3545';
+                    document.getElementById('authError').textContent = `Login failed: ${res.status} ${res.statusText}`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('loginTestStatus').textContent = `Error: ${err.message}`;
+                document.getElementById('loginTestStatus').style.color = '#dc3545';
+                document.getElementById('loginError').textContent = `Stack: ${err.stack || 'No stack trace'}`;
+                document.getElementById('authError').textContent = `Login failed: ${err.message}`;
+            });
+        }
+        
+        function copyCurlCommand() {
+            const token = document.getElementById('adminToken').value;
+            if (!token) {
+                alert('Enter a token first');
+                return;
+            }
+            
+            const curlCmd = `curl.exe -i "${API_BASE}/admin/api/tenants" -H "Authorization: Bearer ${token}"`;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(curlCmd).then(() => {
+                alert('Curl command copied to clipboard!');
+            }).catch(() => {
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = curlCmd;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Curl command copied to clipboard!');
+            });
         }
         
         async function loadTenants() {
