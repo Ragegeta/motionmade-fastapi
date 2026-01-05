@@ -1708,8 +1708,14 @@ def promote_staged(
     
     import json as json_lib
     
-    # Get base URL from settings or use default
-    base_url = os.getenv("PUBLIC_BASE_URL") or "http://localhost:8000"
+    # Get base URL from env var (default to production API in prod, localhost in dev)
+    base_url = os.getenv("PUBLIC_BASE_URL")
+    if not base_url:
+        # Default: production API if RENDER is set, otherwise localhost
+        if os.getenv("RENDER"):
+            base_url = "https://api.motionmadebne.com.au"
+        else:
+            base_url = "http://localhost:8000"
     
     try:
         # 1. Check if staged FAQs exist
@@ -1792,30 +1798,47 @@ def promote_staged(
             conn.commit()
         
         # 3. Run suite (if exists, otherwise skip)
-        # Make suite optional - if it fails, skip it and promote anyway
+        # Suite is REQUIRED if suite file exists - if it fails, promotion is blocked
         suite_path = Path(__file__).parent.parent / "tests" / f"{tenantId}.json"
         suite_result = None
         
         if suite_path.exists():
+            # First, verify we can reach the base URL
+            import requests
+            try:
+                health_check = requests.get(f"{base_url}/api/health", timeout=5)
+                if health_check.status_code != 200:
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Cannot reach API at {base_url} (HTTP {health_check.status_code}). Suite cannot run. Promotion blocked."
+                    )
+            except requests.exceptions.RequestException as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Cannot reach API at {base_url}: {str(e)}. Suite cannot run. Set PUBLIC_BASE_URL env var correctly. Promotion blocked."
+                )
+            
+            # Run suite
             try:
                 suite_result = run_suite(base_url, tenantId)
-                # If suite failed, mark as skipped so we promote anyway
+                
+                # If suite failed, DO NOT promote
                 if not suite_result.get("passed", False):
-                    print(f"Suite failed but promoting anyway (connection issues expected in production)")
-                    suite_result["skipped"] = True
-                    suite_result["passed"] = True  # Override to allow promotion
-                    suite_result["message"] = f"Suite failed but promoting anyway: {suite_result.get('message', '')}"
+                    first_failure = suite_result.get("first_failure", {})
+                    error_msg = first_failure.get("error", "Unknown error")
+                    test_name = first_failure.get("test_name", "unknown")
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Suite failed: {test_name} - {error_msg}. Promotion blocked."
+                    )
+            except HTTPException:
+                raise
             except Exception as e:
-                # Suite failed to run (e.g., connection error) - skip it and promote anyway
-                print(f"Suite run failed: {e}, promoting anyway")
-                suite_result = {
-                    "passed": True,  # Treat as passed so promotion continues
-                    "total": 0,
-                    "passed_count": 0,
-                    "skipped": True,
-                    "error": str(e),
-                    "message": f"Suite run failed ({str(e)[:100]}), promoting anyway"
-                }
+                # Suite failed to run - block promotion
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Suite run failed: {str(e)}. Promotion blocked."
+                )
         else:
             # No suite file - skip tests and promote anyway
             suite_result = {
@@ -2238,4 +2261,62 @@ def debug_routes():
                     routes.append({"method": method, "path": route.path})
     
     return {"routes": sorted(routes, key=lambda x: (x["path"], x["method"]))}
+
+
+@app.post("/admin/api/tenant/{tenantId}/debug-query")
+def debug_query(
+    tenantId: str,
+    request: Request,
+    resp: Response,
+    authorization: str = Header(default="")
+):
+    """
+    Admin-only debug endpoint to test a query and get full debug info.
+    Works even when DEBUG=false (requires ADMIN_TOKEN).
+    """
+    _check_admin_auth(authorization)
+    
+    try:
+        body = await request.json()
+        customer_message = body.get("customerMessage", "").strip()
+        if not customer_message:
+            raise HTTPException(status_code=400, detail="customerMessage required")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+    
+    # Create a mock request object for generate_quote_reply
+    from app.models import QuoteRequest
+    
+    quote_req = QuoteRequest(
+        tenantId=tenantId,
+        customerMessage=customer_message
+    )
+    
+    # Call generate_quote_reply and capture all headers
+    try:
+        result_payload = generate_quote_reply(quote_req, resp)
+        
+        # Extract debug info from response headers
+        debug_info = {
+            "tenant_id": tenantId,
+            "customer_message": customer_message,
+            "faq_hit": resp.headers.get("X-Faq-Hit", "false").lower() == "true",
+            "debug_branch": resp.headers.get("X-Debug-Branch", "unknown"),
+            "retrieval_score": resp.headers.get("X-Retrieval-Score"),
+            "retrieval_stage": resp.headers.get("X-Retrieval-Stage"),
+            "triage_result": resp.headers.get("X-Triage-Result"),
+            "rerank_triggered": resp.headers.get("X-Rerank-Triggered", "false").lower() == "true",
+            "rerank_gate": resp.headers.get("X-Rerank-Gate"),
+            "cache_hit": resp.headers.get("X-Cache-Hit", "false").lower() == "true",
+            "replyText": result_payload.get("replyText", ""),
+            "top_faq_id": resp.headers.get("X-Top-Faq-Id"),
+            "normalized_input": resp.headers.get("X-Normalized-Input", "")
+        }
+        
+        return debug_info
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Debug query failed: {str(e)}")
 
