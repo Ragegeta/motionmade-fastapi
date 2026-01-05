@@ -22,7 +22,20 @@ from .triage import triage_input, CLARIFY_RESPONSE
 from .normalize import normalize_message
 from .splitter import split_intents
 from .cache import get_cached_result, cache_result, get_cache_stats
-from .suite_runner import run_suite
+
+# Import suite_runner defensively to avoid startup failures
+try:
+    from .suite_runner import run_suite
+except ImportError as e:
+    # If suite_runner can't be imported (e.g., missing requests), define a stub
+    def run_suite(base_url: str, tenant_id: str) -> dict:
+        """Stub for run_suite when dependencies are missing."""
+        return {
+            "passed": False,
+            "total": 0,
+            "passed_count": 0,
+            "first_failure": {"name": "Suite runner unavailable", "error": str(e)}
+        }
 
 
 # ========================================
