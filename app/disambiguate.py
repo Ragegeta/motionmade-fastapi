@@ -1,8 +1,10 @@
 """
 LLM-based FAQ disambiguation for uncertain embedding matches.
 
-When embedding retrieval returns scores between 0.50-0.82 (uncertain zone),
+When embedding retrieval returns scores between 0.65-0.82 (uncertain zone),
 ask the LLM to pick the best matching FAQ from the top candidates.
+
+Narrow band (0.65-0.82) to minimize LLM calls (~15-20% of queries).
 
 This gives us the robustness of LLM understanding without:
 - Generating hundreds of variants
@@ -72,11 +74,14 @@ def disambiguate_faq(
     )
     
     try:
+        # Use gpt-4o-mini for fast, cheap disambiguation
         response = chat_once(
             system="You are a precise FAQ matching assistant. Respond only with a number or 'none'.",
             user=prompt,
             temperature=0.0,  # Deterministic
-            max_tokens=10
+            max_tokens=10,
+            model="gpt-4o-mini",  # Fast, cheap model
+            timeout=3.0  # 3 second max timeout
         )
         
         response = response.strip().lower()
@@ -95,8 +100,13 @@ def disambiguate_faq(
         
         return None
         
+    except TimeoutError:
+        # Timeout: fall through to clarify/fallback
+        print("Disambiguate timeout (>3s), falling through")
+        return None
     except Exception as e:
-        print(f"Disambiguate error: {e}")
+        # Any error: fall through to clarify/fallback
+        print(f"Disambiguate error: {e}, falling through")
         return None
 
 
@@ -105,19 +115,14 @@ def should_disambiguate(top_score: float, runner_up_score: float = 0) -> bool:
     Decide if we should ask LLM to disambiguate.
     
     Returns True if:
-    - Top score is in uncertain zone (0.50 - 0.82)
-    - OR top two scores are very close (ambiguous)
+    - Top score is in uncertain zone (0.65 - 0.82)
+    - Narrow band to minimize LLM calls (~15-20% of queries)
     """
     THETA_HIGH = 0.82
-    THETA_LOW = 0.50
-    DELTA_AMBIGUOUS = 0.05
+    THETA_LOW = 0.65  # Narrowed from 0.50 to reduce LLM calls
     
-    # Uncertain zone
+    # Uncertain zone only
     if THETA_LOW <= top_score < THETA_HIGH:
-        return True
-    
-    # Ambiguous (top two very close)
-    if runner_up_score and (top_score - runner_up_score) < DELTA_AMBIGUOUS:
         return True
     
     return False

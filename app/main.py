@@ -682,7 +682,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
 
         # === DISAMBIGUATION: If uncertain, ask LLM to pick best match ===
         disambiguated = False
-        if not hit and score is not None and score >= 0.50:
+        if not hit and score is not None and score >= 0.65:  # Narrow band: 0.65-0.82
             from app.disambiguate import disambiguate_faq, should_disambiguate
             from app.retrieval import get_top_faq_candidates
             
