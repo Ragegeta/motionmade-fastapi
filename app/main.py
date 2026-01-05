@@ -1763,7 +1763,7 @@ def promote_staged(
                     try:
                         v_emb = embed_text(variant)
                         conn.execute("""
-                            INSERT INTO faq_variants (faq_id, variant_text, variant_embedding, enabled)
+                            INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled)
                             VALUES (%s, %s, %s, true)
                         """, (faq_id, variant, Vector(v_emb)))
                     except Exception as e:
