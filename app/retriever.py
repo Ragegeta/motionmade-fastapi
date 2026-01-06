@@ -23,6 +23,7 @@ import re
 from typing import Optional, Tuple, Dict, Any, List
 from app.db import get_conn
 from app.openai_client import chat_once
+from app.cross_encoder import rerank as cross_encoder_rerank, should_accept, RERANK_THRESHOLD
 
 # Thresholds
 THETA_HIGH = 0.82       # Above this = direct hit, skip LLM
@@ -125,6 +126,100 @@ def set_cached_result(tenant_id: str, normalized_query: str, result: Dict):
             conn.commit()
     except Exception as e:
         print(f"Cache write error: {e}")
+
+
+def search_fts(tenant_id: str, query: str, limit: int = 10) -> list[dict]:
+    """
+    Full-text search using PostgreSQL tsvector.
+    
+    Returns candidates with fts_score.
+    """
+    if not tenant_id or not query:
+        return []
+    
+    try:
+        with get_conn() as conn:
+            # Use plainto_tsquery for simple query parsing
+            rows = conn.execute("""
+                SELECT 
+                    id AS faq_id,
+                    question,
+                    answer,
+                    tenant_id,
+                    ts_rank(search_vector, plainto_tsquery('english', %s)) AS fts_score
+                FROM faq_items
+                WHERE tenant_id = %s
+                  AND enabled = true
+                  AND (is_staged = false OR is_staged IS NULL)
+                  AND search_vector @@ plainto_tsquery('english', %s)
+                ORDER BY fts_score DESC
+                LIMIT %s
+            """, (query, tenant_id, query, limit)).fetchall()
+            
+            return [
+                {
+                    "faq_id": row[0],
+                    "question": row[1],
+                    "answer": row[2],
+                    "tenant_id": row[3],
+                    "fts_score": float(row[4]),
+                    "source": "fts"
+                }
+                for row in rows
+            ]
+    except Exception as e:
+        print(f"FTS search error: {e}")
+        return []
+
+
+def merge_candidates(
+    vector_candidates: list[dict],
+    fts_candidates: list[dict],
+    alpha: float = 0.6  # Weight for vector score
+) -> list[dict]:
+    """
+    Merge vector and FTS candidates using linear combination.
+    
+    alpha=0.6 means 60% vector, 40% FTS
+    """
+    # Index by faq_id
+    merged = {}
+    
+    # Add vector candidates
+    for c in vector_candidates:
+        faq_id = c["faq_id"]
+        merged[faq_id] = c.copy()
+        merged[faq_id]["vector_score"] = c.get("score", 0)
+        merged[faq_id]["fts_score"] = 0
+        merged[faq_id]["source"] = "vector"
+    
+    # Add/merge FTS candidates
+    for c in fts_candidates:
+        faq_id = c["faq_id"]
+        if faq_id in merged:
+            merged[faq_id]["fts_score"] = c.get("fts_score", 0)
+            merged[faq_id]["source"] = "hybrid"
+        else:
+            merged[faq_id] = c.copy()
+            merged[faq_id]["vector_score"] = 0
+            merged[faq_id]["fts_score"] = c.get("fts_score", 0)
+            merged[faq_id]["source"] = "fts"
+    
+    # Calculate combined score
+    for faq_id, c in merged.items():
+        v_score = c.get("vector_score", 0)
+        f_score = c.get("fts_score", 0)
+        
+        # Normalize FTS score (typically 0-1 but can be higher)
+        f_score_norm = min(f_score, 1.0)
+        
+        c["combined_score"] = alpha * v_score + (1 - alpha) * f_score_norm
+        c["score"] = c["combined_score"]  # Use combined as primary score
+    
+    # Sort by combined score
+    result = sorted(merged.values(), key=lambda x: x["combined_score"], reverse=True)
+    
+    return result
 
 
 def get_top_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[Dict]:
@@ -751,41 +846,30 @@ def retrieve(
     query: str,
     normalized_query: str,
     use_cache: bool = True
-) -> Tuple[Optional[Dict], Dict]:
+) -> tuple[Optional[dict], dict]:
     """
-    Hybrid retrieval v2: Always returns candidates, uses LLM selector when needed.
-    
-    Args:
-        tenant_id: Tenant identifier
-        query: Original customer query
-        normalized_query: Normalized query (for cache key and LLM)
-        use_cache: Whether to use caching
+    Three-stage retrieval:
+    1. Hybrid search (vector + FTS) - find candidates
+    2. Cross-encoder rerank - rank by true relevance
+    3. Threshold check - reject if cross-encoder score too low
     
     Returns:
         (result_dict or None, trace_dict)
-        
-    Result dict contains:
-        - faq_id, question, answer, score, stage
-        
-    Trace dict contains:
-        - All diagnostic info for headers and observability
     """
     trace = {
         "tenant_id": tenant_id,
         "query": query[:100],
         "normalized": normalized_query[:100],
         "stage": None,
-        "top_score": None,
-        "candidates_count": 0,
-        "candidates": [],  # Top candidates with scores and sources
+        "vector_count": 0,
+        "fts_count": 0,
+        "merged_count": 0,
+        "top_vector_score": 0,
+        "top_fts_score": 0,
+        "rerank_triggered": False,
+        "rerank_trace": None,
+        "final_score": 0,
         "cache_hit": False,
-        "retrieval_mode": None,
-        "selector_called": False,
-        "selector_confidence": None,
-        "selector_choice": None,
-        "chosen_faq_id": None,
-        "retrieval_ms": 0,
-        "selector_ms": 0,
         "total_ms": 0
     }
     
@@ -797,129 +881,100 @@ def retrieve(
         if cached:
             trace["cache_hit"] = True
             trace["stage"] = "cache"
-            trace["chosen_faq_id"] = cached.get("faq_id")
             trace["total_ms"] = int((time.time() - start_time) * 1000)
             return cached, trace
     
-    # Stage 1: Hybrid retrieval v2 (always returns candidates)
+    # Stage 1a: Vector search
     from app.openai_client import embed_text
     
-    retrieval_start = time.time()
-    query_embedding = embed_text(normalized_query)  # May be None, v2 handles it
-    candidates, retrieval_mode = retrieve_candidates_v2(
-        tenant_id=tenant_id,
-        normalized_query=normalized_query,
-        query_embedding=query_embedding,
-        top_k=8
-    )
-    trace["retrieval_ms"] = int((time.time() - retrieval_start) * 1000)
-    trace["retrieval_mode"] = retrieval_mode
-    trace["candidates_count"] = len(candidates)
+    query_embedding = embed_text(normalized_query)
+    vector_candidates = []
     
-    # Store candidates for debugging
-    trace["candidates"] = [
-        {
-            "faq_id": c["faq_id"],
-            "question": c["question"],
-            "score": round(c["score"], 4),
-            "source": c.get("source", "unknown")
-        }
-        for c in candidates[:8]
-    ]
+    if query_embedding is not None:
+        vector_candidates = get_top_candidates(tenant_id, query_embedding, limit=15)
+        trace["vector_count"] = len(vector_candidates)
+        if vector_candidates:
+            trace["top_vector_score"] = round(vector_candidates[0].get("score", 0), 4)
     
-    # IMPORTANT: v2 should never return empty, but handle gracefully
+    # Stage 1b: FTS search
+    fts_candidates = search_fts(tenant_id, normalized_query, limit=15)
+    trace["fts_count"] = len(fts_candidates)
+    if fts_candidates:
+        trace["top_fts_score"] = round(fts_candidates[0].get("fts_score", 0), 4)
+    
+    # Stage 1c: Merge candidates
+    candidates = merge_candidates(vector_candidates, fts_candidates, alpha=0.6)
+    trace["merged_count"] = len(candidates)
+    
     if not candidates:
         trace["stage"] = "no_candidates"
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
     
-    top_score = candidates[0]["score"]
-    trace["top_score"] = round(top_score, 4)
+    top_combined_score = candidates[0].get("combined_score", 0)
     
-    # Fast path: High confidence embedding match (>= 0.82)
-    if top_score >= THETA_HIGH:
-        trace["stage"] = "embedding_high"
-        chosen_candidate = candidates[0]
-        
-        # Guardrail check
-        is_valid, error_msg = guardrail_verifier(
-            chosen_faq_id=chosen_candidate["faq_id"],
-            chosen_answer=chosen_candidate["answer"],
-            candidates=candidates
-        )
-        
-        if not is_valid:
-            trace["stage"] = f"guardrail_failed_{error_msg}"
-            trace["total_ms"] = int((time.time() - start_time) * 1000)
-            return None, trace
-        
+    # Fast path: Very high confidence from hybrid search
+    if top_combined_score >= 0.85:
+        trace["stage"] = "hybrid_high_confidence"
         result = {
-            "faq_id": chosen_candidate["faq_id"],
-            "question": chosen_candidate["question"],
-            "answer": chosen_candidate["answer"],
-            "score": top_score,
-            "stage": "embedding"
+            "faq_id": candidates[0]["faq_id"],
+            "question": candidates[0]["question"],
+            "answer": candidates[0]["answer"],
+            "score": top_combined_score,
+            "stage": "hybrid"
         }
-        trace["chosen_faq_id"] = chosen_candidate["faq_id"]
+        trace["final_score"] = top_combined_score
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         
-        # Cache the result
         if use_cache:
             set_cached_result(tenant_id, normalized_query, result)
         
         return result, trace
     
-    # Stage 2: LLM Selector (when confidence is uncertain)
-    # Use selector when score is below THETA_HIGH (even if very low, selector can help)
-    selector_start = time.time()
-    trace["selector_called"] = True
+    # Stage 2: Cross-encoder rerank (for uncertain matches)
+    trace["rerank_triggered"] = True
     
-    # Limit candidates to top 5-8 for selector
-    selector_candidates = candidates[:min(8, len(candidates))]
-    choice_idx, confidence, selector_trace = llm_selector(normalized_query, selector_candidates)
-    trace["selector_ms"] = int((time.time() - selector_start) * 1000)
-    trace["selector_confidence"] = confidence
-    trace["selector_choice"] = choice_idx
-    trace["selector_trace"] = selector_trace
+    # Take top 8 candidates for reranking
+    candidates_to_rerank = candidates[:8]
     
-    if choice_idx is not None and 0 <= choice_idx < len(selector_candidates):
-        chosen_candidate = selector_candidates[choice_idx]
-        
-        # Build selector response dict for verification
-        selector_response = {
-            "choice": choice_idx,
-            "confidence": confidence
-        }
-        
-        # Verify selection using new verifier
-        is_valid, verify_reason = verify_selection(chosen_candidate, selector_response, candidates)
-        trace["verify_result"] = verify_reason
-        
-        if not is_valid:
-            trace["stage"] = f"verify_failed_{verify_reason}"
-            trace["total_ms"] = int((time.time() - start_time) * 1000)
-            return None, trace
-        
-        trace["stage"] = "selector_hit"
-        result = {
-            "faq_id": chosen_candidate["faq_id"],
-            "question": chosen_candidate["question"],
-            "answer": chosen_candidate["answer"],
-            "score": chosen_candidate["score"],
-            "stage": "selector",
-            "selector_confidence": confidence
-        }
-        trace["chosen_faq_id"] = chosen_candidate["faq_id"]
+    reranked, rerank_trace = cross_encoder_rerank(
+        normalized_query,
+        candidates_to_rerank,
+        top_k=5
+    )
+    trace["rerank_trace"] = rerank_trace
+    
+    if not reranked:
+        trace["stage"] = "rerank_empty"
         trace["total_ms"] = int((time.time() - start_time) * 1000)
-        
-        # Cache the result
-        if use_cache:
-            set_cached_result(tenant_id, normalized_query, result)
-        
-        return result, trace
+        return None, trace
     
-    # Selector returned -1 or low confidence -> clarify/fallback
-    trace["stage"] = "selector_none"
+    # Stage 3: Check cross-encoder threshold
+    top_rerank_score = reranked[0].get("rerank_score", 0)
+    trace["final_score"] = round(top_rerank_score, 4)
+    
+    accept, accept_reason = should_accept(top_rerank_score)
+    trace["accept_reason"] = accept_reason
+    
+    if not accept:
+        trace["stage"] = f"rerank_rejected_{accept_reason}"
+        trace["total_ms"] = int((time.time() - start_time) * 1000)
+        return None, trace
+    
+    # Success: Return top reranked result
+    trace["stage"] = "rerank_accepted"
+    result = {
+        "faq_id": reranked[0]["faq_id"],
+        "question": reranked[0]["question"],
+        "answer": reranked[0]["answer"],
+        "score": top_rerank_score,
+        "stage": "rerank",
+        "rerank_score": top_rerank_score
+    }
     trace["total_ms"] = int((time.time() - start_time) * 1000)
-    return None, trace
+    
+    if use_cache:
+        set_cached_result(tenant_id, normalized_query, result)
+    
+    return result, trace
 

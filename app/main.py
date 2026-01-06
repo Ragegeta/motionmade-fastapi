@@ -719,11 +719,19 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         if retrieval_trace.get("selector_ms") is not None:
             resp.headers["X-Selector-Ms"] = str(retrieval_trace.get("selector_ms", 0))
         
+        # New hybrid search headers
+        resp.headers["X-Vector-Count"] = str(retrieval_trace.get("vector_count", 0))
+        resp.headers["X-FTS-Count"] = str(retrieval_trace.get("fts_count", 0))
+        resp.headers["X-Merged-Count"] = str(retrieval_trace.get("merged_count", 0))
+        resp.headers["X-Final-Score"] = str(retrieval_trace.get("final_score", 0))
+        resp.headers["X-Accept-Reason"] = retrieval_trace.get("accept_reason", "")[:50]
+        
         if retrieval_trace.get("rerank_trace"):
             rt = retrieval_trace["rerank_trace"]
-            resp.headers["X-Rerank-Gate"] = rt.get("safety_gate", "")[:50]
-            if rt.get("duration_ms"):
-                resp.headers["X-Rerank-Ms"] = str(rt["duration_ms"])
+            resp.headers["X-Rerank-Method"] = rt.get("method", "none")
+            resp.headers["X-Rerank-Ms"] = str(rt.get("duration_ms", 0))
+            if rt.get("safety_gate"):
+                resp.headers["X-Rerank-Gate"] = rt.get("safety_gate", "")[:50]
         
         # Convert to hit/answer format
         hit = retrieval_result is not None
