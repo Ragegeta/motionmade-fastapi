@@ -932,58 +932,81 @@ def retrieve(
         
         return result, trace
     
-    # Stage 2: Cross-encoder rerank (for uncertain matches)
+    # Stage 2: Rerank (cross-encoder if available, else LLM selector)
     trace["rerank_triggered"] = True
     
-    # Take top 8 candidates for reranking
     candidates_to_rerank = candidates[:8]
+    reranked = []
+    rerank_trace = {}
+    use_llm_selector = False
     
-    # Lazy import cross-encoder (only when needed)
+    # Try cross-encoder first
     try:
-        from app.cross_encoder import rerank as cross_encoder_rerank, should_accept
-        reranked, rerank_trace = cross_encoder_rerank(
-            normalized_query,
-            candidates_to_rerank,
-            top_k=5
-        )
-    except Exception as e:
-        # If cross-encoder fails to import/load, fall back to LLM selector
-        trace["rerank_trace"] = {"method": "fallback", "error": str(e)[:100]}
-        # Use LLM selector as fallback (same module, call directly)
-        choice_idx, confidence, selector_trace = llm_selector(normalized_query, candidates_to_rerank[:5])
-        if choice_idx is not None and 0 <= choice_idx < len(candidates_to_rerank):
-            # Use LLM selector result - set rerank_score from confidence
-            selected = candidates_to_rerank[choice_idx].copy()
-            selected["rerank_score"] = confidence  # Use LLM confidence as rerank score
-            reranked = [selected]
-            rerank_trace = {"method": "llm_selector_fallback", "confidence": confidence}
+        from app.cross_encoder import rerank as cross_encoder_rerank, should_accept, ENABLE_CROSS_ENCODER
+        
+        if ENABLE_CROSS_ENCODER:
+            reranked, rerank_trace = cross_encoder_rerank(
+                normalized_query,
+                candidates_to_rerank,
+                top_k=5
+            )
         else:
+            # Cross-encoder disabled, use LLM selector
+            use_llm_selector = True
+            rerank_trace = {"method": "skipped", "reason": "cross_encoder_disabled"}
+    except Exception as e:
+        # Cross-encoder failed to import/load, use LLM selector
+        use_llm_selector = True
+        rerank_trace = {"method": "fallback", "error": str(e)[:100]}
+    
+    # Fallback to LLM selector if cross-encoder unavailable/disabled
+    if use_llm_selector or not reranked:
+        try:
+            choice_idx, confidence, selector_trace = llm_selector(normalized_query, candidates_to_rerank[:5])
+            trace["selector_called"] = True
+            trace["selector_confidence"] = confidence
+            trace["selector_trace"] = selector_trace
+            
+            if choice_idx is not None and 0 <= choice_idx < len(candidates_to_rerank):
+                selected = candidates_to_rerank[choice_idx].copy()
+                selected["rerank_score"] = confidence  # Use LLM confidence as rerank score
+                reranked = [selected]
+                rerank_trace["method"] = "llm_selector"
+                rerank_trace["confidence"] = confidence
+                rerank_trace["choice"] = choice_idx
+            else:
+                reranked = []
+                rerank_trace["method"] = "llm_selector"
+                rerank_trace["result"] = "no_match"
+        except Exception as e:
+            rerank_trace["llm_selector_error"] = str(e)[:100]
             reranked = []
-            rerank_trace = {"method": "none", "error": "cross_encoder_unavailable_and_selector_failed"}
+    
     trace["rerank_trace"] = rerank_trace
     
     if not reranked:
-        trace["stage"] = "rerank_empty"
+        trace["stage"] = "rerank_no_result"
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
     
-    # Stage 3: Check threshold (different logic for LLM selector vs cross-encoder)
+    # Stage 3: Check threshold
     top_rerank_score = reranked[0].get("rerank_score", 0)
     trace["final_score"] = round(top_rerank_score, 4)
     
-    # For LLM selector fallback, use LLM confidence threshold (0.5)
-    # For cross-encoder, use rerank threshold (0.3)
-    if rerank_trace.get("method") == "llm_selector_fallback":
-        LLM_CONFIDENCE_THRESHOLD = 0.5
-        accept = top_rerank_score >= LLM_CONFIDENCE_THRESHOLD
-        accept_reason = "llm_acceptable" if accept else f"llm_low_confidence_{top_rerank_score:.2f}"
+    # Use appropriate threshold based on method
+    rerank_method = rerank_trace.get("method", "none")
+    
+    if rerank_method == "llm_selector":
+        # LLM selector returns confidence 0-1, threshold at 0.5
+        LLM_THRESHOLD = 0.5
+        accept = top_rerank_score >= LLM_THRESHOLD
+        accept_reason = "llm_confident" if accept else f"llm_below_threshold_{top_rerank_score:.2f}"
     else:
-        # Lazy import should_accept for cross-encoder
+        # Cross-encoder threshold
         try:
             from app.cross_encoder import should_accept
             accept, accept_reason = should_accept(top_rerank_score)
         except Exception:
-            # Fallback: use simple threshold if cross-encoder not available
             RERANK_THRESHOLD = 0.3
             accept = top_rerank_score >= RERANK_THRESHOLD
             accept_reason = "acceptable" if accept else f"below_threshold_{top_rerank_score:.2f}"
@@ -991,12 +1014,12 @@ def retrieve(
     trace["accept_reason"] = accept_reason
     
     if not accept:
-        trace["stage"] = f"rerank_rejected_{accept_reason}"
+        trace["stage"] = f"rejected_{accept_reason}"
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
     
-    # Success: Return top reranked result
-    trace["stage"] = "rerank_accepted"
+    # Success
+    trace["stage"] = f"{rerank_method}_accepted"
     result = {
         "faq_id": reranked[0]["faq_id"],
         "question": reranked[0]["question"],
