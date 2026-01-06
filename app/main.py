@@ -1850,14 +1850,27 @@ def promote_staged(
             """, (tenantId,)).fetchall()
             
             # Auto-expand variants before embedding
-            faqs_to_expand = [
-                {
+            faqs_to_expand = []
+            for faq in staged_faqs:
+                variants_json = faq[3]
+                variants = []
+                if variants_json:
+                    # Handle both JSON string and already-parsed list
+                    if isinstance(variants_json, str):
+                        try:
+                            variants = json_lib.loads(variants_json)
+                        except:
+                            variants = []
+                    elif isinstance(variants_json, list):
+                        variants = variants_json
+                    else:
+                        variants = []
+                
+                faqs_to_expand.append({
                     "question": faq[1],  # question
                     "answer": faq[2],     # answer
-                    "variants": json_lib.loads(faq[3]) if faq[3] else []  # variants_json
-                }
-                for faq in staged_faqs
-            ]
+                    "variants": variants
+                })
             
             expanded_faqs = expand_faq_list(faqs_to_expand, max_variants_per_faq=50)
             
