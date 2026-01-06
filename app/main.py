@@ -2088,6 +2088,18 @@ def promote_staged(
     except HTTPException:
         raise
     except Exception as e:
+        # Log full traceback server-side
+        import logging
+        logging.error(f"Promote failed at stage '{stage}': {e}", exc_info=True)
+        
+        # Return detailed error for admin (prod-safe)
+        error_type = type(e).__name__
+        error_message = str(e)
+        
+        # Get stack trace (first 20 lines)
+        tb_lines = traceback.format_exc().split('\n')[:20]
+        stack_trace = '\n'.join(tb_lines)
+        
         # On error, try to restore
         try:
             with get_conn() as conn:
@@ -2107,7 +2119,18 @@ def promote_staged(
                 conn.commit()
         except:
             pass
-        raise HTTPException(status_code=500, detail=f"Promote failed: {str(e)}")
+        
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Promotion failed",
+                "stage": stage,
+                "error_type": error_type,
+                "error_message": error_message,
+                "stack_trace": stack_trace,
+                "timings_ms": timings
+            }
+        )
 
 
 @app.post("/admin/api/tenant/{tenantId}/rollback")
