@@ -389,87 +389,101 @@ def _init_debug_headers(resp: Response, tenant_id: str, msg: str) -> str:
 @app.on_event("startup")
 def _startup():
     """Initialize database schema on startup. Non-blocking - failures don't prevent startup."""
-    # Run DB initialization in background to avoid blocking startup
+    # Run DB initialization in background thread to avoid blocking startup
     # If DB is slow/unavailable, app still starts and can serve /ping
-    try:
-        with get_conn() as conn:
-            conn.execute(SCHEMA_SQL)
+    import threading
+    
+    def init_db():
+        try:
+            with get_conn() as conn:
+                conn.execute(SCHEMA_SQL)
+                conn.commit()
+            
             # Migrate telemetry table if old columns exist
             try:
-                # Check if old columns exist
-                check_old = conn.execute("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'telemetry' AND column_name IN ('query_text', 'normalized_text')
-                """).fetchall()
-                
-                # Check if new columns exist
-                check_new = conn.execute("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'telemetry' AND column_name IN ('query_length', 'query_hash')
-                """).fetchall()
-                
-                if check_old and not check_new:
-                    # Migrate: add new columns, then drop old ones
-                    conn.execute("""
-                        ALTER TABLE telemetry 
-                        ADD COLUMN IF NOT EXISTS query_length INTEGER,
-                        ADD COLUMN IF NOT EXISTS normalized_length INTEGER,
-                        ADD COLUMN IF NOT EXISTS query_hash TEXT,
-                        ADD COLUMN IF NOT EXISTS normalized_hash TEXT
-                    """)
-                    # Note: We don't drop old columns immediately to allow gradual migration
-                    # Old columns can be dropped manually after verifying new schema works
+                with get_conn() as conn:
+                    # Check if old columns exist
+                    check_old = conn.execute("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'telemetry' AND column_name IN ('query_text', 'normalized_text')
+                    """).fetchall()
+                    
+                    # Check if new columns exist
+                    check_new = conn.execute("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'telemetry' AND column_name IN ('query_length', 'query_hash')
+                    """).fetchall()
+                    
+                    if check_old and not check_new:
+                        # Migrate: add new columns, then drop old ones
+                        conn.execute("""
+                            ALTER TABLE telemetry 
+                            ADD COLUMN IF NOT EXISTS query_length INTEGER,
+                            ADD COLUMN IF NOT EXISTS normalized_length INTEGER,
+                            ADD COLUMN IF NOT EXISTS query_hash TEXT,
+                            ADD COLUMN IF NOT EXISTS normalized_hash TEXT
+                        """)
+                        conn.commit()
+                        # Note: We don't drop old columns immediately to allow gradual migration
+                        # Old columns can be dropped manually after verifying new schema works
             except Exception:
                 pass  # Migration is best-effort, don't fail startup
             
             # Migrate faq_items to add is_staged column if missing
             try:
-                check_staged = conn.execute("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'faq_items' AND column_name = 'is_staged'
-                """).fetchall()
-                
-                if not check_staged:
-                    conn.execute("""
-                        ALTER TABLE faq_items 
-                        ADD COLUMN IF NOT EXISTS is_staged BOOLEAN NOT NULL DEFAULT false
-                    """)
-                    # Update unique constraint
-                    try:
-                        conn.execute("DROP INDEX IF EXISTS faq_items_tenant_question_key")
-                    except:
-                        pass
-                    conn.execute("""
-                        CREATE UNIQUE INDEX IF NOT EXISTS faq_items_tenant_question_staged_key 
-                        ON faq_items(tenant_id, question, is_staged)
-                    """)
+                with get_conn() as conn:
+                    check_staged = conn.execute("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'faq_items' AND column_name = 'is_staged'
+                    """).fetchall()
+                    
+                    if not check_staged:
+                        conn.execute("""
+                            ALTER TABLE faq_items 
+                            ADD COLUMN IF NOT EXISTS is_staged BOOLEAN NOT NULL DEFAULT false
+                        """)
+                        # Update unique constraint
+                        try:
+                            conn.execute("DROP INDEX IF EXISTS faq_items_tenant_question_key")
+                        except:
+                            pass
+                        conn.execute("""
+                            CREATE UNIQUE INDEX IF NOT EXISTS faq_items_tenant_question_staged_key 
+                            ON faq_items(tenant_id, question, is_staged)
+                        """)
+                        conn.commit()
             except Exception:
                 pass  # Migration is best-effort
             
             # Migrate telemetry to add new v2 fields
             try:
-                conn.execute("""
-                    ALTER TABLE telemetry 
-                    ADD COLUMN IF NOT EXISTS candidate_count INTEGER,
-                    ADD COLUMN IF NOT EXISTS retrieval_mode TEXT,
-                    ADD COLUMN IF NOT EXISTS selector_called BOOLEAN,
-                    ADD COLUMN IF NOT EXISTS selector_confidence REAL,
-                    ADD COLUMN IF NOT EXISTS chosen_faq_id BIGINT,
-                    ADD COLUMN IF NOT EXISTS retrieval_latency_ms INTEGER,
-                    ADD COLUMN IF NOT EXISTS selector_latency_ms INTEGER
-                """)
+                with get_conn() as conn:
+                    conn.execute("""
+                        ALTER TABLE telemetry 
+                        ADD COLUMN IF NOT EXISTS candidate_count INTEGER,
+                        ADD COLUMN IF NOT EXISTS retrieval_mode TEXT,
+                        ADD COLUMN IF NOT EXISTS selector_called BOOLEAN,
+                        ADD COLUMN IF NOT EXISTS selector_confidence REAL,
+                        ADD COLUMN IF NOT EXISTS chosen_faq_id BIGINT,
+                        ADD COLUMN IF NOT EXISTS retrieval_latency_ms INTEGER,
+                        ADD COLUMN IF NOT EXISTS selector_latency_ms INTEGER
+                    """)
+                    conn.commit()
             except Exception:
                 pass  # Migration is best-effort
-            
-            conn.commit()
-    except Exception as e:
-        # Log but don't fail startup - app can still serve /ping and other endpoints
-        import logging
-        logging.warning(f"Database initialization failed (non-fatal): {e}")
-        # App will still start, but DB-dependent endpoints may fail
+                
+        except Exception as e:
+            # Log but don't fail startup - app can still serve /ping and other endpoints
+            import logging
+            logging.warning(f"Database initialization failed (non-fatal): {e}")
+            # App will still start, but DB-dependent endpoints may fail
+    
+    # Start DB init in background thread (non-blocking)
+    thread = threading.Thread(target=init_db, daemon=True)
+    thread.start()
 
 
 class FaqItem(BaseModel):

@@ -25,16 +25,44 @@ from typing import Optional
 import httpx
 import numpy as np
 
-# Try to import sentence-transformers (self-hosted option)
-try:
-    from sentence_transformers import CrossEncoder
-    CROSS_ENCODER_MODEL = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
-    SELF_HOSTED_AVAILABLE = True
-    print("Cross-encoder: Using self-hosted ms-marco-MiniLM-L-6-v2")
-except ImportError:
-    CROSS_ENCODER_MODEL = None
-    SELF_HOSTED_AVAILABLE = False
-    print("Cross-encoder: sentence-transformers not installed, will use Cohere API")
+# Environment flag: Enable cross-encoder in production (default: OFF for fast startup)
+ENABLE_CROSS_ENCODER = os.getenv("ENABLE_CROSS_ENCODER", "false").lower() in ("true", "1", "yes")
+
+# Lazy-load cross-encoder model (only when needed, not at import time)
+_CROSS_ENCODER_MODEL = None
+_SELF_HOSTED_AVAILABLE = None
+
+
+def _get_cross_encoder_model():
+    """Lazy-load cross-encoder model on first use."""
+    global _CROSS_ENCODER_MODEL, _SELF_HOSTED_AVAILABLE
+    
+    if _CROSS_ENCODER_MODEL is not None:
+        return _CROSS_ENCODER_MODEL, _SELF_HOSTED_AVAILABLE
+    
+    # Check if enabled
+    if not ENABLE_CROSS_ENCODER:
+        _CROSS_ENCODER_MODEL = None
+        _SELF_HOSTED_AVAILABLE = False
+        return None, False
+    
+    # Try to import and load model (lazy, only when needed)
+    try:
+        from sentence_transformers import CrossEncoder
+        _CROSS_ENCODER_MODEL = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+        _SELF_HOSTED_AVAILABLE = True
+        print("Cross-encoder: Loaded self-hosted ms-marco-MiniLM-L-6-v2")
+        return _CROSS_ENCODER_MODEL, True
+    except ImportError:
+        _CROSS_ENCODER_MODEL = None
+        _SELF_HOSTED_AVAILABLE = False
+        print("Cross-encoder: sentence-transformers not installed, will use Cohere API")
+        return None, False
+    except Exception as e:
+        print(f"Cross-encoder: Failed to load model: {e}")
+        _CROSS_ENCODER_MODEL = None
+        _SELF_HOSTED_AVAILABLE = False
+        return None, False
 
 # Cohere API (fallback)
 COHERE_API_KEY = os.getenv("COHERE_API_KEY", "")
@@ -69,7 +97,10 @@ def rerank_self_hosted(
         "scores": []
     }
     
-    if not SELF_HOSTED_AVAILABLE or not CROSS_ENCODER_MODEL:
+    # Lazy-load model on first use
+    model, available = _get_cross_encoder_model()
+    
+    if not available or not model:
         trace["error"] = "model_not_available"
         return candidates[:top_k], trace
     
@@ -86,7 +117,7 @@ def rerank_self_hosted(
         ]
         
         # Get cross-encoder scores (raw logits, can be negative)
-        raw_scores = CROSS_ENCODER_MODEL.predict(pairs)
+        raw_scores = model.predict(pairs)
         
         # Normalize using sigmoid to 0-1 range for easier thresholding
         import numpy as np
@@ -205,7 +236,9 @@ def rerank(
     Returns:
         (reranked_candidates, trace)
     """
-    if prefer_self_hosted and SELF_HOSTED_AVAILABLE:
+    # Check if self-hosted is available (lazy-load)
+    model, available = _get_cross_encoder_model()
+    if prefer_self_hosted and available:
         return rerank_self_hosted(query, candidates, top_k)
     elif COHERE_API_KEY:
         return rerank_cohere(query, candidates, top_k)

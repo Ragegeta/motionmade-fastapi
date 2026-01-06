@@ -23,7 +23,8 @@ import re
 from typing import Optional, Tuple, Dict, Any, List
 from app.db import get_conn
 from app.openai_client import chat_once
-from app.cross_encoder import rerank as cross_encoder_rerank, should_accept, RERANK_THRESHOLD
+# Lazy import cross-encoder (only when needed, not at module load)
+# This prevents torch/sentence-transformers from loading at startup
 
 # Thresholds
 THETA_HIGH = 0.82       # Above this = direct hit, skip LLM
@@ -937,11 +938,26 @@ def retrieve(
     # Take top 8 candidates for reranking
     candidates_to_rerank = candidates[:8]
     
-    reranked, rerank_trace = cross_encoder_rerank(
-        normalized_query,
-        candidates_to_rerank,
-        top_k=5
-    )
+    # Lazy import cross-encoder (only when needed)
+    try:
+        from app.cross_encoder import rerank as cross_encoder_rerank, should_accept
+        reranked, rerank_trace = cross_encoder_rerank(
+            normalized_query,
+            candidates_to_rerank,
+            top_k=5
+        )
+    except Exception as e:
+        # If cross-encoder fails to import/load, fall back to LLM selector
+        trace["rerank_trace"] = {"method": "fallback", "error": str(e)[:100]}
+        # Use existing LLM selector as fallback
+        from app.retriever import llm_selector
+        choice_idx, confidence, selector_trace = llm_selector(normalized_query, candidates_to_rerank[:5])
+        if choice_idx is not None and 0 <= choice_idx < len(candidates_to_rerank):
+            reranked = [candidates_to_rerank[choice_idx]]
+            rerank_trace = {"method": "llm_selector_fallback", "confidence": confidence}
+        else:
+            reranked = []
+            rerank_trace = {"method": "none", "error": "cross_encoder_unavailable_and_selector_failed"}
     trace["rerank_trace"] = rerank_trace
     
     if not reranked:
@@ -953,7 +969,15 @@ def retrieve(
     top_rerank_score = reranked[0].get("rerank_score", 0)
     trace["final_score"] = round(top_rerank_score, 4)
     
-    accept, accept_reason = should_accept(top_rerank_score)
+    # Lazy import should_accept
+    try:
+        from app.cross_encoder import should_accept
+        accept, accept_reason = should_accept(top_rerank_score)
+    except Exception:
+        # Fallback: use simple threshold if cross-encoder not available
+        RERANK_THRESHOLD = 0.3
+        accept = top_rerank_score >= RERANK_THRESHOLD
+        accept_reason = "acceptable" if accept else f"below_threshold_{top_rerank_score:.2f}"
     trace["accept_reason"] = accept_reason
     
     if not accept:
