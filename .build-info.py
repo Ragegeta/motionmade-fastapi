@@ -6,3 +6,4 @@ This file is generated during build and read at runtime.
 GIT_SHA = "unknown"
 GIT_BRANCH = "unknown"
 
+

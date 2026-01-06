@@ -53,3 +53,4 @@ def test_admin_has_cache_control():
     assert response.headers.get("Cache-Control") == "no-store", \
         f"Expected no-store, got {response.headers.get('Cache-Control')}"
 
+

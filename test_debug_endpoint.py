@@ -27,3 +27,4 @@ for route in admin_routes:
     print(f"  {route['method']} {route['path']}")
 
 
+

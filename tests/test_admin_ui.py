@@ -94,3 +94,4 @@ def test_admin_ui_page_loads():
     assert "Tenant Management" in res.text or "admin" in res.text.lower()
 
 
+

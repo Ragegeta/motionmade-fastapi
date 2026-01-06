@@ -30,6 +30,24 @@
     "expected_topic": "services"
   },
   {
+    "id": "T05a",
+    "question": "do u do smoke alarms",
+    "expect_hit": true,
+    "expected_topic": "services"
+  },
+  {
+    "id": "T05b",
+    "question": "can you do switchboards",
+    "expect_hit": true,
+    "expected_topic": "services"
+  },
+  {
+    "id": "T05c",
+    "question": "wat do u do",
+    "expect_hit": true,
+    "expected_topic": "services"
+  },
+  {
     "id": "T06",
     "question": "what areas do you service",
     "expect_hit": true,
@@ -56,6 +74,12 @@
   {
     "id": "T10",
     "question": "i have no power",
+    "expect_hit": true,
+    "expected_topic": "emergency"
+  },
+  {
+    "id": "T10a",
+    "question": "urgent",
     "expect_hit": true,
     "expected_topic": "emergency"
   },
@@ -98,6 +122,18 @@
   {
     "id": "T17",
     "question": "do you do plumbing",
+    "expect_hit": false,
+    "expected_topic": "none"
+  },
+  {
+    "id": "T17a",
+    "question": "do you do roofing",
+    "expect_hit": false,
+    "expected_topic": "none"
+  },
+  {
+    "id": "T17b",
+    "question": "do you do tiling",
     "expect_hit": false,
     "expected_topic": "none"
   },

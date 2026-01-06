@@ -307,7 +307,14 @@ def _log_telemetry(
     top_faq_id,
     retrieval_score,
     rewrite_triggered: bool,
-    latency_ms: int
+    latency_ms: int,
+    candidate_count: Optional[int] = None,
+    retrieval_mode: Optional[str] = None,
+    selector_called: Optional[bool] = None,
+    selector_confidence: Optional[float] = None,
+    chosen_faq_id: Optional[int] = None,
+    retrieval_latency_ms: Optional[int] = None,
+    selector_latency_ms: Optional[int] = None
 ):
     """Log request telemetry for analytics. Privacy-safe: stores only lengths and hashes, not raw text."""
     try:
@@ -321,10 +328,14 @@ def _log_telemetry(
                 """INSERT INTO telemetry 
                    (tenant_id, query_length, normalized_length, query_hash, normalized_hash, 
                     intent_count, debug_branch, faq_hit, top_faq_id, retrieval_score, 
-                    rewrite_triggered, latency_ms)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    rewrite_triggered, latency_ms, candidate_count, retrieval_mode, 
+                    selector_called, selector_confidence, chosen_faq_id, 
+                    retrieval_latency_ms, selector_latency_ms)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                 (tenant_id, query_len, normalized_len, query_hash, normalized_hash, intent_count, 
-                 debug_branch, faq_hit, top_faq_id, retrieval_score, rewrite_triggered, latency_ms)
+                 debug_branch, faq_hit, top_faq_id, retrieval_score, rewrite_triggered, latency_ms,
+                 candidate_count, retrieval_mode, selector_called, selector_confidence, chosen_faq_id,
+                 retrieval_latency_ms, selector_latency_ms)
             )
             conn.commit()
     except Exception:
@@ -435,6 +446,21 @@ def _startup():
                         CREATE UNIQUE INDEX IF NOT EXISTS faq_items_tenant_question_staged_key 
                         ON faq_items(tenant_id, question, is_staged)
                     """)
+            except Exception:
+                pass  # Migration is best-effort
+            
+            # Migrate telemetry to add new v2 fields
+            try:
+                conn.execute("""
+                    ALTER TABLE telemetry 
+                    ADD COLUMN IF NOT EXISTS candidate_count INTEGER,
+                    ADD COLUMN IF NOT EXISTS retrieval_mode TEXT,
+                    ADD COLUMN IF NOT EXISTS selector_called BOOLEAN,
+                    ADD COLUMN IF NOT EXISTS selector_confidence REAL,
+                    ADD COLUMN IF NOT EXISTS chosen_faq_id BIGINT,
+                    ADD COLUMN IF NOT EXISTS retrieval_latency_ms INTEGER,
+                    ADD COLUMN IF NOT EXISTS selector_latency_ms INTEGER
+                """)
             except Exception:
                 pass  # Migration is best-effort
             
@@ -684,8 +710,14 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         if retrieval_trace.get("top_score") is not None:
             resp.headers["X-Retrieval-Score"] = str(retrieval_trace.get("top_score", 0))
         resp.headers["X-Cache-Hit"] = str(retrieval_trace.get("cache_hit", False)).lower()
-        resp.headers["X-Rerank-Triggered"] = str(retrieval_trace.get("rerank_triggered", False)).lower()
-        resp.headers["X-Retrieval-Ms"] = str(retrieval_trace.get("total_ms", 0))
+        resp.headers["X-Retrieval-Mode"] = retrieval_trace.get("retrieval_mode", "unknown")
+        resp.headers["X-Candidate-Count"] = str(retrieval_trace.get("candidates_count", 0))
+        resp.headers["X-Selector-Called"] = str(retrieval_trace.get("selector_called", False)).lower()
+        if retrieval_trace.get("selector_confidence") is not None:
+            resp.headers["X-Selector-Confidence"] = str(retrieval_trace.get("selector_confidence", 0))
+        resp.headers["X-Retrieval-Ms"] = str(retrieval_trace.get("retrieval_ms", 0))
+        if retrieval_trace.get("selector_ms") is not None:
+            resp.headers["X-Selector-Ms"] = str(retrieval_trace.get("selector_ms", 0))
         
         if retrieval_trace.get("rerank_trace"):
             rt = retrieval_trace["rerank_trace"]
@@ -698,15 +730,20 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         ans = retrieval_result["answer"] if retrieval_result else None
         faq_id = retrieval_result["faq_id"] if retrieval_result else None
         score = retrieval_result["score"] if retrieval_result else retrieval_trace.get("top_score", 0)
+        chosen_faq_id = retrieval_trace.get("chosen_faq_id") or faq_id
         
         if faq_id is not None:
             resp.headers["X-Top-Faq-Id"] = str(faq_id)
+        if chosen_faq_id is not None:
+            resp.headers["X-Chosen-Faq-Id"] = str(chosen_faq_id)
         
         resp.headers["X-Faq-Hit"] = str(hit).lower()
 
         if hit and ans:
             stage = retrieval_result.get("stage", "embedding")
-            if stage == "rerank":
+            if stage == "selector":
+                resp.headers["X-Debug-Branch"] = "selector_hit"
+            elif stage == "rerank":
                 resp.headers["X-Debug-Branch"] = "rerank_hit"
             elif stage == "cache":
                 resp.headers["X-Debug-Branch"] = "cache_hit"
@@ -735,7 +772,14 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                 top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
                 retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
                 rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-                latency_ms=timings["total_ms"]
+                latency_ms=timings["total_ms"],
+                candidate_count=retrieval_trace.get("candidates_count"),
+                retrieval_mode=retrieval_trace.get("retrieval_mode"),
+                selector_called=retrieval_trace.get("selector_called"),
+                selector_confidence=retrieval_trace.get("selector_confidence"),
+                chosen_faq_id=chosen_faq_id,
+                retrieval_latency_ms=retrieval_trace.get("retrieval_ms"),
+                selector_latency_ms=retrieval_trace.get("selector_ms")
             )
             return payload
 
@@ -2310,19 +2354,35 @@ async def debug_query(
             "debug_branch": resp.headers.get("X-Debug-Branch", "unknown"),
             "retrieval_score": resp.headers.get("X-Retrieval-Score"),
             "retrieval_stage": resp.headers.get("X-Retrieval-Stage"),
+            "retrieval_mode": resp.headers.get("X-Retrieval-Mode"),
             "triage_result": resp.headers.get("X-Triage-Result"),
-            "rerank_triggered": resp.headers.get("X-Rerank-Triggered", "false").lower() == "true",
-            "rerank_gate": resp.headers.get("X-Rerank-Gate"),
             "cache_hit": resp.headers.get("X-Cache-Hit", "false").lower() == "true",
             "replyText": result_payload.get("replyText", ""),
             "top_faq_id": resp.headers.get("X-Top-Faq-Id"),
+            "chosen_faq_id": resp.headers.get("X-Chosen-Faq-Id"),
             "normalized_input": resp.headers.get("X-Normalized-Input", ""),
             "candidates": retrieval_trace.get("candidates", []) if retrieval_trace else [],
+            "candidate_count": retrieval_trace.get("candidates_count", 0) if retrieval_trace else 0,
+            "selector_called": resp.headers.get("X-Selector-Called", "false").lower() == "true",
+            "selector_confidence": resp.headers.get("X-Selector-Confidence"),
+            "selector_choice": retrieval_trace.get("selector_choice") if retrieval_trace else None,
+            "selector_trace": retrieval_trace.get("selector_trace") if retrieval_trace else None,
+            "retrieval_latency_ms": retrieval_trace.get("retrieval_ms", 0) if retrieval_trace else 0,
+            "selector_latency_ms": retrieval_trace.get("selector_ms") if retrieval_trace else None,
+            "total_latency_ms": retrieval_trace.get("total_ms", 0) if retrieval_trace else 0,
+            # Legacy fields (for backwards compatibility)
+            "rerank_triggered": resp.headers.get("X-Selector-Called", "false").lower() == "true",
             "rerank_candidates": None,
             "rerank_reason": None
         }
         
-        # Add rerank-specific info if available
+        # Add selector-specific info if available
+        if retrieval_trace and retrieval_trace.get("selector_trace"):
+            st = retrieval_trace["selector_trace"]
+            debug_info["selector_response"] = st.get("llm_response")
+            debug_info["selector_error"] = st.get("error")
+        
+        # Legacy rerank fields (for backwards compatibility)
         if retrieval_trace and retrieval_trace.get("rerank_trace"):
             rt = retrieval_trace["rerank_trace"]
             debug_info["rerank_candidates"] = rt.get("candidates_seen", [])

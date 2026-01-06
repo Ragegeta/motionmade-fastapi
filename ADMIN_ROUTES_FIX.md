@@ -122,3 +122,4 @@ curl -s https://motionmade-fastapi.onrender.com/admin/api/routes \
 - **Prevention:** Added tests that fail if routes don't exist
 - **Debug:** Added `/admin/api/routes` endpoint to verify deployed routes
 
+

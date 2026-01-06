@@ -24,3 +24,4 @@ echo "Build info: SHA=$GIT_SHA, Branch=$GIT_BRANCH"
 # Install dependencies
 pip install -r requirements.txt
 
+

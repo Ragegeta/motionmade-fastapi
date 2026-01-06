@@ -19,7 +19,8 @@ SAFETY GATES:
 import json
 import hashlib
 import time
-from typing import Optional, Tuple, Dict, Any
+import re
+from typing import Optional, Tuple, Dict, Any, List
 from app.db import get_conn
 from app.openai_client import chat_once
 
@@ -29,8 +30,30 @@ THETA_LOW = 0.40        # Below this = too uncertain, skip LLM (waste of money)
 THETA_RERANK = 0.40     # Rerank zone: 0.40-0.82
 
 # Cache TTL (seconds)
-CACHE_TTL = 3600  # 1 hour
+CACHE_TTL = 86400  # 24 hours (updated per requirements)
 
+# Selector confidence threshold
+SELECTOR_CONFIDENCE_THRESHOLD = 0.6  # Minimum confidence for selector to accept
+
+
+SELECTOR_PROMPT = """You are a precise FAQ selector. Match the customer question to the best FAQ.
+
+Customer question: "{question}"
+
+Candidate FAQs:
+{candidates}
+
+OUTPUT STRICT JSON ONLY (no other text):
+{{
+  "choice": <0-based index 0-{max_idx}, or -1 if none match>,
+  "confidence": <0.0-1.0>
+}}
+
+Rules:
+- choice: index of best matching FAQ, or -1 if none match
+- confidence: how confident you are (0.0 = uncertain, 1.0 = very confident)
+- If confidence < 0.6, set choice to -1
+- Only return valid JSON, nothing else"""
 
 RERANK_PROMPT = """You are matching a customer question to FAQ answers for a business.
 
@@ -162,6 +185,458 @@ def get_top_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[
         return []
 
 
+def _extract_keywords(text: str, max_words: int = 5) -> str:
+    """Extract key words from text (simple approach: remove stopwords, take first N words)."""
+    # Simple stopwords list
+    stopwords = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'do', 'does', 'did', 'is', 'are', 'was', 'were', 'you', 'your', 'what', 'where', 'when', 'how', 'why', 'can', 'could', 'will', 'would', 'should', 'may', 'might'}
+    words = re.findall(r'\b\w+\b', text.lower())
+    keywords = [w for w in words if w not in stopwords and len(w) > 2]
+    return ' '.join(keywords[:max_words])
+
+
+def _pattern_router_score(normalized_query: str, faq_question: str, faq_answer: str) -> float:
+    """Simple pattern router for common forms. Returns boost score (0.0-0.3)."""
+    query_lower = normalized_query.lower()
+    question_lower = faq_question.lower()
+    answer_lower = faq_answer.lower()
+    
+    boost = 0.0
+    
+    # Pattern: "do you do X" / "can you install X"
+    if re.search(r'\b(do you do|can you install|can you do|do you install)\b', query_lower):
+        # Extract service/item after the pattern
+        match = re.search(r'\b(do you do|can you install|can you do|do you install)\s+([a-z\s]+)', query_lower)
+        if match:
+            service_terms = match.group(2).strip().split()[:3]  # First 3 words
+            for term in service_terms:
+                if term in question_lower or term in answer_lower:
+                    boost += 0.1
+                    break
+    
+    # Pattern: "do you service Y" / "come to Y"
+    if re.search(r'\b(do you service|come to|service|service area)\b', query_lower):
+        # Extract location/service area
+        match = re.search(r'\b(do you service|come to|service)\s+([a-z\s]+)', query_lower)
+        if match:
+            location_terms = match.group(2).strip().split()[:2]
+            for term in location_terms:
+                if term in question_lower or term in answer_lower:
+                    boost += 0.15
+                    break
+    
+    # Pattern: "urgent" / "emergency" / "no power"
+    if re.search(r'\b(urgent|emergency|no power|power out|power outage)\b', query_lower):
+        if any(term in question_lower or term in answer_lower for term in ['urgent', 'emergency', 'emergencies', '24/7', 'after hours']):
+            boost += 0.2
+    
+    return min(boost, 0.3)  # Cap at 0.3
+
+
+def retrieve_candidates_v2(
+    tenant_id: str,
+    normalized_query: str,
+    query_embedding,
+    top_k: int = 8
+) -> Tuple[List[Dict], str]:
+    """
+    Hybrid retrieval v2: Always returns candidates using vector + keyword + pattern matching.
+    
+    Returns:
+        (candidates_list, retrieval_mode)
+        - candidates_list: List of dicts with faq_id, question, answer, score, source
+        - retrieval_mode: "vector", "hybrid", "keyword", "pattern", or "fallback"
+    """
+    if not tenant_id:
+        return [], "empty_tenant"
+    
+    candidates_by_id = {}  # faq_id -> candidate dict (best score wins)
+    retrieval_modes = set()
+    
+    # 1. Vector search (always try first)
+    vector_candidates = []
+    if query_embedding is not None:
+        try:
+            from pgvector.psycopg import register_vector
+            from pgvector import Vector
+            
+            with get_conn() as conn:
+                register_vector(conn)
+                qv = Vector(query_embedding)
+                
+                rows = conn.execute("""
+                    SELECT DISTINCT ON (fi.id)
+                        fi.id AS faq_id,
+                        fi.question,
+                        fi.answer,
+                        fi.tenant_id,
+                        (1 - (fv.variant_embedding <=> %s)) AS score
+                    FROM faq_variants fv
+                    JOIN faq_items fi ON fi.id = fv.faq_id
+                    WHERE fi.tenant_id = %s
+                      AND fi.enabled = true
+                      AND fv.enabled = true
+                      AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                    ORDER BY fi.id, (fv.variant_embedding <=> %s) ASC
+                    LIMIT %s
+                """, (qv, tenant_id, qv, top_k * 2)).fetchall()
+                
+                for row in rows:
+                    faq_id = int(row[0])
+                    score = float(row[4])
+                    if faq_id not in candidates_by_id or candidates_by_id[faq_id]["score"] < score:
+                        candidates_by_id[faq_id] = {
+                            "faq_id": faq_id,
+                            "question": str(row[1]),
+                            "answer": str(row[2]),
+                            "tenant_id": str(row[3]),
+                            "score": score,
+                            "source": "vector"
+                        }
+                        vector_candidates.append({
+                            "faq_id": faq_id,
+                            "score": score
+                        })
+                
+                if vector_candidates:
+                    retrieval_modes.add("vector")
+        except Exception as e:
+            print(f"Vector search error: {e}")
+    
+    # 2. Keyword fallback using trigram similarity (if vector found few/none, or as supplement)
+    if len(candidates_by_id) < top_k:
+        try:
+            # Try to enable pg_trgm extension if available
+            with get_conn() as conn:
+                try:
+                    conn.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+                    conn.commit()
+                except:
+                    pass  # Extension might not be available, continue without it
+                
+                # Use trigram similarity as keyword fallback
+                # Normalize query for matching
+                query_words = normalized_query.lower().split()
+                query_pattern = ' & '.join([w for w in query_words if len(w) > 2])
+                
+                if query_pattern:
+                    rows = conn.execute("""
+                        SELECT DISTINCT ON (fi.id)
+                            fi.id AS faq_id,
+                            fi.question,
+                            fi.answer,
+                            fi.tenant_id,
+                            GREATEST(
+                                similarity(LOWER(fi.question), %s),
+                                COALESCE((
+                                    SELECT MAX(similarity(LOWER(fv.variant_question), %s))
+                                    FROM faq_variants fv
+                                    WHERE fv.faq_id = fi.id AND fv.enabled = true
+                                ), 0.0)
+                            ) AS score
+                        FROM faq_items fi
+                        WHERE fi.tenant_id = %s
+                          AND fi.enabled = true
+                          AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                        ORDER BY fi.id, score DESC
+                        LIMIT %s
+                    """, (normalized_query.lower(), normalized_query.lower(), tenant_id, top_k * 2)).fetchall()
+                    
+                    keyword_found = False
+                    for row in rows:
+                        faq_id = int(row[0])
+                        score = float(row[4])
+                        # Only add if similarity is reasonable (> 0.2) or we need more candidates
+                        if score > 0.2 or len(candidates_by_id) < top_k:
+                            keyword_found = True
+                            # Use lower weight for keyword matches (scale by 0.5)
+                            keyword_score = score * 0.5
+                            if faq_id not in candidates_by_id:
+                                candidates_by_id[faq_id] = {
+                                    "faq_id": faq_id,
+                                    "question": str(row[1]),
+                                    "answer": str(row[2]),
+                                    "tenant_id": str(row[3]),
+                                    "score": keyword_score,
+                                    "source": "keyword"
+                                }
+                            elif candidates_by_id[faq_id]["source"] == "keyword":
+                                # Update if this keyword match is better
+                                candidates_by_id[faq_id]["score"] = max(candidates_by_id[faq_id]["score"], keyword_score)
+                    
+                    if keyword_found:
+                        retrieval_modes.add("keyword")
+        except Exception as e:
+            print(f"Keyword/trigram search error: {e}")
+            # If trigram fails, try simple LIKE matching as last resort
+            try:
+                with get_conn() as conn:
+                    query_words = [w for w in normalized_query.lower().split() if len(w) > 2][:3]
+                    if query_words:
+                        pattern = '%' + '%'.join(query_words) + '%'
+                        rows = conn.execute("""
+                            SELECT DISTINCT fi.id AS faq_id, fi.question, fi.answer, fi.tenant_id
+                            FROM faq_items fi
+                            WHERE fi.tenant_id = %s
+                              AND fi.enabled = true
+                              AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                              AND (LOWER(fi.question) LIKE %s OR LOWER(fi.answer) LIKE %s)
+                            LIMIT %s
+                        """, (tenant_id, pattern, pattern, top_k)).fetchall()
+                        
+                        for row in rows:
+                            faq_id = int(row[0])
+                            if faq_id not in candidates_by_id and len(candidates_by_id) < top_k:
+                                candidates_by_id[faq_id] = {
+                                    "faq_id": faq_id,
+                                    "question": str(row[1]),
+                                    "answer": str(row[2]),
+                                    "tenant_id": str(row[3]),
+                                    "score": 0.1,  # Low baseline score
+                                    "source": "keyword"
+                                }
+                                retrieval_modes.add("keyword")
+            except:
+                pass
+    
+    # 3. Pattern router boost (apply to existing candidates)
+    for faq_id in list(candidates_by_id.keys()):
+        candidate = candidates_by_id[faq_id]
+        pattern_boost = _pattern_router_score(normalized_query, candidate["question"], candidate["answer"])
+        if pattern_boost > 0:
+            candidate["score"] += pattern_boost
+            candidate["source"] = "hybrid" if candidate["source"] != "hybrid" else candidate["source"]
+            retrieval_modes.add("pattern")
+    
+    # 4. Fallback: If still no candidates, get any enabled FAQs (last resort)
+    if not candidates_by_id:
+        try:
+            with get_conn() as conn:
+                rows = conn.execute("""
+                    SELECT fi.id AS faq_id, fi.question, fi.answer, fi.tenant_id
+                    FROM faq_items fi
+                    WHERE fi.tenant_id = %s
+                      AND fi.enabled = true
+                      AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                    ORDER BY fi.id
+                    LIMIT %s
+                """, (tenant_id, top_k)).fetchall()
+                
+                for row in rows:
+                    faq_id = int(row[0])
+                    candidates_by_id[faq_id] = {
+                        "faq_id": faq_id,
+                        "question": str(row[1]),
+                        "answer": str(row[2]),
+                        "tenant_id": str(row[3]),
+                        "score": 0.05,  # Very low baseline
+                        "source": "fallback"
+                    }
+                if candidates_by_id:
+                    retrieval_modes.add("fallback")
+        except Exception as e:
+            print(f"Fallback retrieval error: {e}")
+    
+    # Convert to list, sort by score, limit to top_k
+    candidates = list(candidates_by_id.values())
+    candidates.sort(key=lambda x: x["score"], reverse=True)
+    candidates = candidates[:top_k]
+    
+    # Determine retrieval mode string
+    if "vector" in retrieval_modes and ("keyword" in retrieval_modes or "pattern" in retrieval_modes):
+        mode = "hybrid"
+    elif "vector" in retrieval_modes:
+        mode = "vector"
+    elif "keyword" in retrieval_modes:
+        mode = "keyword"
+    elif "pattern" in retrieval_modes:
+        mode = "pattern"
+    elif "fallback" in retrieval_modes:
+        mode = "fallback"
+    else:
+        mode = "none"
+    
+    return candidates, mode
+
+
+def llm_selector(
+    normalized_query: str,
+    candidates: List[Dict],
+    timeout: float = 3.0
+) -> Tuple[Optional[int], float, Dict]:
+    """
+    LLM selector: Fast selector that returns strict JSON with choice index and confidence.
+    
+    Args:
+        normalized_query: Normalized user question
+        candidates: List of candidate FAQs (at least top 5-8)
+        timeout: Timeout in seconds
+    
+    Returns:
+        (choice_index or None, confidence, trace_dict)
+        - choice_index: 0-based index into candidates, or None if -1/low confidence
+        - confidence: 0.0-1.0
+        - trace_dict: Diagnostic info
+    """
+    trace = {
+        "selector_called": True,
+        "candidates_count": len(candidates),
+        "llm_response": None,
+        "choice": None,
+        "confidence": None,
+        "error": None,
+        "duration_ms": 0
+    }
+    
+    start_time = time.time()
+    
+    if not candidates:
+        trace["error"] = "no_candidates"
+        return None, 0.0, trace
+    
+    # Format candidates for prompt (only titles + keywords)
+    candidates_text = ""
+    for i, c in enumerate(candidates):
+        keywords = _extract_keywords(c["question"], max_words=5)
+        candidates_text += f'{i}. "{c["question"]}" (keywords: {keywords})\n'
+    
+    prompt = SELECTOR_PROMPT.format(
+        question=normalized_query,
+        candidates=candidates_text,
+        max_idx=len(candidates) - 1
+    )
+    
+    try:
+        response = chat_once(
+            system="You are a precise FAQ selector. Return ONLY valid JSON, no other text.",
+            user=prompt,
+            temperature=0.0,
+            max_tokens=100,
+            timeout=timeout,
+            model="gpt-4o-mini"
+        )
+        
+        trace["llm_response"] = response[:200]
+        trace["duration_ms"] = int((time.time() - start_time) * 1000)
+        
+        # Parse JSON response
+        response_clean = response.strip()
+        # Try to extract JSON if wrapped in markdown
+        json_match = re.search(r'\{[^{}]*"choice"[^{}]*\}', response_clean)
+        if json_match:
+            response_clean = json_match.group(0)
+        
+        try:
+            result = json.loads(response_clean)
+            choice = result.get("choice")
+            confidence = float(result.get("confidence", 0.0))
+            
+            trace["choice"] = choice
+            trace["confidence"] = confidence
+            
+            # Validate choice
+            if choice == -1 or confidence < SELECTOR_CONFIDENCE_THRESHOLD:
+                return None, confidence, trace
+            
+            if not isinstance(choice, int) or choice < 0 or choice >= len(candidates):
+                trace["error"] = f"invalid_choice_{choice}"
+                return None, confidence, trace
+            
+            return choice, confidence, trace
+            
+        except json.JSONDecodeError as e:
+            trace["error"] = f"json_parse_error: {str(e)[:50]}"
+            return None, 0.0, trace
+            
+    except Exception as e:
+        trace["duration_ms"] = int((time.time() - start_time) * 1000)
+        trace["error"] = f"error_{str(e)[:50]}"
+        return None, 0.0, trace
+
+
+def verify_selection(
+    selected_faq: dict,
+    selector_response: dict,
+    candidates: list[dict]
+) -> tuple[bool, str]:
+    """
+    Guardrail verifier: ensure selection is valid and safe.
+    
+    Returns:
+        (is_valid, reason)
+    """
+    # Gate 1: Must have a selection
+    if not selected_faq:
+        return False, "no_faq_selected"
+    
+    # Gate 2: Selector must have responded
+    if not selector_response:
+        return False, "no_selector_response"
+    
+    # Gate 3: Choice must be valid index
+    choice = selector_response.get("choice", -1)
+    if choice == -1:
+        return False, "selector_said_none"
+    
+    if choice < 0 or choice >= len(candidates):
+        return False, f"invalid_choice_index_{choice}"
+    
+    # Gate 4: Confidence must be above threshold
+    confidence = selector_response.get("confidence", 0)
+    if confidence < 0.5:
+        return False, f"low_confidence_{confidence}"
+    
+    # Gate 5: Selected FAQ must match the choice
+    if selected_faq.get("faq_id") != candidates[choice].get("faq_id"):
+        return False, "faq_mismatch"
+    
+    # Gate 6: Answer must exist and not be empty
+    answer = selected_faq.get("answer", "")
+    if not answer or len(answer.strip()) < 10:
+        return False, "empty_or_short_answer"
+    
+    return True, "passed"
+
+
+def guardrail_verifier(
+    chosen_faq_id: Optional[int],
+    chosen_answer: Optional[str],
+    candidates: List[Dict]
+) -> Tuple[bool, Optional[str]]:
+    """
+    Guardrail verifier: Ensures chosen FAQ is valid and answer matches.
+    
+    Returns:
+        (is_valid, error_message)
+    """
+    if chosen_faq_id is None:
+        return False, "chosen_faq_id_is_null"
+    
+    # Find the candidate with matching faq_id
+    matching_candidate = None
+    for c in candidates:
+        if c["faq_id"] == chosen_faq_id:
+            matching_candidate = c
+            break
+    
+    if matching_candidate is None:
+        return False, f"chosen_faq_id_{chosen_faq_id}_not_in_candidates"
+    
+    # Verify answer matches (should be identical or very close)
+    if chosen_answer is None:
+        return False, "chosen_answer_is_null"
+    
+    # Allow slight variations (whitespace, case)
+    answer_normalized = chosen_answer.strip().lower()
+    candidate_answer_normalized = matching_candidate["answer"].strip().lower()
+    
+    if answer_normalized != candidate_answer_normalized:
+        # Check if answer is at least a substring (some wrappers might add text)
+        if answer_normalized not in candidate_answer_normalized and candidate_answer_normalized not in answer_normalized:
+            return False, "answer_mismatch"
+    
+    return True, None
+
+
 def llm_rerank(question: str, candidates: list[Dict], timeout: float = 3.0) -> Tuple[Optional[Dict], Dict]:
     """
     Ask LLM to pick the best FAQ from candidates.
@@ -278,7 +753,7 @@ def retrieve(
     use_cache: bool = True
 ) -> Tuple[Optional[Dict], Dict]:
     """
-    Two-stage retrieval: embeddings + conditional LLM rerank.
+    Hybrid retrieval v2: Always returns candidates, uses LLM selector when needed.
     
     Args:
         tenant_id: Tenant identifier
@@ -290,11 +765,10 @@ def retrieve(
         (result_dict or None, trace_dict)
         
     Result dict contains:
-        - faq_id, question, answer, score
-        - stage: "cache", "embedding", "rerank"
+        - faq_id, question, answer, score, stage
         
     Trace dict contains:
-        - All diagnostic info for headers
+        - All diagnostic info for headers and observability
     """
     trace = {
         "tenant_id": tenant_id,
@@ -303,10 +777,15 @@ def retrieve(
         "stage": None,
         "top_score": None,
         "candidates_count": 0,
-        "candidates": [],  # Top candidates with scores
+        "candidates": [],  # Top candidates with scores and sources
         "cache_hit": False,
-        "rerank_triggered": False,
-        "rerank_trace": None,
+        "retrieval_mode": None,
+        "selector_called": False,
+        "selector_confidence": None,
+        "selector_choice": None,
+        "chosen_faq_id": None,
+        "retrieval_ms": 0,
+        "selector_ms": 0,
         "total_ms": 0
     }
     
@@ -318,31 +797,37 @@ def retrieve(
         if cached:
             trace["cache_hit"] = True
             trace["stage"] = "cache"
+            trace["chosen_faq_id"] = cached.get("faq_id")
             trace["total_ms"] = int((time.time() - start_time) * 1000)
             return cached, trace
     
-    # Stage 1: Embedding retrieval
+    # Stage 1: Hybrid retrieval v2 (always returns candidates)
     from app.openai_client import embed_text
     
-    query_embedding = embed_text(normalized_query)
-    if query_embedding is None:
-        trace["stage"] = "embedding_failed"
-        trace["total_ms"] = int((time.time() - start_time) * 1000)
-        return None, trace
-    
-    candidates = get_top_candidates(tenant_id, query_embedding, limit=5)
+    retrieval_start = time.time()
+    query_embedding = embed_text(normalized_query)  # May be None, v2 handles it
+    candidates, retrieval_mode = retrieve_candidates_v2(
+        tenant_id=tenant_id,
+        normalized_query=normalized_query,
+        query_embedding=query_embedding,
+        top_k=8
+    )
+    trace["retrieval_ms"] = int((time.time() - retrieval_start) * 1000)
+    trace["retrieval_mode"] = retrieval_mode
     trace["candidates_count"] = len(candidates)
     
-    # Store top candidates for debugging
+    # Store candidates for debugging
     trace["candidates"] = [
         {
             "faq_id": c["faq_id"],
             "question": c["question"],
-            "score": round(c["score"], 4)
+            "score": round(c["score"], 4),
+            "source": c.get("source", "unknown")
         }
-        for c in candidates[:5]
+        for c in candidates[:8]
     ]
     
+    # IMPORTANT: v2 should never return empty, but handle gracefully
     if not candidates:
         trace["stage"] = "no_candidates"
         trace["total_ms"] = int((time.time() - start_time) * 1000)
@@ -351,16 +836,31 @@ def retrieve(
     top_score = candidates[0]["score"]
     trace["top_score"] = round(top_score, 4)
     
-    # Fast path: High confidence embedding match
+    # Fast path: High confidence embedding match (>= 0.82)
     if top_score >= THETA_HIGH:
         trace["stage"] = "embedding_high"
+        chosen_candidate = candidates[0]
+        
+        # Guardrail check
+        is_valid, error_msg = guardrail_verifier(
+            chosen_faq_id=chosen_candidate["faq_id"],
+            chosen_answer=chosen_candidate["answer"],
+            candidates=candidates
+        )
+        
+        if not is_valid:
+            trace["stage"] = f"guardrail_failed_{error_msg}"
+            trace["total_ms"] = int((time.time() - start_time) * 1000)
+            return None, trace
+        
         result = {
-            "faq_id": candidates[0]["faq_id"],
-            "question": candidates[0]["question"],
-            "answer": candidates[0]["answer"],
+            "faq_id": chosen_candidate["faq_id"],
+            "question": chosen_candidate["question"],
+            "answer": chosen_candidate["answer"],
             "score": top_score,
             "stage": "embedding"
         }
+        trace["chosen_faq_id"] = chosen_candidate["faq_id"]
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         
         # Cache the result
@@ -369,28 +869,47 @@ def retrieve(
         
         return result, trace
     
-    # Too low: Don't waste LLM call
-    if top_score < THETA_LOW:
-        trace["stage"] = "embedding_too_low"
-        trace["total_ms"] = int((time.time() - start_time) * 1000)
-        return None, trace
+    # Stage 2: LLM Selector (when confidence is uncertain)
+    # Use selector when score is below THETA_HIGH (even if very low, selector can help)
+    selector_start = time.time()
+    trace["selector_called"] = True
     
-    # Stage 2: LLM rerank (0.40-0.82 range)
-    trace["rerank_triggered"] = True
+    # Limit candidates to top 5-8 for selector
+    selector_candidates = candidates[:min(8, len(candidates))]
+    choice_idx, confidence, selector_trace = llm_selector(normalized_query, selector_candidates)
+    trace["selector_ms"] = int((time.time() - selector_start) * 1000)
+    trace["selector_confidence"] = confidence
+    trace["selector_choice"] = choice_idx
+    trace["selector_trace"] = selector_trace
     
-    rerank_result, rerank_trace = llm_rerank(normalized_query, candidates)
-    trace["rerank_trace"] = rerank_trace
-    
-    if rerank_result:
-        trace["stage"] = "rerank_hit"
-        result = {
-            "faq_id": rerank_result["faq_id"],
-            "question": rerank_result["question"],
-            "answer": rerank_result["answer"],
-            "score": rerank_result["score"],
-            "stage": "rerank",
-            "rerank_reason": rerank_result.get("rerank_reason", "")
+    if choice_idx is not None and 0 <= choice_idx < len(selector_candidates):
+        chosen_candidate = selector_candidates[choice_idx]
+        
+        # Build selector response dict for verification
+        selector_response = {
+            "choice": choice_idx,
+            "confidence": confidence
         }
+        
+        # Verify selection using new verifier
+        is_valid, verify_reason = verify_selection(chosen_candidate, selector_response, candidates)
+        trace["verify_result"] = verify_reason
+        
+        if not is_valid:
+            trace["stage"] = f"verify_failed_{verify_reason}"
+            trace["total_ms"] = int((time.time() - start_time) * 1000)
+            return None, trace
+        
+        trace["stage"] = "selector_hit"
+        result = {
+            "faq_id": chosen_candidate["faq_id"],
+            "question": chosen_candidate["question"],
+            "answer": chosen_candidate["answer"],
+            "score": chosen_candidate["score"],
+            "stage": "selector",
+            "selector_confidence": confidence
+        }
+        trace["chosen_faq_id"] = chosen_candidate["faq_id"]
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         
         # Cache the result
@@ -399,8 +918,8 @@ def retrieve(
         
         return result, trace
     
-    # Rerank failed or said "none"
-    trace["stage"] = "rerank_none"
+    # Selector returned -1 or low confidence -> clarify/fallback
+    trace["stage"] = "selector_none"
     trace["total_ms"] = int((time.time() - start_time) * 1000)
     return None, trace
 

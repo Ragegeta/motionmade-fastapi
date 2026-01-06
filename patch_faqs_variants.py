@@ -73,3 +73,4 @@ total_variants = sum(len(f.get('variants', [])) for f in faqs)
 print(f'Patched {len(faqs)} FAQs with {total_variants} total variants')
 print(f'Saved to: {output_path}')
 
+

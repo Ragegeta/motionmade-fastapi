@@ -71,3 +71,4 @@ def test_admin_api_routes_with_auth():
     assert "/admin/api/health" in route_paths
     assert "/admin/api/tenants" in route_paths
 
+

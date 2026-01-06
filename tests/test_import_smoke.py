@@ -31,3 +31,4 @@ def test_requests_available():
     except ImportError:
         pytest.fail("requests module not found. Add 'requests' to requirements.txt")
 
+

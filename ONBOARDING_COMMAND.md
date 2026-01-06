@@ -54,3 +54,4 @@
 - Worker domain setup requires wrangler CLI and backend path
 - Script handles 404 routes gracefully with fallbacks
 
+
