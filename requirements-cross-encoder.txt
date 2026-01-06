@@ -1,0 +1,9 @@
+# Optional: Self-hosted cross-encoder dependencies
+# Install with: pip install -r requirements-cross-encoder.txt
+# 
+# Note: These are NOT in requirements.txt to keep production deploys fast.
+# Production should use Cohere API or LLM selector unless ENABLE_CROSS_ENCODER=true.
+
+-r requirements.txt
+sentence-transformers>=2.2.0
+

@@ -21,26 +21,32 @@ We'll implement Option 2 (self-hosted) with Option 1 (Cohere) as fallback.
 
 import os
 import time
-from typing import Optional
+from typing import Optional, Tuple
 import httpx
-import numpy as np
 
 # Environment flag: Enable cross-encoder in production (default: OFF for fast startup)
 ENABLE_CROSS_ENCODER = os.getenv("ENABLE_CROSS_ENCODER", "false").lower() in ("true", "1", "yes")
 
 # Lazy-load cross-encoder model (only when needed, not at import time)
+# Module-level cache (None means not yet checked, False means checked and unavailable)
 _CROSS_ENCODER_MODEL = None
 _SELF_HOSTED_AVAILABLE = None
 
 
-def _get_cross_encoder_model():
-    """Lazy-load cross-encoder model on first use."""
+def _get_cross_encoder_model() -> Tuple[Optional[object], bool]:
+    """
+    Lazy-load cross-encoder model on first use.
+    
+    Returns:
+        (model, available) - model is None if unavailable, available is bool
+    """
     global _CROSS_ENCODER_MODEL, _SELF_HOSTED_AVAILABLE
     
-    if _CROSS_ENCODER_MODEL is not None:
+    # Return cached result if already checked
+    if _SELF_HOSTED_AVAILABLE is not None:
         return _CROSS_ENCODER_MODEL, _SELF_HOSTED_AVAILABLE
     
-    # Check if enabled
+    # Fast path: if disabled, return immediately without any imports
     if not ENABLE_CROSS_ENCODER:
         _CROSS_ENCODER_MODEL = None
         _SELF_HOSTED_AVAILABLE = False
@@ -120,8 +126,13 @@ def rerank_self_hosted(
         raw_scores = model.predict(pairs)
         
         # Normalize using sigmoid to 0-1 range for easier thresholding
-        import numpy as np
-        scores = 1 / (1 + np.exp(-np.array(raw_scores)))
+        try:
+            import numpy as np
+            scores = 1 / (1 + np.exp(-np.array(raw_scores)))
+        except ImportError:
+            # Fallback: use simple sigmoid without numpy (slower but works)
+            import math
+            scores = [1 / (1 + math.exp(-s)) for s in raw_scores]
         
         # Attach normalized scores to candidates
         for i, c in enumerate(candidates):

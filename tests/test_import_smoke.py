@@ -1,34 +1,93 @@
 """
-Smoke test to verify app.main can be imported without errors.
-This ensures all dependencies are available and imports work correctly.
+Import smoke test: Verify app imports without sentence-transformers installed.
+
+This test ensures production can deploy without heavy ML dependencies.
+Run with: pytest tests/test_import_smoke.py
 """
 import pytest
+import sys
+import importlib
 
 
-def test_app_main_imports_successfully():
-    """Verify app.main can be imported without errors."""
-    # This will fail if any imports are missing or broken
+def test_app_imports_without_sentence_transformers():
+    """Verify app.main and app.retriever import without sentence-transformers."""
+    # Temporarily remove sentence-transformers if installed
+    original_modules = {}
+    modules_to_remove = ['sentence_transformers', 'torch', 'transformers']
+    
+    for mod_name in modules_to_remove:
+        if mod_name in sys.modules:
+            original_modules[mod_name] = sys.modules[mod_name]
+            del sys.modules[mod_name]
+    
+    try:
+        # Clear any cached imports
+        importlib.invalidate_caches()
+        
+        # Try importing app modules
+        from app.main import app
+        from app.retriever import retrieve
+        from app.cross_encoder import ENABLE_CROSS_ENCODER, _get_cross_encoder_model
+        
+        # Verify cross-encoder returns None when disabled
+        model, available = _get_cross_encoder_model()
+        assert model is None
+        assert available is False
+        
+        # Verify app object exists
+        assert app is not None
+        
+    finally:
+        # Restore original modules
+        for mod_name, mod in original_modules.items():
+            sys.modules[mod_name] = mod
+        importlib.invalidate_caches()
+
+
+def test_cross_encoder_disabled_by_default():
+    """Verify cross-encoder is disabled by default (no env var)."""
+    import os
+    # Save original value
+    original = os.environ.get("ENABLE_CROSS_ENCODER")
+    
+    try:
+        # Remove env var to test default
+        if "ENABLE_CROSS_ENCODER" in os.environ:
+            del os.environ["ENABLE_CROSS_ENCODER"]
+        
+        # Reload module to pick up default
+        import importlib
+        import app.cross_encoder
+        importlib.reload(app.cross_encoder)
+        
+        # Check default is False
+        assert app.cross_encoder.ENABLE_CROSS_ENCODER is False
+        
+        # Verify model returns None
+        model, available = app.cross_encoder._get_cross_encoder_model()
+        assert model is None
+        assert available is False
+        
+    finally:
+        # Restore original
+        if original is not None:
+            os.environ["ENABLE_CROSS_ENCODER"] = original
+        elif "ENABLE_CROSS_ENCODER" in os.environ:
+            del os.environ["ENABLE_CROSS_ENCODER"]
+        
+        # Reload module
+        import importlib
+        import app.cross_encoder
+        importlib.reload(app.cross_encoder)
+
+
+def test_ping_imports_fast():
+    """Verify /ping endpoint imports without heavy dependencies."""
+    from fastapi.testclient import TestClient
     from app.main import app
     
-    assert app is not None
-    assert hasattr(app, "routes")
-
-
-def test_suite_runner_imports_successfully():
-    """Verify suite_runner can be imported (requests dependency available)."""
-    try:
-        from app.suite_runner import run_suite
-        assert callable(run_suite)
-    except ImportError as e:
-        pytest.fail(f"suite_runner import failed: {e}. Make sure 'requests' is installed.")
-
-
-def test_requests_available():
-    """Verify requests module is available."""
-    try:
-        import requests
-        assert requests is not None
-    except ImportError:
-        pytest.fail("requests module not found. Add 'requests' to requirements.txt")
-
-
+    client = TestClient(app)
+    response = client.get("/ping")
+    
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}

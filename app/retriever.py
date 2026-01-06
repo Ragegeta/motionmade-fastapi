@@ -949,8 +949,7 @@ def retrieve(
     except Exception as e:
         # If cross-encoder fails to import/load, fall back to LLM selector
         trace["rerank_trace"] = {"method": "fallback", "error": str(e)[:100]}
-        # Use existing LLM selector as fallback
-        from app.retriever import llm_selector
+        # Use LLM selector as fallback (same module, call directly)
         choice_idx, confidence, selector_trace = llm_selector(normalized_query, candidates_to_rerank[:5])
         if choice_idx is not None and 0 <= choice_idx < len(candidates_to_rerank):
             reranked = [candidates_to_rerank[choice_idx]]
