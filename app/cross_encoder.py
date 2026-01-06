@@ -23,6 +23,7 @@ import os
 import time
 from typing import Optional
 import httpx
+import numpy as np
 
 # Try to import sentence-transformers (self-hosted option)
 try:
@@ -39,7 +40,7 @@ except ImportError:
 COHERE_API_KEY = os.getenv("COHERE_API_KEY", "")
 COHERE_RERANK_URL = "https://api.cohere.ai/v1/rerank"
 
-# Thresholds
+# Thresholds (after sigmoid normalization to 0-1)
 RERANK_THRESHOLD = 0.3  # Below this = reject (cross-encoder is confident it's wrong)
 RERANK_HIGH_CONFIDENCE = 0.7  # Above this = confident match
 
@@ -84,10 +85,14 @@ def rerank_self_hosted(
             for c in candidates
         ]
         
-        # Get cross-encoder scores
-        scores = CROSS_ENCODER_MODEL.predict(pairs)
+        # Get cross-encoder scores (raw logits, can be negative)
+        raw_scores = CROSS_ENCODER_MODEL.predict(pairs)
         
-        # Attach scores to candidates
+        # Normalize using sigmoid to 0-1 range for easier thresholding
+        import numpy as np
+        scores = 1 / (1 + np.exp(-np.array(raw_scores)))
+        
+        # Attach normalized scores to candidates
         for i, c in enumerate(candidates):
             c['rerank_score'] = float(scores[i])
         
