@@ -1782,6 +1782,8 @@ def promote_staged(
     _check_admin_auth(authorization)
     
     import json as json_lib
+    import traceback
+    from datetime import datetime
     
     # Get base URL from env var (default to production API in prod, localhost in dev)
     base_url = os.getenv("PUBLIC_BASE_URL")
@@ -1792,8 +1794,13 @@ def promote_staged(
         else:
             base_url = "http://localhost:8000"
     
+    stage = "init"
+    timings = {}
+    start_time = time.time()
+    
     try:
         # 1. Check if staged FAQs exist
+        stage = "check_staged"
         with get_conn() as conn:
             staged_count = conn.execute(
                 "SELECT COUNT(*) FROM faq_items WHERE tenant_id=%s AND is_staged=true",
@@ -1803,8 +1810,9 @@ def promote_staged(
             if staged_count == 0:
                 raise HTTPException(status_code=400, detail="No staged FAQs to promote")
         
-        # 2. Temporarily activate staged FAQs for testing
-        # We'll swap staged to live temporarily, run suite, then decide
+        # 2. Delete live FAQs and variants
+        stage = "delete_live"
+        stage_start = time.time()
         with get_conn() as conn:
             # Backup current live FAQs to last_good if not already there
             conn.execute("""
@@ -1816,7 +1824,7 @@ def promote_staged(
                 SET answer=EXCLUDED.answer, embedding=EXCLUDED.embedding, updated_at=now()
             """, (tenantId,))
             
-            # 3. Delete ALL current live FAQs and their variants FIRST (prevents duplicate key error)
+            # Delete ALL current live FAQs and their variants FIRST (prevents duplicate key error)
             conn.execute('''
                 DELETE FROM faq_variants 
                 WHERE faq_id IN (
@@ -1829,7 +1837,13 @@ def promote_staged(
                 DELETE FROM faq_items 
                 WHERE tenant_id = %s AND (is_staged = false OR is_staged IS NULL)
             ''', (tenantId,))
-            
+            conn.commit()
+        timings["delete_live"] = int((time.time() - stage_start) * 1000)
+        
+        # 3. Get staged FAQs and expand variants
+        stage = "expand_variants"
+        stage_start = time.time()
+        with get_conn() as conn:
             # Get staged FAQs with variants_json
             staged_faqs = conn.execute("""
                 SELECT id, question, answer, variants_json FROM faq_items WHERE tenant_id=%s AND is_staged=true
@@ -1850,11 +1864,16 @@ def promote_staged(
             # Log expansion stats
             total_before = sum(len(f.get("variants", [])) for f in faqs_to_expand)
             total_after = sum(len(f.get("variants", [])) for f in expanded_faqs)
-            print(f"Variant expansion: {total_before} → {total_after} variants")
+            print(f"Variant expansion: {total_before} -> {total_after} variants")
             
             # Create mapping from question to expanded variants
             expanded_variants_map = {f["question"]: f["variants"] for f in expanded_faqs}
-            
+        timings["expand_variants"] = int((time.time() - stage_start) * 1000)
+        
+        # 4. Promote staged to live and embed variants
+        stage = "promote_and_embed"
+        stage_start = time.time()
+        with get_conn() as conn:
             # NOW promote staged to live (no conflicts possible)
             conn.execute("""
                 UPDATE faq_items SET is_staged=false WHERE tenant_id=%s AND is_staged=true
@@ -1893,17 +1912,24 @@ def promote_staged(
                         """, (faq_id, variant, Vector(v_emb)))
                     except Exception as e:
                         print(f"Embed error for '{variant[:30]}': {e}")
+                        # Continue with next variant instead of failing entire promote
+                        continue
             
             # Update search vectors for FTS after promotion
-            conn.execute("""
-                UPDATE faq_items 
-                SET search_vector = to_tsvector('english', COALESCE(question, '') || ' ' || COALESCE(answer, ''))
-                WHERE tenant_id = %s AND is_staged = false
-            """, (tenantId,))
+            try:
+                conn.execute("""
+                    UPDATE faq_items 
+                    SET search_vector = to_tsvector('english', COALESCE(question, '') || ' ' || COALESCE(answer, ''))
+                    WHERE tenant_id = %s AND is_staged = false
+                """, (tenantId,))
+            except Exception as e:
+                # FTS update is non-critical, log but don't fail
+                print(f"FTS update error (non-critical): {e}")
             
             conn.commit()
+        timings["promote_and_embed"] = int((time.time() - stage_start) * 1000)
         
-        # 3. Run suite (if exists, otherwise skip)
+        # 5. Run suite (if exists, otherwise skip)
         # Suite is REQUIRED if suite file exists - if it fails, promotion is blocked
         suite_path = Path(__file__).parent.parent / "tests" / f"{tenantId}.json"
         suite_result = None
@@ -1958,8 +1984,9 @@ def promote_staged(
         # Always promote - suite is informational only
         should_promote = True
         
-        # 4. If pass: keep staged as live, update last_good
-        # If fail: restore live from last_good, move staged back
+        # 6. Update last_good backup
+        stage = "update_last_good"
+        stage_start = time.time()
         with get_conn() as conn:
             if should_promote:
                 # Promote: staged is already live, just update last_good
@@ -2367,6 +2394,112 @@ def debug_routes():
                     routes.append({"method": method, "path": route.path})
     
     return {"routes": sorted(routes, key=lambda x: (x["path"], x["method"]))}
+
+
+@app.get("/admin/api/tenant/{tenantId}/faq-dump")
+def get_faq_dump(
+    tenantId: str,
+    resp: Response,
+    authorization: str = Header(default="")
+):
+    """Get detailed FAQ dump with variant counts (admin only)."""
+    _check_admin_auth(authorization)
+    
+    import json as json_lib
+    
+    with get_conn() as conn:
+        # Get live FAQ count
+        live_count = conn.execute(
+            "SELECT COUNT(*) FROM faq_items WHERE tenant_id=%s AND is_staged=false",
+            (tenantId,)
+        ).fetchone()[0]
+        
+        # Get each FAQ with variant count
+        faqs = []
+        rows = conn.execute("""
+            SELECT fi.id, fi.question, fi.answer,
+                   COUNT(fv.id) as variant_count
+            FROM faq_items fi
+            LEFT JOIN faq_variants fv ON fv.faq_id = fi.id AND fv.enabled = true
+            WHERE fi.tenant_id = %s AND fi.is_staged = false
+            GROUP BY fi.id, fi.question, fi.answer
+            ORDER BY fi.id
+        """, (tenantId,)).fetchall()
+        
+        for row in rows:
+            faq_id, question, answer, variant_count = row
+            
+            # Get sample variants (first 10)
+            variant_samples = conn.execute("""
+                SELECT variant_question 
+                FROM faq_variants 
+                WHERE faq_id = %s AND enabled = true
+                ORDER BY id
+                LIMIT 10
+            """, (faq_id,)).fetchall()
+            
+            faqs.append({
+                "id": faq_id,
+                "question": question,
+                "answer": answer[:200] + "..." if len(answer) > 200 else answer,
+                "variant_count": variant_count,
+                "variant_samples": [v[0] for v in variant_samples]
+            })
+    
+    return {
+        "tenant_id": tenantId,
+        "live_faq_count": live_count,
+        "faqs": faqs
+    }
+
+
+@app.get("/admin/api/tenant/{tenantId}/embedding-stats")
+def get_embedding_stats(
+    tenantId: str,
+    resp: Response,
+    authorization: str = Header(default="")
+):
+    """Get embedding statistics for a tenant (admin only)."""
+    _check_admin_auth(authorization)
+    
+    with get_conn() as conn:
+        # Count embedded variants
+        variant_count = conn.execute("""
+            SELECT COUNT(*) 
+            FROM faq_variants fv
+            JOIN faq_items fi ON fi.id = fv.faq_id
+            WHERE fi.tenant_id = %s AND fi.is_staged = false AND fv.enabled = true
+        """, (tenantId,)).fetchone()[0]
+        
+        # Get min/max/avg variants per FAQ
+        stats = conn.execute("""
+            SELECT 
+                COUNT(DISTINCT fi.id) as faq_count,
+                MIN(variant_count) as min_variants,
+                MAX(variant_count) as max_variants,
+                AVG(variant_count) as avg_variants
+            FROM faq_items fi
+            LEFT JOIN (
+                SELECT faq_id, COUNT(*) as variant_count
+                FROM faq_variants
+                WHERE enabled = true
+                GROUP BY faq_id
+            ) v ON v.faq_id = fi.id
+            WHERE fi.tenant_id = %s AND fi.is_staged = false
+        """, (tenantId,)).fetchone()
+        
+        faq_count, min_v, max_v, avg_v = stats
+        
+        return {
+            "tenant_id": tenantId,
+            "total_embedded_variants": variant_count,
+            "live_faq_count": faq_count,
+            "variants_per_faq": {
+                "min": min_v or 0,
+                "max": max_v or 0,
+                "avg": round(float(avg_v or 0), 1)
+            }
+        }
 
 
 @app.post("/admin/api/tenant/{tenantId}/debug-query")
