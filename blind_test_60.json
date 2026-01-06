@@ -1,0 +1,302 @@
+﻿[
+    {
+        "q":  "the lights in my kitchen keep turning off randomly",
+        "category":  "lighting_symptom",
+        "expect":  "hit"
+    },
+    {
+        "q":  "need someone to add more plugs in my garage",
+        "category":  "powerpoints_indirect",
+        "expect":  "hit"
+    },
+    {
+        "q":  "my fuse box is really old and making weird noises",
+        "category":  "switchboard_symptom",
+        "expect":  "hit"
+    },
+    {
+        "q":  "can someone put a fan in my living room ceiling",
+        "category":  "ceiling_fans_indirect",
+        "expect":  "hit"
+    },
+    {
+        "q":  "that beeping sound is driving me crazy",
+        "category":  "smoke_alarms_symptom",
+        "expect":  "hit"
+    },
+    {
+        "q":  "do u guys work in springfield lakes",
+        "category":  "service_area",
+        "expect":  "hit"
+    },
+    {
+        "q":  "im in ipswich can u come out",
+        "category":  "service_area",
+        "expect":  "hit"
+    },
+    {
+        "q":  "whats your weekend availability like",
+        "category":  "availability",
+        "expect":  "hit"
+    },
+    {
+        "q":  "how much would it cost to get someone out here",
+        "category":  "pricing_indirect",
+        "expect":  "hit"
+    },
+    {
+        "q":  "the safety switch keeps tripping everything",
+        "category":  "safety_switches_symptom",
+        "expect":  "hit"
+    },
+    {
+        "q":  "no power at all in the whole house",
+        "category":  "emergency_symptom",
+        "expect":  "hit"
+    },
+    {
+        "q":  "lights flicker when i turn on the washing machine",
+        "category":  "lighting_symptom",
+        "expect":  "hit"
+    },
+    {
+        "q":  "want to add more outlets in the bedroom",
+        "category":  "powerpoints_indirect",
+        "expect":  "hit"
+    },
+    {
+        "q":  "switchboard upgrade quote needed",
+        "category":  "switchboard",
+        "expect":  "hit"
+    },
+    {
+        "q":  "ceiling fan installation price",
+        "category":  "ceiling_fans",
+        "expect":  "hit"
+    },
+    {
+        "q":  "smoke detector wont stop chirping",
+        "category":  "smoke_alarms_symptom",
+        "expect":  "hit"
+    },
+    {
+        "q":  "do you service logan area",
+        "category":  "service_area",
+        "expect":  "hit"
+    },
+    {
+        "q":  "available next week sometime",
+        "category":  "availability",
+        "expect":  "hit"
+    },
+    {
+        "q":  "whats the minimum charge to come out",
+        "category":  "pricing_indirect",
+        "expect":  "hit"
+    },
+    {
+        "q":  "safety switch keeps cutting power",
+        "category":  "safety_switches_symptom",
+        "expect":  "hit"
+    },
+    {
+        "q":  "complete blackout nothing works",
+        "category":  "emergency_symptom",
+        "expect":  "hit"
+    },
+    {
+        "q":  "lights dim when ac kicks in",
+        "category":  "lighting_symptom",
+        "expect":  "hit"
+    },
+    {
+        "q":  "need extra power points in kitchen",
+        "category":  "powerpoints",
+        "expect":  "hit"
+    },
+    {
+        "q":  "old electrical panel needs replacing",
+        "category":  "switchboard_indirect",
+        "expect":  "hit"
+    },
+    {
+        "q":  "want a fan installed above bed",
+        "category":  "ceiling_fans_indirect",
+        "expect":  "hit"
+    },
+    {
+        "q":  "that annoying beep every few minutes",
+        "category":  "smoke_alarms_symptom",
+        "expect":  "hit"
+    },
+    {
+        "q":  "brisbane southside covered",
+        "category":  "service_area",
+        "expect":  "hit"
+    },
+    {
+        "q":  "when can you fit me in",
+        "category":  "availability",
+        "expect":  "hit"
+    },
+    {
+        "q":  "how much just to show up",
+        "category":  "pricing_indirect",
+        "expect":  "hit"
+    },
+    {
+        "q":  "everything shuts off when i use hairdryer",
+        "category":  "safety_switches_symptom",
+        "expect":  "hit"
+    },
+    {
+        "q":  "can you install a split system air conditioner",
+        "category":  "wrong_ac",
+        "expect":  "miss"
+    },
+    {
+        "q":  "need a plumber to fix my hot water",
+        "category":  "wrong_plumbing",
+        "expect":  "miss"
+    },
+    {
+        "q":  "gas line installation quote",
+        "category":  "wrong_gas",
+        "expect":  "miss"
+    },
+    {
+        "q":  "want someone to build a deck",
+        "category":  "wrong_carpentry",
+        "expect":  "miss"
+    },
+    {
+        "q":  "solar panel installation prices",
+        "category":  "wrong_solar",
+        "expect":  "miss"
+    },
+    {
+        "q":  "need network cables run through house",
+        "category":  "wrong_data",
+        "expect":  "miss"
+    },
+    {
+        "q":  "dishwasher not working can you fix",
+        "category":  "wrong_appliance",
+        "expect":  "miss"
+    },
+    {
+        "q":  "oven stopped heating up",
+        "category":  "wrong_appliance",
+        "expect":  "miss"
+    },
+    {
+        "q":  "electrical work on my pool pump",
+        "category":  "wrong_pool",
+        "expect":  "miss"
+    },
+    {
+        "q":  "need someone to wire up my security cameras",
+        "category":  "wrong_security",
+        "expect":  "miss"
+    },
+    {
+        "q":  "can you do electrical for my new bathroom",
+        "category":  "trap_electrical_mention",
+        "expect":  "miss"
+    },
+    {
+        "q":  "need power run to my shed but also plumbing",
+        "category":  "trap_mixed",
+        "expect":  "miss"
+    },
+    {
+        "q":  "electrical contractor for hvac system",
+        "category":  "trap_electrical_mention",
+        "expect":  "miss"
+    },
+    {
+        "q":  "wiring for my new kitchen but also tiling",
+        "category":  "trap_mixed",
+        "expect":  "miss"
+    },
+    {
+        "q":  "electrical work on my car battery",
+        "category":  "wrong_auto",
+        "expect":  "miss"
+    },
+    {
+        "q":  "help",
+        "category":  "too_short",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "need someone",
+        "category":  "too_vague",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "how much",
+        "category":  "incomplete",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "are you available",
+        "category":  "missing_context",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "can you come",
+        "category":  "missing_context",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "its broken",
+        "category":  "too_vague",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "urgent help needed",
+        "category":  "missing_context",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "what services",
+        "category":  "incomplete",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "do you do that",
+        "category":  "missing_reference",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "how long",
+        "category":  "incomplete",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "is it expensive",
+        "category":  "missing_context",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "can you fix it",
+        "category":  "missing_reference",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "when are you free",
+        "category":  "missing_context",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "whats the price",
+        "category":  "incomplete",
+        "expect":  "unclear"
+    },
+    {
+        "q":  "need help asap",
+        "category":  "too_vague",
+        "expect":  "unclear"
+    }
+]

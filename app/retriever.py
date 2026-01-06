@@ -939,9 +939,28 @@ def retrieve(
     
     # Pre-check: Reject queries about wrong services before reranking
     # These are services that electrical businesses typically don't offer
-    wrong_service_keywords = ["plumbing", "plumber", "paint", "painting", "painter", "roof", "roofing", "roofer", 
-                              "landscaping", "landscape", "carpentry", "carpenter", "tiling", "tiler", 
-                              "car repair", "auto repair", "mechanic", "hvac", "heating", "cooling"]
+    WRONG_SERVICE_KEYWORDS = [
+        # Plumbing
+        "plumbing", "plumber", "toilet", "tap", "drain", "pipe", "leak", "water heater", "hot water system",
+        # HVAC
+        "air conditioning", "air con", "aircon", "ac", "heating", "hvac", "ducted", "split system",
+        # Gas
+        "gas", "gas line", "gas fitting", "gas plumber", "gas heater", "gas stove",
+        # Solar
+        "solar", "solar panel", "solar installation", "solar power", "solar system",
+        # Building/Construction
+        "painting", "painter", "roofing", "roofer", "carpentry", "carpenter", "tiling", "tiler",
+        "plastering", "plasterer", "concreting", "concrete", "fencing", "fence",
+        # Gardening
+        "gardening", "landscaping", "lawn", "mowing", "tree", "hedge",
+        # Security (not electrical)
+        "security camera", "security cameras", "cctv", "surveillance", "alarm system", "intercom",
+        # Automotive
+        "car", "vehicle", "automotive",
+        # Appliances (repair, not installation)
+        "washing machine repair", "fridge repair", "dishwasher repair", "oven repair",
+    ]
+    wrong_service_keywords = WRONG_SERVICE_KEYWORDS
     query_lower = normalized_query.lower()
     
     # Check if query is asking about a wrong service

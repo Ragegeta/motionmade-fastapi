@@ -1,0 +1,122 @@
+﻿[
+    {
+        "q":  "how much for a new powerpoint",
+        "category":  "pricing",
+        "expect":  "hit",
+        "prediction":  "hit"
+    },
+    {
+        "q":  "can u fix my lights that keep flickering",
+        "category":  "lighting",
+        "expect":  "hit",
+        "prediction":  "hit"
+    },
+    {
+        "q":  "need someone to upgrade my switchboard",
+        "category":  "switchboard",
+        "expect":  "hit",
+        "prediction":  "hit"
+    },
+    {
+        "q":  "do u install ceiling fans in bedrooms",
+        "category":  "ceiling_fans",
+        "expect":  "hit",
+        "prediction":  "hit"
+    },
+    {
+        "q":  "my smoke alarm keeps beeping can u help",
+        "category":  "smoke_alarms",
+        "expect":  "hit",
+        "prediction":  "hit"
+    },
+    {
+        "q":  "wat suburbs do u cover",
+        "category":  "service_area",
+        "expect":  "hit",
+        "prediction":  "hit"
+    },
+    {
+        "q":  "r u available this weekend",
+        "category":  "availability",
+        "expect":  "hit",
+        "prediction":  "hit"
+    },
+    {
+        "q":  "how much is the call out fee",
+        "category":  "pricing",
+        "expect":  "hit",
+        "prediction":  "hit"
+    },
+    {
+        "q":  "do u do safety switch installation",
+        "category":  "safety_switches",
+        "expect":  "hit",
+        "prediction":  "hit"
+    },
+    {
+        "q":  "my power went out can u come today",
+        "category":  "emergency",
+        "expect":  "hit",
+        "prediction":  "hit"
+    },
+    {
+        "q":  "can you fix my air conditioning",
+        "category":  "wrong_service_ac",
+        "expect":  "miss",
+        "prediction":  "miss"
+    },
+    {
+        "q":  "do you do plumbing work",
+        "category":  "wrong_service_plumbing",
+        "expect":  "miss",
+        "prediction":  "miss"
+    },
+    {
+        "q":  "need someone to mow my lawn",
+        "category":  "wrong_service_gardening",
+        "expect":  "miss",
+        "prediction":  "miss"
+    },
+    {
+        "q":  "can you install a new toilet",
+        "category":  "wrong_service_plumbing",
+        "expect":  "miss",
+        "prediction":  "miss"
+    },
+    {
+        "q":  "do you do painting or just electrical",
+        "category":  "wrong_service_painting",
+        "expect":  "miss",
+        "prediction":  "miss"
+    },
+    {
+        "q":  "help",
+        "category":  "too_short",
+        "expect":  "unclear",
+        "prediction":  "clarify"
+    },
+    {
+        "q":  "what do you charge",
+        "category":  "vague_pricing",
+        "expect":  "hit",
+        "prediction":  "hit"
+    },
+    {
+        "q":  "are you good",
+        "category":  "too_vague",
+        "expect":  "unclear",
+        "prediction":  "clarify"
+    },
+    {
+        "q":  "can you come to my house",
+        "category":  "vague_location",
+        "expect":  "hit",
+        "prediction":  "hit"
+    },
+    {
+        "q":  "how long does it take",
+        "category":  "vague_timing",
+        "expect":  "unclear",
+        "prediction":  "clarify"
+    }
+]

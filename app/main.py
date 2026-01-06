@@ -23,6 +23,7 @@ from .triage import triage_input, CLARIFY_RESPONSE
 from .normalize import normalize_message
 from .splitter import split_intents
 from .cache import get_cached_result, cache_result, get_cache_stats
+from .variant_expander import expand_faq_list
 
 # Import suite_runner defensively to avoid startup failures
 try:
@@ -1834,6 +1835,26 @@ def promote_staged(
                 SELECT id, question, answer, variants_json FROM faq_items WHERE tenant_id=%s AND is_staged=true
             """, (tenantId,)).fetchall()
             
+            # Auto-expand variants before embedding
+            faqs_to_expand = [
+                {
+                    "question": faq[1],  # question
+                    "answer": faq[2],     # answer
+                    "variants": json_lib.loads(faq[3]) if faq[3] else []  # variants_json
+                }
+                for faq in staged_faqs
+            ]
+            
+            expanded_faqs = expand_faq_list(faqs_to_expand, max_variants_per_faq=50)
+            
+            # Log expansion stats
+            total_before = sum(len(f.get("variants", [])) for f in faqs_to_expand)
+            total_after = sum(len(f.get("variants", [])) for f in expanded_faqs)
+            print(f"Variant expansion: {total_before} → {total_after} variants")
+            
+            # Create mapping from question to expanded variants
+            expanded_variants_map = {f["question"]: f["variants"] for f in expanded_faqs}
+            
             # NOW promote staged to live (no conflicts possible)
             conn.execute("""
                 UPDATE faq_items SET is_staged=false WHERE tenant_id=%s AND is_staged=true
@@ -1841,12 +1862,16 @@ def promote_staged(
             
             # Embed variants for each FAQ
             for faq_id, q, a, variants_json in staged_faqs:
-                # Parse variants from JSON
-                variants = []
-                try:
-                    variants = json_lib.loads(variants_json) if variants_json else []
-                except:
-                    pass
+                # Use expanded variants if available, otherwise fall back to original
+                if q in expanded_variants_map:
+                    variants = expanded_variants_map[q]
+                else:
+                    # Parse variants from JSON (fallback)
+                    variants = []
+                    try:
+                        variants = json_lib.loads(variants_json) if variants_json else []
+                    except:
+                        pass
                 
                 # Always include question itself, plus variants
                 all_variants = [q] + [v for v in variants if v and v.lower() != q.lower()]
@@ -1868,6 +1893,13 @@ def promote_staged(
                         """, (faq_id, variant, Vector(v_emb)))
                     except Exception as e:
                         print(f"Embed error for '{variant[:30]}': {e}")
+            
+            # Update search vectors for FTS after promotion
+            conn.execute("""
+                UPDATE faq_items 
+                SET search_vector = to_tsvector('english', COALESCE(question, '') || ' ' || COALESCE(answer, ''))
+                WHERE tenant_id = %s AND is_staged = false
+            """, (tenantId,))
             
             conn.commit()
         
