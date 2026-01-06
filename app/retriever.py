@@ -55,6 +55,8 @@ Rules:
 - choice: index of best matching FAQ, or -1 if none match
 - confidence: how confident you are (0.0 = uncertain, 1.0 = very confident)
 - If confidence < 0.6, set choice to -1
+- CRITICAL: If the query asks about a service NOT covered by these FAQs (like plumbing, painting, roofing, landscaping, car repairs, tiling, carpentry), return choice: -1
+- Only return a match if the FAQ genuinely answers what the customer is asking
 - Only return valid JSON, nothing else"""
 
 RERANK_PROMPT = """You are matching a customer question to FAQ answers for a business.
@@ -935,6 +937,27 @@ def retrieve(
     # Stage 2: Rerank (cross-encoder if available, else LLM selector)
     trace["rerank_triggered"] = True
     
+    # Pre-check: Reject queries about wrong services before reranking
+    wrong_service_keywords = ["plumbing", "plumber", "paint", "painting", "painter", "roof", "roofing", "roofer", 
+                              "landscaping", "landscape", "carpentry", "carpenter", "tiling", "tiler", 
+                              "car repair", "auto repair", "mechanic", "hvac", "heating", "cooling"]
+    query_lower = normalized_query.lower()
+    if any(keyword in query_lower for keyword in wrong_service_keywords):
+        # Check if any candidate FAQ actually mentions this service
+        service_in_faqs = False
+        for c in candidates[:5]:
+            faq_text = f"{c.get('question', '')} {c.get('answer', '')}".lower()
+            if any(keyword in faq_text for keyword in wrong_service_keywords):
+                service_in_faqs = True
+                break
+        
+        if not service_in_faqs:
+            # Query is about a wrong service and no FAQ covers it - reject immediately
+            trace["stage"] = "wrong_service_rejected"
+            trace["rerank_trace"] = {"method": "pre_check", "reason": "wrong_service_not_covered"}
+            trace["total_ms"] = int((time.time() - start_time) * 1000)
+            return None, trace
+    
     candidates_to_rerank = candidates[:8]
     reranked = []
     rerank_trace = {}
@@ -997,8 +1020,8 @@ def retrieve(
     rerank_method = rerank_trace.get("method", "none")
     
     if rerank_method == "llm_selector":
-        # LLM selector returns confidence 0-1, threshold at 0.5
-        LLM_THRESHOLD = 0.5
+        # LLM selector returns confidence 0-1, threshold at 0.7 for better precision
+        LLM_THRESHOLD = 0.7
         accept = top_rerank_score >= LLM_THRESHOLD
         accept_reason = "llm_confident" if accept else f"llm_below_threshold_{top_rerank_score:.2f}"
     else:
