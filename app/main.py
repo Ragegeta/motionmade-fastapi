@@ -747,6 +747,11 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             if rt.get("safety_gate"):
                 resp.headers["X-Rerank-Gate"] = rt.get("safety_gate", "")[:50]
         
+        # LLM selector headers
+        resp.headers["X-Selector-Called"] = str(retrieval_trace.get("selector_called", False)).lower()
+        if retrieval_trace.get("selector_confidence") is not None:
+            resp.headers["X-Selector-Confidence"] = str(retrieval_trace["selector_confidence"])
+        
         # Convert to hit/answer format
         hit = retrieval_result is not None
         ans = retrieval_result["answer"] if retrieval_result else None
