@@ -938,21 +938,36 @@ def retrieve(
     trace["rerank_triggered"] = True
     
     # Pre-check: Reject queries about wrong services before reranking
+    # These are services that electrical businesses typically don't offer
     wrong_service_keywords = ["plumbing", "plumber", "paint", "painting", "painter", "roof", "roofing", "roofer", 
                               "landscaping", "landscape", "carpentry", "carpenter", "tiling", "tiler", 
                               "car repair", "auto repair", "mechanic", "hvac", "heating", "cooling"]
     query_lower = normalized_query.lower()
-    if any(keyword in query_lower for keyword in wrong_service_keywords):
-        # Check if any candidate FAQ actually mentions this service
-        service_in_faqs = False
+    
+    # Check if query is asking about a wrong service
+    query_mentions_wrong_service = any(keyword in query_lower for keyword in wrong_service_keywords)
+    
+    if query_mentions_wrong_service:
+        # Check if any candidate FAQ explicitly covers this service (not just mentions it)
+        # For electrical businesses, FAQs should not cover plumbing/painting/roofing
+        service_explicitly_covered = False
         for c in candidates[:5]:
             faq_text = f"{c.get('question', '')} {c.get('answer', '')}".lower()
-            if any(keyword in faq_text for keyword in wrong_service_keywords):
-                service_in_faqs = True
-                break
+            # Only allow if FAQ explicitly says they DO offer this service (not just mentions it)
+            # Check for positive indicators: "we do", "we offer", "we provide", "yes we", "we can"
+            positive_indicators = ["we do", "we offer", "we provide", "yes we", "we can", "we handle", "we perform"]
+            if any(indicator in faq_text for indicator in positive_indicators):
+                # Check if this positive statement is about the wrong service
+                for keyword in wrong_service_keywords:
+                    if keyword in query_lower and keyword in faq_text:
+                        # FAQ explicitly says they do this service - allow it
+                        service_explicitly_covered = True
+                        break
+                if service_explicitly_covered:
+                    break
         
-        if not service_in_faqs:
-            # Query is about a wrong service and no FAQ covers it - reject immediately
+        if not service_explicitly_covered:
+            # Query is about a wrong service and no FAQ explicitly covers it - reject immediately
             trace["stage"] = "wrong_service_rejected"
             trace["rerank_trace"] = {"method": "pre_check", "reason": "wrong_service_not_covered"}
             trace["total_ms"] = int((time.time() - start_time) * 1000)
