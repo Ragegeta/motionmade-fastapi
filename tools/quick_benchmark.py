@@ -100,7 +100,7 @@ def main():
         results[actual] = results.get(actual, 0) + 1
         by_category[category]["pass" if passed else "fail"] += 1
         
-        icon = "✅" if passed else "❌"
+        icon = "[OK]" if passed else "[FAIL]"
         stage_info = f"[{r.get('stage', '?')}]" if r.get('stage') else ""
         score_info = f"({r.get('score', '?')})" if r.get('score') else ""
         
@@ -131,7 +131,7 @@ def main():
     for cat, stats in sorted(by_category.items()):
         total_cat = stats["pass"] + stats["fail"]
         pct = (stats["pass"] / total_cat * 100) if total_cat > 0 else 0
-        icon = "✅" if stats["fail"] == 0 else "⚠️"
+        icon = "[OK]" if stats["fail"] == 0 else "[WARN]"
         print(f"    {icon} {cat:20} {stats['pass']}/{total_cat} ({pct:.0f}%)")
     
     # Failures
@@ -143,9 +143,9 @@ def main():
     # Final verdict
     print(f"\n{'='*60}")
     if hit_rate >= 75 and wrong_hit_rate == 0:
-        print("  ✅ PASS: Hit rate >= 75% and wrong hit rate = 0%")
+        print("  [PASS] Hit rate >= 75% and wrong hit rate = 0%")
     else:
-        print(f"  ❌ FAIL: Hit rate {hit_rate:.1f}% (need 75%), wrong hits {wrong_hit_rate:.1f}% (need 0%)")
+        print(f"  [FAIL] Hit rate {hit_rate:.1f}% (need 75%), wrong hits {wrong_hit_rate:.1f}% (need 0%)")
     print(f"{'='*60}\n")
     
     return 0 if (hit_rate >= 75 and wrong_hit_rate == 0) else 1
