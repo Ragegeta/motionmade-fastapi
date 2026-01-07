@@ -131,33 +131,72 @@ def set_cached_result(tenant_id: str, normalized_query: str, result: Dict):
         print(f"Cache write error: {e}")
 
 
-def search_fts(tenant_id: str, query: str, limit: int = 10) -> list[dict]:
+def search_fts(tenant_id: str, query: str, limit: int = 20) -> list[dict]:
     """
-    Full-text search using PostgreSQL tsvector.
-    
-    Returns candidates with fts_score.
+    Full-text search using PostgreSQL.
+    Uses websearch_to_tsquery for better partial matching.
     """
     if not tenant_id or not query:
         return []
     
     try:
         with get_conn() as conn:
-            # Use plainto_tsquery for simple query parsing
+            # Try websearch first (handles natural language better)
             rows = conn.execute("""
                 SELECT 
-                    id AS faq_id,
-                    question,
-                    answer,
-                    tenant_id,
-                    ts_rank(search_vector, plainto_tsquery('english', %s)) AS fts_score
-                FROM faq_items
-                WHERE tenant_id = %s
-                  AND enabled = true
-                  AND (is_staged = false OR is_staged IS NULL)
-                  AND search_vector @@ plainto_tsquery('english', %s)
+                    fi.id AS faq_id,
+                    fi.question,
+                    fi.answer,
+                    fi.tenant_id,
+                    ts_rank(fi.search_vector, websearch_to_tsquery('english', %s)) AS fts_score
+                FROM faq_items fi
+                WHERE fi.tenant_id = %s
+                  AND fi.enabled = true
+                  AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                  AND fi.search_vector @@ websearch_to_tsquery('english', %s)
                 ORDER BY fts_score DESC
                 LIMIT %s
             """, (query, tenant_id, query, limit)).fetchall()
+            
+            # If no results, try simpler plainto_tsquery
+            if not rows:
+                rows = conn.execute("""
+                    SELECT 
+                        fi.id AS faq_id,
+                        fi.question,
+                        fi.answer,
+                        fi.tenant_id,
+                        ts_rank(fi.search_vector, plainto_tsquery('english', %s)) AS fts_score
+                    FROM faq_items fi
+                    WHERE fi.tenant_id = %s
+                      AND fi.enabled = true
+                      AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                      AND fi.search_vector @@ plainto_tsquery('english', %s)
+                    ORDER BY fts_score DESC
+                    LIMIT %s
+                """, (query, tenant_id, query, limit)).fetchall()
+            
+            # If still no results, try ILIKE on question/answer (last resort)
+            if not rows:
+                # Extract words from query
+                words = [w for w in query.lower().split() if len(w) > 2]
+                if words:
+                    # Search for any word match
+                    like_pattern = '%' + '%'.join(words[:3]) + '%'
+                    rows = conn.execute("""
+                        SELECT 
+                            fi.id AS faq_id,
+                            fi.question,
+                            fi.answer,
+                            fi.tenant_id,
+                            0.5 AS fts_score
+                        FROM faq_items fi
+                        WHERE fi.tenant_id = %s
+                          AND fi.enabled = true
+                          AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                          AND (LOWER(fi.question || ' ' || fi.answer) LIKE %s)
+                        LIMIT %s
+                    """, (tenant_id, like_pattern, limit)).fetchall()
             
             return [
                 {
@@ -173,6 +212,50 @@ def search_fts(tenant_id: str, query: str, limit: int = 10) -> list[dict]:
     except Exception as e:
         print(f"FTS search error: {e}")
         return []
+
+
+def merge_candidates_fts_primary(
+    fts_candidates: list[dict],
+    vector_candidates: list[dict]
+) -> list[dict]:
+    """
+    Merge candidates with FTS as primary signal.
+    
+    FTS finds keyword matches (high recall).
+    Vector search adds semantic matches that FTS missed.
+    """
+    merged = {}
+    
+    # FTS candidates get base score of 0.7 (they matched keywords)
+    for c in fts_candidates:
+        faq_id = c["faq_id"]
+        merged[faq_id] = c.copy()
+        merged[faq_id]["fts_score"] = c.get("fts_score", 0.5)
+        merged[faq_id]["vector_score"] = 0
+        merged[faq_id]["source"] = "fts"
+        # FTS matches get minimum score of 0.7 (they contain the keyword!)
+        merged[faq_id]["score"] = max(0.7, c.get("fts_score", 0.5))
+    
+    # Vector candidates add semantic matches
+    for c in vector_candidates:
+        faq_id = c["faq_id"]
+        if faq_id in merged:
+            # Already found by FTS, boost score
+            merged[faq_id]["vector_score"] = c.get("score", 0)
+            merged[faq_id]["source"] = "hybrid"
+            # Boost if both FTS and vector agree
+            merged[faq_id]["score"] = min(1.0, merged[faq_id]["score"] + 0.1)
+        else:
+            # Vector-only match (semantic, no keyword)
+            merged[faq_id] = c.copy()
+            merged[faq_id]["fts_score"] = 0
+            merged[faq_id]["vector_score"] = c.get("score", 0)
+            merged[faq_id]["source"] = "vector"
+            merged[faq_id]["score"] = c.get("score", 0)
+    
+    # Sort by score descending
+    result = sorted(merged.values(), key=lambda x: x["score"], reverse=True)
+    return result
 
 
 def merge_candidates(
@@ -887,34 +970,36 @@ def retrieve(
             trace["total_ms"] = int((time.time() - start_time) * 1000)
             return cached, trace
     
-    # Stage 1a: Vector search
-    from app.openai_client import embed_text
+    # Stage 1: Get candidates - FTS PRIMARY, embeddings SECONDARY
     
-    query_embedding = embed_text(normalized_query)
-    vector_candidates = []
-    
-    if query_embedding is not None:
-        vector_candidates = get_top_candidates(tenant_id, query_embedding, limit=15)
-        trace["vector_count"] = len(vector_candidates)
-        if vector_candidates:
-            trace["top_vector_score"] = round(vector_candidates[0].get("score", 0), 4)
-    
-    # Stage 1b: FTS search
-    fts_candidates = search_fts(tenant_id, normalized_query, limit=15)
+    # 1a: FTS search (primary - finds keyword matches)
+    fts_candidates = search_fts(tenant_id, normalized_query, limit=20)
     trace["fts_count"] = len(fts_candidates)
     if fts_candidates:
         trace["top_fts_score"] = round(fts_candidates[0].get("fts_score", 0), 4)
     
-    # Stage 1c: Merge candidates
-    candidates = merge_candidates(vector_candidates, fts_candidates, alpha=0.6)
+    # 1b: Vector search (secondary - finds semantic matches)
+    from app.openai_client import embed_text
+    
+    vector_candidates = []
+    query_embedding = embed_text(normalized_query)
+    if query_embedding is not None:
+        vector_candidates = get_top_candidates(tenant_id, query_embedding, limit=20)
+        trace["vector_count"] = len(vector_candidates)
+        if vector_candidates:
+            trace["top_vector_score"] = round(vector_candidates[0].get("score", 0), 4)
+    
+    # 1c: Merge - FTS results get priority, vectors add extras
+    candidates = merge_candidates_fts_primary(fts_candidates, vector_candidates)
     trace["merged_count"] = len(candidates)
     
+    # CRITICAL: If we have ANY candidates, proceed (don't require high scores)
     if not candidates:
         trace["stage"] = "no_candidates"
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
     
-    top_combined_score = candidates[0].get("combined_score", 0)
+    top_combined_score = candidates[0].get("score", 0)
     
     # Fast path: High confidence from hybrid search (lowered from 0.85 to 0.65)
     if top_combined_score >= 0.65:

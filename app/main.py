@@ -1950,13 +1950,36 @@ def promote_staged(
                 
                 print(f"Embedded {embedded_count} variants for FAQ '{q}' (faq_id={faq_id})")
             
-            # Update search vectors for FTS after promotion
+            # Update search vectors for FTS after promotion - include variants
             try:
-                conn.execute("""
-                    UPDATE faq_items 
-                    SET search_vector = to_tsvector('english', COALESCE(question, '') || ' ' || COALESCE(answer, ''))
-                    WHERE tenant_id = %s AND is_staged = false
-                """, (tenantId,))
+                # Get all promoted FAQs with their variants
+                promoted_faqs = conn.execute("""
+                    SELECT fi.id, fi.question, fi.answer, fi.variants_json
+                    FROM faq_items fi
+                    WHERE fi.tenant_id = %s AND fi.is_staged = false
+                """, (tenantId,)).fetchall()
+                
+                for faq_row in promoted_faqs:
+                    faq_id, question, answer, variants_json = faq_row
+                    # Parse variants
+                    variants = []
+                    if variants_json:
+                        try:
+                            if isinstance(variants_json, str):
+                                variants = json_lib.loads(variants_json)
+                            elif isinstance(variants_json, list):
+                                variants = variants_json
+                        except:
+                            variants = []
+                    
+                    # Combine question, answer, and all variants for FTS
+                    all_text = (question or "") + " " + (answer or "") + " " + " ".join(variants)
+                    
+                    conn.execute("""
+                        UPDATE faq_items 
+                        SET search_vector = to_tsvector('english', %s)
+                        WHERE id = %s
+                    """, (all_text, faq_id))
             except Exception as e:
                 # FTS update is non-critical, log but don't fail
                 print(f"FTS update error (non-critical): {e}")
