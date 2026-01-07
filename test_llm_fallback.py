@@ -17,3 +17,4 @@ print(f'Final score: {trace.get("final_score", 0)}')
 print(f'Rerank method: {trace.get("rerank_trace", {}).get("method", "?")}')
 print(f'Accept reason: {trace.get("accept_reason", "?")}')
 
+

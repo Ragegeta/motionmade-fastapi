@@ -38,3 +38,4 @@ print("   First 15 variants:")
 for v in variants[:15]:
     print(f"     - {v}")
 
+

@@ -2465,13 +2465,15 @@ def get_faq_dump(
         for row in rows:
             faq_id, question, answer, variant_count = row
             
-            # Get sample variants (first 10)
+            # Get sample variants (first 20, and any containing beep/chirp/smoke/alarm)
             variant_samples = conn.execute("""
                 SELECT variant_question 
                 FROM faq_variants 
                 WHERE faq_id = %s AND enabled = true
-                ORDER BY id
-                LIMIT 10
+                ORDER BY 
+                    CASE WHEN variant_question ILIKE ANY(ARRAY['%beep%', '%chirp%', '%smoke%', '%alarm%']) THEN 0 ELSE 1 END,
+                    id
+                LIMIT 20
             """, (faq_id,)).fetchall()
             
             faqs.append({

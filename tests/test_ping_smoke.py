@@ -40,3 +40,4 @@ def test_ping_health_check_ready(client):
     # Health checks expect 200 OK
     assert "ok" in response.json()
 
+

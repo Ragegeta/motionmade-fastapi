@@ -129,3 +129,4 @@ pytest tests/ -v
 - Verify `requirements.txt` doesn't include sentence-transformers
 - Check Render logs for import-time errors
 
+

@@ -67,3 +67,4 @@ def update_search_vectors(tenant_id: str = None):
 if __name__ == "__main__":
     migrate()
 
+

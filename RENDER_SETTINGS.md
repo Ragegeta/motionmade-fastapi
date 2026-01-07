@@ -149,3 +149,4 @@ curl -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
    - Run the 3 curl commands above
    - All should return `200 OK`
 
+
