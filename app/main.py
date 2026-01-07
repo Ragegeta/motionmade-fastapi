@@ -1895,15 +1895,33 @@ def promote_staged(
             # Embed variants for each FAQ
             for faq_id, q, a, variants_json in staged_faqs:
                 # Use expanded variants if available, otherwise fall back to original
+                variants = []
                 if q in expanded_variants_map:
                     variants = expanded_variants_map[q]
+                    print(f"Using expanded variants for FAQ '{q}': {len(variants)} variants")
                 else:
-                    # Parse variants from JSON (fallback)
-                    variants = []
-                    try:
-                        variants = json_lib.loads(variants_json) if variants_json else []
-                    except:
-                        pass
+                    # Try case-insensitive match
+                    q_lower = q.lower()
+                    matched = False
+                    for exp_q, exp_variants in expanded_variants_map.items():
+                        if exp_q.lower() == q_lower:
+                            variants = exp_variants
+                            print(f"Matched FAQ '{q}' to expanded '{exp_q}': {len(variants)} variants")
+                            matched = True
+                            break
+                    
+                    if not matched:
+                        # Parse variants from JSON (fallback)
+                        try:
+                            if isinstance(variants_json, str):
+                                variants = json_lib.loads(variants_json)
+                            elif isinstance(variants_json, list):
+                                variants = variants_json
+                            else:
+                                variants = []
+                        except:
+                            variants = []
+                        print(f"Using original variants for FAQ '{q}': {len(variants)} variants (no expansion match)")
                 
                 # Always include question itself, plus variants
                 all_variants = [q] + [v for v in variants if v and v.lower() != q.lower()]
@@ -1912,6 +1930,7 @@ def promote_staged(
                 conn.execute("DELETE FROM faq_variants WHERE faq_id=%s", (faq_id,))
                 
                 # Embed all variants (limit to 50 per FAQ)
+                embedded_count = 0
                 for variant in all_variants[:50]:
                     variant = variant.strip()
                     if not variant:
@@ -1923,10 +1942,13 @@ def promote_staged(
                             INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled)
                             VALUES (%s, %s, %s, true)
                         """, (faq_id, variant, Vector(v_emb)))
+                        embedded_count += 1
                     except Exception as e:
                         print(f"Embed error for '{variant[:30]}': {e}")
                         # Continue with next variant instead of failing entire promote
                         continue
+                
+                print(f"Embedded {embedded_count} variants for FAQ '{q}' (faq_id={faq_id})")
             
             # Update search vectors for FTS after promotion
             try:
