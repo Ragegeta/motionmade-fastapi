@@ -916,8 +916,8 @@ def retrieve(
     
     top_combined_score = candidates[0].get("combined_score", 0)
     
-    # Fast path: Very high confidence from hybrid search
-    if top_combined_score >= 0.85:
+    # Fast path: High confidence from hybrid search (lowered from 0.85 to 0.65)
+    if top_combined_score >= 0.65:
         trace["stage"] = "hybrid_high_confidence"
         result = {
             "faq_id": candidates[0]["faq_id"],
