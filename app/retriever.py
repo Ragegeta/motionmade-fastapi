@@ -961,14 +961,74 @@ def retrieve(
     
     start_time = time.time()
     
-    # Stage 0: Check cache
+    # ============================================================================
+    # EARLY REJECTION CHECKS - MUST RUN BEFORE CACHE/RETRIEVAL/ANYTHING ELSE
+    # ============================================================================
+    
+    query_lower = normalized_query.lower().strip()
+    
+    # Stage 0.1: Vague query check - reject immediately if too short or generic
+    vague_patterns = ["hi", "hello", "help", "hey", "yo", "sup", "?", "??", "???"]
+    if query_lower in vague_patterns or len(query_lower) < 4:
+        trace["stage"] = "clarify_vague"
+        trace["total_ms"] = int((time.time() - start_time) * 1000)
+        return None, trace
+    
+    # Stage 0.2: Wrong-service check - reject IMMEDIATELY if query contains wrong-service keywords
+    # This MUST run before cache, before retrieval, before everything
+    # For electrical businesses, we should NEVER match gas/plumbing/solar/painting/etc
+    WRONG_SERVICE_KEYWORDS = [
+        # Plumbing
+        "plumbing", "plumber", "toilet", "tap", "drain", "pipe", "leak", "water heater", "hot water system",
+        # HVAC
+        "air conditioning", "air con", "aircon", "ac", "heating", "hvac", "ducted", "split system",
+        # Gas
+        "gas", "gas line", "gas fitting", "gas plumber", "gas heater", "gas stove",
+        # Solar
+        "solar", "solar panel", "solar installation", "solar power", "solar system",
+        # Building/Construction
+        "painting", "painter", "roofing", "roofer", "carpentry", "carpenter", "tiling", "tiler",
+        "plastering", "plasterer", "concreting", "concrete", "fencing", "fence",
+        # Gardening
+        "gardening", "landscaping", "lawn", "mowing", "tree", "hedge",
+        # Security (not electrical)
+        "security camera", "security cameras", "cctv", "surveillance", "alarm system", "intercom",
+        # Automotive
+        "car", "vehicle", "automotive",
+        # Appliances (repair, not installation)
+        "washing machine repair", "fridge repair", "dishwasher repair", "oven repair",
+    ]
+    
+    # Check if query contains any wrong-service keyword/phrase
+    # If it does, reject IMMEDIATELY - do NOT check FAQs, do NOT proceed
+    wrong_service_keywords_in_query = [
+        kw for kw in WRONG_SERVICE_KEYWORDS 
+        if kw.lower() in query_lower
+    ]
+    
+    if wrong_service_keywords_in_query:
+        trace["stage"] = "wrong_service_rejected"
+        trace["wrong_service_keywords"] = wrong_service_keywords_in_query
+        trace["total_ms"] = int((time.time() - start_time) * 1000)
+        return None, trace
+    
+    # ============================================================================
+    # NOW SAFE TO PROCEED WITH NORMAL RETRIEVAL
+    # ============================================================================
+    
+    # Stage 0: Check cache (only after early rejection checks)
     if use_cache:
         cached = get_cached_result(tenant_id, normalized_query)
         if cached:
-            trace["cache_hit"] = True
-            trace["stage"] = "cache"
-            trace["total_ms"] = int((time.time() - start_time) * 1000)
-            return cached, trace
+            # Double-check cached result isn't a wrong-service hit (defensive)
+            # This shouldn't happen if cache was cleared, but be safe
+            cached_query_lower = normalized_query.lower()
+            if not any(kw.lower() in cached_query_lower for kw in WRONG_SERVICE_KEYWORDS):
+                trace["cache_hit"] = True
+                trace["stage"] = "cache"
+                trace["total_ms"] = int((time.time() - start_time) * 1000)
+                return cached, trace
+            # If cache contains wrong-service, ignore it and continue
     
     # Stage 1: Get candidates - FTS PRIMARY, embeddings SECONDARY
     
@@ -999,6 +1059,7 @@ def retrieve(
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
     
+    
     top_combined_score = candidates[0].get("score", 0)
     
     # Fast path: High confidence from hybrid search (lowered to 0.5 for better recall)
@@ -1021,61 +1082,6 @@ def retrieve(
     
     # Stage 2: Rerank (cross-encoder if available, else LLM selector)
     trace["rerank_triggered"] = True
-    
-    # Pre-check: Reject queries about wrong services before reranking
-    # These are services that electrical businesses typically don't offer
-    WRONG_SERVICE_KEYWORDS = [
-        # Plumbing
-        "plumbing", "plumber", "toilet", "tap", "drain", "pipe", "leak", "water heater", "hot water system",
-        # HVAC
-        "air conditioning", "air con", "aircon", "ac", "heating", "hvac", "ducted", "split system",
-        # Gas
-        "gas", "gas line", "gas fitting", "gas plumber", "gas heater", "gas stove",
-        # Solar
-        "solar", "solar panel", "solar installation", "solar power", "solar system",
-        # Building/Construction
-        "painting", "painter", "roofing", "roofer", "carpentry", "carpenter", "tiling", "tiler",
-        "plastering", "plasterer", "concreting", "concrete", "fencing", "fence",
-        # Gardening
-        "gardening", "landscaping", "lawn", "mowing", "tree", "hedge",
-        # Security (not electrical)
-        "security camera", "security cameras", "cctv", "surveillance", "alarm system", "intercom",
-        # Automotive
-        "car", "vehicle", "automotive",
-        # Appliances (repair, not installation)
-        "washing machine repair", "fridge repair", "dishwasher repair", "oven repair",
-    ]
-    wrong_service_keywords = WRONG_SERVICE_KEYWORDS
-    query_lower = normalized_query.lower()
-    
-    # Check if query is asking about a wrong service
-    query_mentions_wrong_service = any(keyword in query_lower for keyword in wrong_service_keywords)
-    
-    if query_mentions_wrong_service:
-        # Check if any candidate FAQ explicitly covers this service (not just mentions it)
-        # For electrical businesses, FAQs should not cover plumbing/painting/roofing
-        service_explicitly_covered = False
-        for c in candidates[:5]:
-            faq_text = f"{c.get('question', '')} {c.get('answer', '')}".lower()
-            # Only allow if FAQ explicitly says they DO offer this service (not just mentions it)
-            # Check for positive indicators: "we do", "we offer", "we provide", "yes we", "we can"
-            positive_indicators = ["we do", "we offer", "we provide", "yes we", "we can", "we handle", "we perform"]
-            if any(indicator in faq_text for indicator in positive_indicators):
-                # Check if this positive statement is about the wrong service
-                for keyword in wrong_service_keywords:
-                    if keyword in query_lower and keyword in faq_text:
-                        # FAQ explicitly says they do this service - allow it
-                        service_explicitly_covered = True
-                        break
-                if service_explicitly_covered:
-                    break
-        
-        if not service_explicitly_covered:
-            # Query is about a wrong service and no FAQ explicitly covers it - reject immediately
-            trace["stage"] = "wrong_service_rejected"
-            trace["rerank_trace"] = {"method": "pre_check", "reason": "wrong_service_not_covered"}
-            trace["total_ms"] = int((time.time() - start_time) * 1000)
-            return None, trace
     
     candidates_to_rerank = candidates[:8]
     reranked = []

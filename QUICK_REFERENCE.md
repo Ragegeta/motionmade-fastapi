@@ -263,6 +263,45 @@ All `/admin/api/...` endpoints also available at `/api/v2/admin/...`:
 2. Check alerts: `GET /admin/api/tenant/{id}/alerts`
 3. Review fallback rate - if >40%, add FAQ variants
 
+### Run Production Confidence Pack
+The confidence pack tests repeatability, scale, and adversarial scenarios with 80+ questions.
+
+**Basic run (5 iterations):**
+```powershell
+.\tools\run_confidence_pack.ps1 -TenantId "sparkys_electrical"
+```
+
+**Scale test (100 FAQs):**
+```powershell
+.\tools\run_confidence_pack.ps1 -TenantId "sparkys_electrical" -ScaleTest
+```
+
+**Custom runs:**
+```powershell
+.\tools\run_confidence_pack.ps1 -TenantId "sparkys_electrical" -Runs 10
+```
+
+**Custom test pack:**
+```powershell
+.\tools\run_confidence_pack.ps1 -TenantId "sparkys_electrical" -TestPackPath "tools\testpacks\custom_pack.json"
+```
+
+The script:
+- Runs the test pack N times (default 5)
+- Reports mean/min/max hit rates, wrong-hit rates, latency (P50/P95)
+- Tests repeatability (variance <= 5 percentage points)
+- Optionally scales to 100 FAQs to test with larger candidate sets
+- Saves detailed results to `tools/results/confidence_{tenant}_{timestamp}.json`
+
+**Pass/Fail Gates:**
+- Hit rate (should-hit) >= 85%
+- Wrong-hit rate (should-miss) = 0%
+- Edge clarify rate >= 70%
+- Repeatability variance <= 5pp
+- Latency P50 <= 2.5s, P95 <= 6s
+
+Results include per-question traces with retrieval scores, branches, and failure analysis.
+
 ## Troubleshooting
 
 ### Widget shows "domain not allowed"
