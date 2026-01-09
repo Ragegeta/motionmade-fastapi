@@ -160,12 +160,24 @@ def set_cached_result(tenant_id: str, normalized_query: str, result: Dict):
 def expand_query_synonyms(query: str) -> str:
     """
     Expand query with synonyms to improve FTS recall.
-    Returns query with synonyms added.
-    """
-    query_lower = query.lower()
-    expanded_terms = []
+    Returns a tsquery string with:
+    - Stop words filtered out: how,much,can,you,my,the,a,an,to,for,please,do,does,what,where,when,why,is,are,will,would,could,should
+    - Synonyms are OR'd: (token | syn1 | syn2 ...)
+    - For pricing-intent queries like "how much", return ONLY pricing synonym OR-group
+    - Multi-word synonyms converted to AND groups: "call out" => (call & out)
+    - Supports 2-word and 3-word phrases
     
-    # Synonym mappings (same as variant_expander but for query expansion)
+    Examples:
+    - "how much" → (price | pricing | cost | quote | (call & out) | callout | fee | fees | charge | charges | rates | rate)
+    - "smoke alarm beeping" → smoke & alarm & (beep | beeping | chirp | chirping)
+    """
+    # Stop words to filter out (exact list from requirements)
+    STOP_WORDS = {"how", "much", "can", "you", "my", "the", "a", "an", "to", "for", "please", "do", "does", "what", "where", "when", "why", "is", "are", "will", "would", "could", "should"}
+    
+    query_lower = query.lower().strip()
+    words = query_lower.split()
+    
+    # Synonym mappings
     SYNONYMS = {
         "wall plug": ["powerpoint", "outlet", "socket", "power point", "gpo"],
         "powerpoint": ["outlet", "socket", "power point", "wall plug", "gpo"],
@@ -177,98 +189,186 @@ def expand_query_synonyms(query: str) -> str:
         "chirping": ["beep", "beeping", "chirp"],
         "plug": ["powerpoint", "outlet", "socket"],
         "wall socket": ["powerpoint", "outlet", "socket", "wall plug"],
+        # Pricing intent synonyms
+        "how much": ["price", "pricing", "cost", "quote", "call-out", "callout", "fee", "fees", "charge", "charges", "rates", "rate"],
+        "call out": ["callout", "call-out", "call out fee", "callout fee"],
+        "callout": ["call-out", "call out", "call out fee", "callout fee"],
+        "call-out": ["callout", "call out", "call out fee", "callout fee"],
+        "call out fee": ["callout", "call-out", "call out", "callout fee"],
+        "callout fee": ["call-out", "call out", "call out fee"],
+        "fee": ["call-out", "callout", "call out fee", "callout fee", "price", "pricing", "cost", "charge", "charges"],
     }
     
-    # Check if query contains any synonym keys
-    words = query_lower.split()
-    found_synonyms = set()
+    # Pricing intent patterns - if query matches pricing intent, return ONLY pricing synonyms
+    pricing_patterns = ["how much", "how much do you charge", "how much do you", "how much does", "what do you charge"]
+    has_pricing_intent = any(pattern in query_lower for pattern in pricing_patterns)
     
-    for word in words:
-        # Check single word
+    # Special handling for pricing-only queries: return ONLY pricing synonym OR-group (no original tokens)
+    if has_pricing_intent:
+        # Check if query is primarily pricing intent (all or mostly stopwords + pricing pattern)
+        meaningful_words_count = len([w for w in words if w not in STOP_WORDS])
+        if meaningful_words_count <= 1:
+            # Replace entirely with pricing synonyms
+            synonyms = SYNONYMS.get("how much", ["price", "pricing", "cost", "quote", "call-out", "fee"])
+            # Build OR group: (price | pricing | cost | ...)
+            # For multi-word synonyms, convert to AND groups: "call-out" => (call & out)
+            or_parts = []
+            for s in synonyms:
+                if " " in s or "-" in s:
+                    # Multi-word synonym: split into AND group
+                    phrase_words = s.replace("-", " ").split()
+                    phrase_query = " & ".join(phrase_words)
+                    or_parts.append(f"({phrase_query})")
+                else:
+                    or_parts.append(s)
+            return f"({' | '.join(or_parts)})"
+    
+    # Filter out stop words and get meaningful tokens
+    meaningful_words = [w for w in words if w not in STOP_WORDS and len(w) > 1]
+    
+    if not meaningful_words:
+        # If all words are stop words after filtering, return original query (will fall back to websearch/plainto)
+        return query
+    
+    # Build query groups: each meaningful word/token gets (word | syn1 | syn2 | ...)
+    query_groups = []
+    
+    # Check for multi-word phrases first (3-word, then 2-word)
+    i = 0
+    while i < len(meaningful_words):
+        # Check 3-word phrase first (like "call out fee")
+        if i < len(meaningful_words) - 2:
+            phrase3 = f"{meaningful_words[i]} {meaningful_words[i+1]} {meaningful_words[i+2]}"
+            if phrase3 in SYNONYMS:
+                # Found 3-word phrase with synonyms
+                all_terms = [phrase3] + SYNONYMS[phrase3]
+                # Build OR group, handling multi-word terms
+                or_parts = []
+                for term in all_terms:
+                    if " " in term or "-" in term:
+                        # Multi-word: split into AND group
+                        term_words = term.replace("-", " ").split()
+                        or_parts.append(f"({' & '.join(term_words)})")
+                    else:
+                        or_parts.append(term)
+                query_groups.append(f"({' | '.join(or_parts)})")
+                i += 3  # Skip all three words
+                continue
+        
+        # Check 2-word phrase (like "wall plug", "call out")
+        if i < len(meaningful_words) - 1:
+            phrase2 = f"{meaningful_words[i]} {meaningful_words[i+1]}"
+            if phrase2 in SYNONYMS:
+                # Found 2-word phrase with synonyms
+                all_terms = [phrase2] + SYNONYMS[phrase2]
+                # Build OR group, handling multi-word terms
+                or_parts = []
+                for term in all_terms:
+                    if " " in term or "-" in term:
+                        # Multi-word: split into AND group
+                        term_words = term.replace("-", " ").split()
+                        or_parts.append(f"({' & '.join(term_words)})")
+                    else:
+                        or_parts.append(term)
+                query_groups.append(f"({' | '.join(or_parts)})")
+                i += 2  # Skip both words
+                continue
+        
+        # Single word
+        word = meaningful_words[i]
         if word in SYNONYMS:
-            found_synonyms.update(SYNONYMS[word])
-        # Check 2-word phrases
-        if len(words) > 1:
-            for i in range(len(words) - 1):
-                phrase = f"{words[i]} {words[i+1]}"
-                if phrase in SYNONYMS:
-                    found_synonyms.update(SYNONYMS[phrase])
+            # Word has synonyms
+            all_terms = [word] + SYNONYMS[word]
+            # Build OR group, handling multi-word synonyms
+            or_parts = []
+            for term in all_terms:
+                if " " in term or "-" in term:
+                    # Multi-word synonym: split into AND group
+                    term_words = term.replace("-", " ").split()
+                    or_parts.append(f"({' & '.join(term_words)})")
+                else:
+                    or_parts.append(term)
+            query_groups.append(f"({' | '.join(or_parts)})")
+        else:
+            # Word has no synonyms, use as-is
+            query_groups.append(word)
+        i += 1
     
-    # If we found synonyms, append them to query
-    if found_synonyms:
-        # Add synonyms to original query for FTS
-        expanded = query + " " + " ".join(found_synonyms)
-        return expanded
+    # Join all groups with AND: (group1) & (group2) & (group3)
+    result = " & ".join(query_groups)
     
-    return query
+    return result
 
 
 def search_fts(tenant_id: str, query: str, limit: int = 20) -> list[dict]:
     """
     Full-text search using PostgreSQL.
-    Uses websearch_to_tsquery for better partial matching.
-    Expands query with synonyms before searching to improve recall.
-    Adds pricing intent fallback for queries like "how much".
+    Expands query with synonyms (with AND/OR logic) before searching to improve recall.
+    Uses to_tsquery() for expanded queries with operators, websearch_to_tsquery() as fallback.
     """
     if not tenant_id or not query:
         return []
     
-    # Pricing intent fallback: if query matches pricing patterns, append "price" token
-    query_lower = query.lower().strip()
-    pricing_patterns = [
-        "how much", "how much do you charge", "how much do you", "how much does",
-        "cost", "price", "prices", "rates", "rate", "call out", "callout", "call-out",
-        "quote", "quotes", "pricing", "charge", "charges", "fee", "fees", "what do you charge"
-    ]
-    has_pricing_intent = any(pattern in query_lower for pattern in pricing_patterns)
-    
-    # If query matches pricing pattern (especially short queries like "how much"), append price token
-    query_words = query_lower.split()
-    if has_pricing_intent:
-        # Append "price" to help FTS find pricing FAQs
-        # Only append if "price" or "pricing" not already in query to avoid duplication
-        if "price" not in query_lower and "pricing" not in query_lower:
-            query = query + " price"
-    
-    # Expand query with synonyms to improve recall
+    # Expand query with synonyms - returns tsquery format if synonyms found, otherwise natural language
     expanded_query = expand_query_synonyms(query)
+    
+    # Check if expanded_query is already in tsquery format (has operators)
+    is_tsquery_format = ('(' in expanded_query and (')' in expanded_query)) or ('|' in expanded_query) or ('&' in expanded_query)
     
     try:
         with get_conn() as conn:
-            # Try websearch first (handles natural language better)
-            rows = conn.execute("""
-                SELECT 
-                    fi.id AS faq_id,
-                    fi.question,
-                    fi.answer,
-                    fi.tenant_id,
-                    ts_rank(fi.search_vector, websearch_to_tsquery('english', %s)) AS fts_score
-                FROM faq_items fi
-                WHERE fi.tenant_id = %s
-                  AND fi.enabled = true
-                  AND (fi.is_staged = false OR fi.is_staged IS NULL)
-                  AND fi.search_vector @@ websearch_to_tsquery('english', %s)
-                ORDER BY fts_score DESC
-                LIMIT %s
-            """, (expanded_query, tenant_id, expanded_query, limit)).fetchall()
-            
-            # If no results, try simpler plainto_tsquery
-            if not rows:
+            if is_tsquery_format:
+                # Use to_tsquery() for manually constructed tsquery strings
                 rows = conn.execute("""
                     SELECT 
                         fi.id AS faq_id,
                         fi.question,
                         fi.answer,
                         fi.tenant_id,
-                        ts_rank(fi.search_vector, plainto_tsquery('english', %s)) AS fts_score
+                        ts_rank(fi.search_vector, to_tsquery('english', %s)) AS fts_score
                     FROM faq_items fi
                     WHERE fi.tenant_id = %s
                       AND fi.enabled = true
                       AND (fi.is_staged = false OR fi.is_staged IS NULL)
-                      AND fi.search_vector @@ plainto_tsquery('english', %s)
+                      AND fi.search_vector @@ to_tsquery('english', %s)
                     ORDER BY fts_score DESC
                     LIMIT %s
                 """, (expanded_query, tenant_id, expanded_query, limit)).fetchall()
+            else:
+                # Use websearch_to_tsquery for natural language (fallback when no synonyms)
+                rows = conn.execute("""
+                    SELECT 
+                        fi.id AS faq_id,
+                        fi.question,
+                        fi.answer,
+                        fi.tenant_id,
+                        ts_rank(fi.search_vector, websearch_to_tsquery('english', %s)) AS fts_score
+                    FROM faq_items fi
+                    WHERE fi.tenant_id = %s
+                      AND fi.enabled = true
+                      AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                      AND fi.search_vector @@ websearch_to_tsquery('english', %s)
+                    ORDER BY fts_score DESC
+                    LIMIT %s
+                """, (expanded_query, tenant_id, expanded_query, limit)).fetchall()
+                
+                # If no results, try simpler plainto_tsquery
+                if not rows:
+                    rows = conn.execute("""
+                        SELECT 
+                            fi.id AS faq_id,
+                            fi.question,
+                            fi.answer,
+                            fi.tenant_id,
+                            ts_rank(fi.search_vector, plainto_tsquery('english', %s)) AS fts_score
+                        FROM faq_items fi
+                        WHERE fi.tenant_id = %s
+                          AND fi.enabled = true
+                          AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                          AND fi.search_vector @@ plainto_tsquery('english', %s)
+                        ORDER BY fts_score DESC
+                        LIMIT %s
+                    """, (expanded_query, tenant_id, expanded_query, limit)).fetchall()
             
             # If still no results, try ILIKE on question/answer (last resort)
             if not rows:

@@ -3521,91 +3521,113 @@ def fts_diagnostics(
                 for row in sample_rows
             ]
             
-            # 4. Build the exact same query as search_fts
-            # Pricing intent fallback
-            query_lower = query.lower().strip()
-            pricing_patterns = [
-                "how much", "how much do you charge", "how much do you", "how much does",
-                "cost", "price", "prices", "rates", "rate", "call out", "callout", "call-out",
-                "quote", "quotes", "pricing", "charge", "charges", "fee", "fees", "what do you charge"
-            ]
-            has_pricing_intent = any(pattern in query_lower for pattern in pricing_patterns)
-            
-            if has_pricing_intent:
-                if "price" not in query_lower and "pricing" not in query_lower:
-                    query = query + " price"
-            
-            # Expand query with synonyms
+            # 4. Build the exact same query as search_fts - use same exact logic
+            # Expand query with synonyms - returns tsquery format if synonyms found, otherwise natural language
             expanded_query = expand_query_synonyms(query)
             
-            # 5. Build tsquery strings (exact same as search_fts)
-            # Try websearch first
-            try:
-                websearch_tsquery = conn.execute("""
-                    SELECT websearch_to_tsquery('english', %s)::text
-                """, (expanded_query,)).fetchone()[0]
-            except:
-                websearch_tsquery = None
+            # Check if expanded_query is already in tsquery format (has operators) - same logic as search_fts
+            is_tsquery_format = ('(' in expanded_query and (')' in expanded_query)) or ('|' in expanded_query) or ('&' in expanded_query)
             
-            # Try plainto_tsquery as fallback
-            try:
-                plainto_tsquery_str = conn.execute("""
-                    SELECT plainto_tsquery('english', %s)::text
-                """, (expanded_query,)).fetchone()[0]
-            except:
-                plainto_tsquery_str = None
-            
-            # Use websearch if available, otherwise plainto
-            fts_query_string_used = websearch_tsquery if websearch_tsquery else plainto_tsquery_str
-            
-            # 6. Count FTS matches using exact same WHERE filters and query
+            # 5. Build tsquery strings (exact same as search_fts) - get the actual tsquery string used
+            fts_query_string_used = None
             fts_matches_count = 0
             fts_top_matches = []
             
-            if fts_query_string_used:
-                # Try websearch first (same as search_fts)
-                if websearch_tsquery:
+            # Use exact same logic as search_fts()
+            if is_tsquery_format:
+                # Use to_tsquery() for manually constructed tsquery strings
+                try:
+                    # Get the tsquery string
+                    fts_query_string_used = conn.execute("""
+                        SELECT to_tsquery('english', %s)::text
+                    """, (expanded_query,)).fetchone()[0]
+                    
+                    # Count matches using exact same WHERE filters as search_fts
+                    count_rows = conn.execute("""
+                        SELECT COUNT(*) 
+                        FROM faq_items fi
+                        WHERE fi.tenant_id = %s
+                          AND fi.enabled = true
+                          AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                          AND fi.search_vector @@ to_tsquery('english', %s)
+                    """, (tenantId, expanded_query)).fetchone()
+                    fts_matches_count = count_rows[0] if count_rows else 0
+                    
+                    # Get top 5 matches with rank
+                    top_rows = conn.execute("""
+                        SELECT 
+                            fi.id,
+                            fi.question,
+                            ts_rank(fi.search_vector, to_tsquery('english', %s)) AS fts_score
+                        FROM faq_items fi
+                        WHERE fi.tenant_id = %s
+                          AND fi.enabled = true
+                          AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                          AND fi.search_vector @@ to_tsquery('english', %s)
+                        ORDER BY fts_score DESC
+                        LIMIT 5
+                    """, (expanded_query, tenantId, expanded_query)).fetchall()
+                    
+                    fts_top_matches = [
+                        {
+                            "id": int(row[0]),
+                            "question": str(row[1]),
+                            "rank_score": float(row[2])
+                        }
+                        for row in top_rows
+                    ]
+                except Exception as e:
+                    # If to_tsquery fails, fts_query_string_used stays None
+                    pass
+            else:
+                # Use websearch_to_tsquery first, then fallback to plainto_tsquery (same as search_fts)
+                try:
+                    fts_query_string_used = conn.execute("""
+                        SELECT websearch_to_tsquery('english', %s)::text
+                    """, (expanded_query,)).fetchone()[0]
+                    
+                    # Count matches
+                    count_rows = conn.execute("""
+                        SELECT COUNT(*) 
+                        FROM faq_items fi
+                        WHERE fi.tenant_id = %s
+                          AND fi.enabled = true
+                          AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                          AND fi.search_vector @@ websearch_to_tsquery('english', %s)
+                    """, (tenantId, expanded_query)).fetchone()
+                    fts_matches_count = count_rows[0] if count_rows else 0
+                    
+                    # Get top 5 matches with rank
+                    top_rows = conn.execute("""
+                        SELECT 
+                            fi.id,
+                            fi.question,
+                            ts_rank(fi.search_vector, websearch_to_tsquery('english', %s)) AS fts_score
+                        FROM faq_items fi
+                        WHERE fi.tenant_id = %s
+                          AND fi.enabled = true
+                          AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                          AND fi.search_vector @@ websearch_to_tsquery('english', %s)
+                        ORDER BY fts_score DESC
+                        LIMIT 5
+                    """, (expanded_query, tenantId, expanded_query)).fetchall()
+                    
+                    fts_top_matches = [
+                        {
+                            "id": int(row[0]),
+                            "question": str(row[1]),
+                            "rank_score": float(row[2])
+                        }
+                        for row in top_rows
+                    ]
+                except Exception as e:
+                    # If websearch fails, try plainto_tsquery (fallback)
                     try:
-                        count_rows = conn.execute("""
-                            SELECT COUNT(*) 
-                            FROM faq_items fi
-                            WHERE fi.tenant_id = %s
-                              AND fi.enabled = true
-                              AND (fi.is_staged = false OR fi.is_staged IS NULL)
-                              AND fi.search_vector @@ websearch_to_tsquery('english', %s)
-                        """, (tenantId, expanded_query)).fetchone()
-                        fts_matches_count = count_rows[0] if count_rows else 0
+                        fts_query_string_used = conn.execute("""
+                            SELECT plainto_tsquery('english', %s)::text
+                        """, (expanded_query,)).fetchone()[0]
                         
-                        # Get top 5 matches with rank
-                        top_rows = conn.execute("""
-                            SELECT 
-                                fi.id,
-                                fi.question,
-                                ts_rank(fi.search_vector, websearch_to_tsquery('english', %s)) AS fts_score
-                            FROM faq_items fi
-                            WHERE fi.tenant_id = %s
-                              AND fi.enabled = true
-                              AND (fi.is_staged = false OR fi.is_staged IS NULL)
-                              AND fi.search_vector @@ websearch_to_tsquery('english', %s)
-                            ORDER BY fts_score DESC
-                            LIMIT 5
-                        """, (expanded_query, tenantId, expanded_query)).fetchall()
-                        
-                        fts_top_matches = [
-                            {
-                                "id": int(row[0]),
-                                "question": str(row[1]),
-                                "rank_score": float(row[2])
-                            }
-                            for row in top_rows
-                        ]
-                    except Exception as e:
-                        # If websearch fails, try plainto
-                        pass
-                
-                # If websearch didn't work or returned 0, try plainto_tsquery
-                if fts_matches_count == 0 and plainto_tsquery_str:
-                    try:
+                        # Count matches
                         count_rows = conn.execute("""
                             SELECT COUNT(*) 
                             FROM faq_items fi
@@ -3640,6 +3662,7 @@ def fts_diagnostics(
                             for row in top_rows
                         ]
                     except Exception as e:
+                        # If plainto also fails, fts_query_string_used stays None
                         pass
             
             # 7. Generate notes
@@ -3658,7 +3681,8 @@ def fts_diagnostics(
                 "faq_items_count": faq_items_count,
                 "faq_items_with_search_vector_count": faq_items_with_search_vector_count,
                 "sample_search_vector_rows": sample_search_vector_rows,
-                "fts_query_string_used": fts_query_string_used,
+                "expanded_query": expanded_query,  # The query after synonym expansion
+                "fts_query_string_used": fts_query_string_used,  # The actual tsquery string used
                 "fts_matches_count": fts_matches_count,
                 "fts_top_matches": fts_top_matches,
                 "notes": notes
