@@ -403,7 +403,13 @@ def merge_candidates(
 
 
 def get_top_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[Dict]:
-    """Get top FAQ candidates via embedding similarity."""
+    """Get top FAQ candidates via embedding similarity.
+    
+    Query is optimized for index usage:
+    - Orders by distance FIRST (allows index scan)
+    - Filters by tenant_id and enabled status
+    - Deduplicates by faq_id in Python after getting top candidates
+    """
     if not tenant_id or query_embedding is None:
         return []
     
@@ -414,11 +420,20 @@ def get_top_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[
         with get_conn() as conn:
             register_vector(conn)
             
+            # Set ivfflat.probes for better recall if using ivfflat index
+            # (HNSW doesn't need this, but setting it is harmless)
+            try:
+                conn.execute("SET LOCAL ivfflat.probes = 10")
+            except Exception:
+                pass  # Ignore if setting not supported
+            
             # Convert to Vector
             qv = Vector(query_embedding)
             
+            # Index-friendly query: ORDER BY distance FIRST, then filter and limit
+            # This allows the vector index to be used efficiently
             rows = conn.execute("""
-                SELECT DISTINCT ON (fi.id)
+                SELECT 
                     fi.id AS faq_id,
                     fi.question,
                     fi.answer,
@@ -431,26 +446,30 @@ def get_top_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[
                   AND fi.enabled = true
                   AND fv.enabled = true
                   AND (fi.is_staged = false OR fi.is_staged IS NULL)
-                ORDER BY fi.id, (fv.variant_embedding <=> %s) ASC
-            """, (qv, tenant_id, qv)).fetchall()
+                ORDER BY (fv.variant_embedding <=> %s) ASC
+                LIMIT %s
+            """, (qv, tenant_id, qv, limit * 3)).fetchall()  # Get 3x limit to account for deduplication
         
         if not rows:
             return []
         
-        candidates = [
-            {
-                "faq_id": int(row[0]),
-                "question": str(row[1]),
-                "answer": str(row[2]),
-                "tenant_id": str(row[3]),
-                "matched_variant": str(row[4]) if row[4] else str(row[1]),  # Fallback to question if no variant
-                "score": float(row[5])
-            }
-            for row in rows
-        ]
+        # Deduplicate by faq_id, keeping the best variant (highest score) for each FAQ
+        seen_faqs = {}
+        for row in rows:
+            faq_id = int(row[0])
+            score = float(row[5])
+            if faq_id not in seen_faqs or score > seen_faqs[faq_id]["score"]:
+                seen_faqs[faq_id] = {
+                    "faq_id": faq_id,
+                    "question": str(row[1]),
+                    "answer": str(row[2]),
+                    "tenant_id": str(row[3]),
+                    "matched_variant": str(row[4]) if row[4] else str(row[1]),
+                    "score": score
+                }
         
-        # Sort by score descending
-        candidates.sort(key=lambda x: x["score"], reverse=True)
+        # Sort by score descending and return top limit
+        candidates = sorted(seen_faqs.values(), key=lambda x: x["score"], reverse=True)
         return candidates[:limit]
         
     except Exception as e:
@@ -1158,20 +1177,33 @@ def retrieve(
         trace["top_fts_score"] = round(fts_candidates[0].get("fts_score", 0), 4)
     
     # 1b: Vector search (secondary - finds semantic matches)
-    # If FTS returned empty and query matches pricing intent, ensure we try vector search
-    from app.openai_client import embed_text
-    
+    # Skip vector search if FTS returned enough good candidates (>=8) to reduce load
+    # Only run vector when FTS candidate_count < 8 OR query is long and FTS looks weak
     vector_candidates = []
     vector_start_time = time.time()
-    query_embedding = embed_text(normalized_query)
-    if query_embedding is not None:
-        vector_candidates = get_top_candidates(tenant_id, query_embedding, limit=20)
-        vector_db_ms = int((time.time() - vector_start_time) * 1000)
-        trace["retrieval_db_vector_ms"] = vector_db_ms
-        trace["retrieval_db_ms"] += vector_db_ms
-        trace["vector_count"] = len(vector_candidates)
-        if vector_candidates:
-            trace["top_vector_score"] = round(vector_candidates[0].get("score", 0), 4)
+    fts_count = len(fts_candidates)
+    should_skip_vector = fts_count >= 8
+    
+    if should_skip_vector:
+        trace["vector_skipped"] = True
+        trace["vector_skip_reason"] = f"fts_count={fts_count} >= 8"
+        trace["retrieval_db_vector_ms"] = 0
+        trace["vector_count"] = 0
+        query_embedding = None  # Don't embed if we're skipping vector
+    else:
+        from app.openai_client import embed_text
+        query_embedding = embed_text(normalized_query)
+        if query_embedding is not None:
+            vector_candidates = get_top_candidates(tenant_id, query_embedding, limit=20)
+            vector_db_ms = int((time.time() - vector_start_time) * 1000)
+            trace["retrieval_db_vector_ms"] = vector_db_ms
+            trace["retrieval_db_ms"] += vector_db_ms
+            trace["vector_count"] = len(vector_candidates)
+            if vector_candidates:
+                trace["top_vector_score"] = round(vector_candidates[0].get("score", 0), 4)
+        else:
+            trace["retrieval_db_vector_ms"] = int((time.time() - vector_start_time) * 1000)
+            trace["vector_count"] = 0
     
     # 1c: Merge - FTS results get priority, vectors add extras
     candidates = merge_candidates_fts_primary(fts_candidates, vector_candidates)

@@ -231,9 +231,44 @@ CREATE TABLE IF NOT EXISTS faq_variants (
 );
 
 CREATE INDEX IF NOT EXISTS faq_variants_faq_id_idx ON faq_variants(faq_id);
-CREATE INDEX IF NOT EXISTS faq_variants_embedding_idx
-ON faq_variants USING ivfflat (variant_embedding vector_cosine_ops)
-WITH (lists = 100);
+
+-- Create HNSW index for vector search (preferred, faster than ivfflat)
+-- Falls back to ivfflat if HNSW not supported (pgvector < 0.5)
+DO $$
+BEGIN
+    -- Try HNSW first (pgvector >= 0.5)
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c 
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.relname = 'faq_variants_embedding_hnsw_idx' AND n.nspname = 'public'
+    ) THEN
+        BEGIN
+            EXECUTE 'CREATE INDEX CONCURRENTLY IF NOT EXISTS faq_variants_embedding_hnsw_idx
+                     ON faq_variants USING hnsw (variant_embedding vector_cosine_ops)
+                     WHERE enabled = true';
+        EXCEPTION WHEN OTHERS THEN
+            -- HNSW not supported, create ivfflat instead
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_class c 
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE c.relname = 'faq_variants_embedding_ivfflat_idx' AND n.nspname = 'public'
+            ) THEN
+                EXECUTE 'CREATE INDEX CONCURRENTLY IF NOT EXISTS faq_variants_embedding_ivfflat_idx
+                         ON faq_variants USING ivfflat (variant_embedding vector_cosine_ops)
+                         WITH (lists = 100)
+                         WHERE enabled = true';
+            END IF;
+        END;
+    END IF;
+END $$;
+
+-- Drop old unfiltered index if it exists (replaced by filtered index above)
+DROP INDEX IF EXISTS faq_variants_embedding_idx;
+
+-- Index to help tenant filtering on faq_items
+CREATE INDEX IF NOT EXISTS idx_faq_items_tenant_live 
+ON faq_items(tenant_id) 
+WHERE is_staged = false AND enabled = true;
 
 CREATE TABLE IF NOT EXISTS telemetry (
   id BIGSERIAL PRIMARY KEY,
@@ -2680,6 +2715,81 @@ def get_embedding_stats(
                 "avg": round(float(avg_v or 0), 1)
             }
         }
+
+
+@app.post("/admin/api/tenant/{tenantId}/explain-vector-query")
+def explain_vector_query(
+    tenantId: str,
+    authorization: str = Header(default="")
+):
+    """
+    Admin-only endpoint to run EXPLAIN ANALYZE on the vector query.
+    Returns the query plan to verify index usage.
+    """
+    _check_admin_auth(authorization)
+    
+    from pgvector.psycopg import register_vector
+    from pgvector import Vector
+    from app.openai_client import embed_text
+    
+    # Use a sample query to generate embedding
+    sample_query = "how much do you charge"
+    query_embedding = embed_text(sample_query)
+    
+    if query_embedding is None:
+        return {"error": "Failed to generate embedding for sample query"}
+    
+    qv = Vector(query_embedding)
+    limit = 20
+    
+    with get_conn() as conn:
+        register_vector(conn)
+        
+        # Run EXPLAIN ANALYZE on the exact vector query (text format for readability)
+        plan_text = conn.execute("""
+            EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
+            SELECT 
+                fi.id AS faq_id,
+                fi.question,
+                fi.answer,
+                fi.tenant_id,
+                fv.variant_question AS matched_variant,
+                (1 - (fv.variant_embedding <=> %s)) AS score
+            FROM faq_variants fv
+            JOIN faq_items fi ON fi.id = fv.faq_id
+            WHERE fi.tenant_id = %s
+              AND fi.enabled = true
+              AND fv.enabled = true
+              AND (fi.is_staged = false OR fi.is_staged IS NULL)
+            ORDER BY (fv.variant_embedding <=> %s) ASC
+            LIMIT %s
+        """, (qv, tenantId, qv, limit)).fetchall()
+        
+        if plan_text:
+            plan_text_lines = [row[0] for row in plan_text]
+            
+            # Check if index is being used
+            uses_index = False
+            index_name = None
+            for line in plan_text_lines:
+                if "Index" in line or "index" in line.lower():
+                    uses_index = True
+                    # Try to extract index name
+                    import re
+                    match = re.search(r'Index.*?(\w+_idx|\w+_\w+_idx)', line, re.IGNORECASE)
+                    if match:
+                        index_name = match.group(1)
+                    break
+            
+            return {
+                "tenant_id": tenantId,
+                "sample_query": sample_query,
+                "uses_index": uses_index,
+                "index_name": index_name,
+                "plan_text": plan_text_lines
+            }
+        else:
+            return {"error": "Failed to get EXPLAIN plan"}
 
 
 @app.post("/admin/api/tenant/{tenantId}/debug-query")
