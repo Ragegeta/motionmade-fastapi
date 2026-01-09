@@ -272,8 +272,9 @@ WHERE is_staged = false AND enabled = true;
 
 -- Partitioned table for faq_variants (Phase 2: tenant partitioning for ANN index performance)
 -- Parent table with LIST partitioning by tenant_id
+-- Note: PRIMARY KEY must include partition key (tenant_id) for partitioned tables
 CREATE TABLE IF NOT EXISTS faq_variants_p (
-  id BIGSERIAL,
+  id BIGINT NOT NULL DEFAULT nextval('faq_variants_p_id_seq'),
   tenant_id TEXT NOT NULL,
   faq_id BIGINT NOT NULL REFERENCES faq_items(id) ON DELETE CASCADE,
   variant_question TEXT NOT NULL,
@@ -282,6 +283,9 @@ CREATE TABLE IF NOT EXISTS faq_variants_p (
   updated_at TIMESTAMPTZ DEFAULT now(),
   PRIMARY KEY (tenant_id, id)
 ) PARTITION BY LIST (tenant_id);
+
+-- Create sequence for id generation (shared across partitions)
+CREATE SEQUENCE IF NOT EXISTS faq_variants_p_id_seq;
 
 -- Helper function to ensure partition exists for a tenant
 CREATE OR REPLACE FUNCTION ensure_faq_variants_partition(p_tenant_id TEXT)
@@ -545,7 +549,34 @@ def _startup():
     def init_db():
         try:
             with get_conn() as conn:
-                conn.execute(SCHEMA_SQL)
+                # Execute SCHEMA_SQL with error logging per statement
+                statements = SCHEMA_SQL.split(';')
+                for i, stmt in enumerate(statements):
+                    stmt = stmt.strip()
+                    if not stmt or stmt.startswith('--'):
+                        continue
+                    try:
+                        conn.execute(stmt)
+                    except Exception as e:
+                        # Extract table/object name from statement for better error reporting
+                        obj_name = "unknown"
+                        if "CREATE TABLE" in stmt.upper():
+                            # Try to extract table name
+                            import re
+                            match = re.search(r'CREATE TABLE.*?(\w+)', stmt, re.IGNORECASE)
+                            if match:
+                                obj_name = match.group(1)
+                        elif "CREATE FUNCTION" in stmt.upper() or "CREATE OR REPLACE FUNCTION" in stmt.upper():
+                            match = re.search(r'FUNCTION.*?(\w+)', stmt, re.IGNORECASE)
+                            if match:
+                                obj_name = match.group(1)
+                        elif "CREATE SEQUENCE" in stmt.upper():
+                            match = re.search(r'SEQUENCE.*?(\w+)', stmt, re.IGNORECASE)
+                            if match:
+                                obj_name = match.group(1)
+                        print(f"[schema_init] Failed to create {obj_name}: {str(e)}")
+                        print(f"[schema_init] Statement: {stmt[:200]}...")
+                        # Continue with other statements - don't fail entire init
                 conn.commit()
             
             # Migrate telemetry table if old columns exist
@@ -2855,6 +2886,54 @@ async def analyze_tables(
     }
 
 
+@app.post("/admin/api/db/create_faq_variants_partitioned")
+async def create_faq_variants_partitioned(
+    authorization: str = Header(default="")
+):
+    """
+    Admin-only endpoint to manually create the faq_variants_p partitioned table.
+    Returns success/error with full PostgreSQL error message if it fails.
+    """
+    _check_admin_auth(authorization)
+    
+    try:
+        with get_conn() as conn:
+            # Create sequence first (required for DEFAULT in table definition)
+            conn.execute("""
+                CREATE SEQUENCE IF NOT EXISTS faq_variants_p_id_seq
+            """)
+            
+            # Create the partitioned parent table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS faq_variants_p (
+                  id BIGINT NOT NULL DEFAULT nextval('faq_variants_p_id_seq'),
+                  tenant_id TEXT NOT NULL,
+                  faq_id BIGINT NOT NULL REFERENCES faq_items(id) ON DELETE CASCADE,
+                  variant_question TEXT NOT NULL,
+                  variant_embedding vector(1536) NOT NULL,
+                  enabled BOOLEAN NOT NULL DEFAULT true,
+                  updated_at TIMESTAMPTZ DEFAULT now(),
+                  PRIMARY KEY (tenant_id, id)
+                ) PARTITION BY LIST (tenant_id)
+            """)
+            
+            conn.commit()
+            
+            return {
+                "ok": True,
+                "message": "faq_variants_p partitioned table created successfully"
+            }
+    except Exception as e:
+        error_msg = str(e)
+        import traceback
+        traceback.print_exc()
+        return {
+            "ok": False,
+            "error": error_msg,
+            "error_type": type(e).__name__
+        }
+
+
 @app.post("/admin/api/db/migrate_faq_variants_to_partitioned")
 async def migrate_faq_variants_to_partitioned(
     authorization: str = Header(default="")
@@ -2908,13 +2987,13 @@ async def migrate_faq_variants_to_partitioned(
                     """, (tenant_id,)).fetchone()[0]
                     
                     # Copy rows to partitioned table (with tenant_id)
+                    # Note: id will be auto-generated from sequence, we don't preserve old ids
                     conn.execute("""
-                        INSERT INTO faq_variants_p (id, tenant_id, faq_id, variant_question, variant_embedding, enabled, updated_at)
-                        SELECT fv.id, fi.tenant_id, fv.faq_id, fv.variant_question, fv.variant_embedding, fv.enabled, fv.updated_at
+                        INSERT INTO faq_variants_p (tenant_id, faq_id, variant_question, variant_embedding, enabled, updated_at)
+                        SELECT fi.tenant_id, fv.faq_id, fv.variant_question, fv.variant_embedding, fv.enabled, fv.updated_at
                         FROM faq_variants fv
                         JOIN faq_items fi ON fi.id = fv.faq_id
                         WHERE fi.tenant_id = %s
-                        ON CONFLICT (tenant_id, id) DO NOTHING
                     """, (tenant_id,))
                     conn.commit()
                     
