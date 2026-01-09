@@ -3112,6 +3112,7 @@ async def explain_vector_query(
         
         # Run EXPLAIN ANALYZE on partitioned table query (same as production)
         # Try partitioned table first, fall back to old table if it doesn't exist
+        using_partitioned = None
         try:
             plan_text = conn.execute("""
                 EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
@@ -3225,7 +3226,7 @@ async def explain_vector_query(
                 "tenant_id": tenantId,
                 "sample_query": sample_query,
                 "force_index": force_index,
-                "using_partitioned_table": using_partitioned if 'using_partitioned' in locals() else None,
+                "using_partitioned_table": using_partitioned,
                 **plan_analysis,
                 "plan_text": plan_text_lines[:30],  # First 30 lines
                 "plan_text_combined": "\n".join(plan_text_lines)
