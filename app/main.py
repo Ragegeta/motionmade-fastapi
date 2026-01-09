@@ -2701,7 +2701,11 @@ async def debug_query(
     
     # Call generate_quote_reply and capture all headers
     try:
-        result_payload = generate_quote_reply(quote_req, resp)
+        result_payload = generate_quote_reply(
+            req=quote_req,
+            resp=resp,
+            request=request
+        )
         
         # Extract debug info from response headers
         # Get retrieval trace for candidate info
