@@ -131,13 +131,63 @@ def set_cached_result(tenant_id: str, normalized_query: str, result: Dict):
         print(f"Cache write error: {e}")
 
 
+def expand_query_synonyms(query: str) -> str:
+    """
+    Expand query with synonyms to improve FTS recall.
+    Returns query with synonyms added.
+    """
+    query_lower = query.lower()
+    expanded_terms = []
+    
+    # Synonym mappings (same as variant_expander but for query expansion)
+    SYNONYMS = {
+        "wall plug": ["powerpoint", "outlet", "socket", "power point", "gpo"],
+        "powerpoint": ["outlet", "socket", "power point", "wall plug", "gpo"],
+        "outlet": ["powerpoint", "socket", "power point", "wall plug", "gpo"],
+        "socket": ["powerpoint", "outlet", "power point", "wall plug", "gpo"],
+        "beep": ["beeping", "chirp", "chirping"],
+        "beeping": ["beep", "chirp", "chirping"],
+        "chirp": ["beep", "beeping", "chirping"],
+        "chirping": ["beep", "beeping", "chirp"],
+        "plug": ["powerpoint", "outlet", "socket"],
+        "wall socket": ["powerpoint", "outlet", "socket", "wall plug"],
+    }
+    
+    # Check if query contains any synonym keys
+    words = query_lower.split()
+    found_synonyms = set()
+    
+    for word in words:
+        # Check single word
+        if word in SYNONYMS:
+            found_synonyms.update(SYNONYMS[word])
+        # Check 2-word phrases
+        if len(words) > 1:
+            for i in range(len(words) - 1):
+                phrase = f"{words[i]} {words[i+1]}"
+                if phrase in SYNONYMS:
+                    found_synonyms.update(SYNONYMS[phrase])
+    
+    # If we found synonyms, append them to query
+    if found_synonyms:
+        # Add synonyms to original query for FTS
+        expanded = query + " " + " ".join(found_synonyms)
+        return expanded
+    
+    return query
+
+
 def search_fts(tenant_id: str, query: str, limit: int = 20) -> list[dict]:
     """
     Full-text search using PostgreSQL.
     Uses websearch_to_tsquery for better partial matching.
+    Expands query with synonyms before searching to improve recall.
     """
     if not tenant_id or not query:
         return []
+    
+    # Expand query with synonyms to improve recall
+    expanded_query = expand_query_synonyms(query)
     
     try:
         with get_conn() as conn:
@@ -156,7 +206,7 @@ def search_fts(tenant_id: str, query: str, limit: int = 20) -> list[dict]:
                   AND fi.search_vector @@ websearch_to_tsquery('english', %s)
                 ORDER BY fts_score DESC
                 LIMIT %s
-            """, (query, tenant_id, query, limit)).fetchall()
+            """, (expanded_query, tenant_id, expanded_query, limit)).fetchall()
             
             # If no results, try simpler plainto_tsquery
             if not rows:
@@ -174,7 +224,7 @@ def search_fts(tenant_id: str, query: str, limit: int = 20) -> list[dict]:
                       AND fi.search_vector @@ plainto_tsquery('english', %s)
                     ORDER BY fts_score DESC
                     LIMIT %s
-                """, (query, tenant_id, query, limit)).fetchall()
+                """, (expanded_query, tenant_id, expanded_query, limit)).fetchall()
             
             # If still no results, try ILIKE on question/answer (last resort)
             if not rows:
@@ -974,39 +1024,65 @@ def retrieve(
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
     
-    # Stage 0.2: Wrong-service check - reject IMMEDIATELY if query contains wrong-service keywords
+    # Stage 0.2: Wrong-service check - reject ONLY explicit wrong-trade intent
+    # Allow mentions when electrical intent signals exist (voltage drop, power issues, alarms beeping, etc.)
     # This MUST run before cache, before retrieval, before everything
-    # For electrical businesses, we should NEVER match gas/plumbing/solar/painting/etc
+    
+    # Electrical intent signals - if query contains these, allow even if wrong-service keyword present
+    ELECTRICAL_INTENT_SIGNALS = [
+        # Power/voltage issues
+        "lights flicker", "lights dim", "lights dimming", "voltage drop", "power trips", "power cuts",
+        "power went out", "power out", "power cutting", "safety switch", "rcd", "circuit breaker",
+        "fuse box", "switchboard", "electrical panel", "powerpoint", "outlet", "socket",
+        # Smoke/fire alarms (beeping/chirping = electrical issue, not security system)
+        "smoke alarm beep", "smoke alarm chirp", "fire alarm beep", "fire alarm chirp",
+        "smoke detector beep", "smoke detector chirp", "alarm beep", "alarm chirp", "beeping",
+        "chirping", "battery low", "battery replacement",
+        # Electrical problems
+        "sparking", "buzzing", "humming", "crackling", "hot outlet", "burnt",
+        # Appliance-related electrical issues (voltage drop when appliance runs)
+        "when ac turns on", "when washing machine", "when dryer", "when appliance",
+    ]
+    
+    # Check for electrical intent signals first
+    has_electrical_intent = any(signal.lower() in query_lower for signal in ELECTRICAL_INTENT_SIGNALS)
+    
+    # Wrong-service keywords - only reject if EXPLICIT wrong-trade intent (no electrical context)
     WRONG_SERVICE_KEYWORDS = [
-        # Plumbing
-        "plumbing", "plumber", "toilet", "tap", "drain", "pipe", "leak", "water heater", "hot water system",
-        # HVAC
-        "air conditioning", "air con", "aircon", "ac", "heating", "hvac", "ducted", "split system",
-        # Gas
-        "gas", "gas line", "gas fitting", "gas plumber", "gas heater", "gas stove",
-        # Solar
-        "solar", "solar panel", "solar installation", "solar power", "solar system",
+        # Plumbing (explicit)
+        "plumber", "plumbing", "toilet", "tap", "drain", "pipe", "leak", "water heater", "hot water system",
+        # HVAC (explicit repair/install - but allow voltage drop mentions)
+        "air conditioning repair", "air con repair", "aircon repair", "ac repair", "heating repair",
+        "hvac repair", "ducted system", "split system install", "install air con", "install ac",
+        # Gas (explicit)
+        "gas plumber", "gas heater", "gas stove", "gas line", "gas fitting", "gas repair",
+        # Solar (explicit)
+        "solar panel", "solar installation", "solar power install", "solar system install",
         # Building/Construction
         "painting", "painter", "roofing", "roofer", "carpentry", "carpenter", "tiling", "tiler",
         "plastering", "plasterer", "concreting", "concrete", "fencing", "fence",
         # Gardening
         "gardening", "landscaping", "lawn", "mowing", "tree", "hedge",
-        # Security (not electrical)
-        "security camera", "security cameras", "cctv", "surveillance", "alarm system", "intercom",
+        # Security systems (NOT smoke/fire alarms - those are electrical)
+        "security camera", "security cameras", "cctv", "surveillance system", "alarm system install",
+        "intercom system",
         # Automotive
-        "car", "vehicle", "automotive",
-        # Appliances (repair, not installation)
+        "car repair", "vehicle repair", "automotive",
+        # Appliance repair (explicit)
         "washing machine repair", "fridge repair", "dishwasher repair", "oven repair",
     ]
     
-    # Check if query contains any wrong-service keyword/phrase
-    # If it does, reject IMMEDIATELY - do NOT check FAQs, do NOT proceed
+    # Check if query contains wrong-service keywords
     wrong_service_keywords_in_query = [
         kw for kw in WRONG_SERVICE_KEYWORDS 
         if kw.lower() in query_lower
     ]
     
-    if wrong_service_keywords_in_query:
+    # Reject ONLY if:
+    # 1. Query contains wrong-service keyword AND
+    # 2. Query does NOT have electrical intent signal AND
+    # 3. Query is not about switchboard (always allow switchboard - it's electrical)
+    if wrong_service_keywords_in_query and not has_electrical_intent and "switchboard" not in query_lower:
         trace["stage"] = "wrong_service_rejected"
         trace["wrong_service_keywords"] = wrong_service_keywords_in_query
         trace["total_ms"] = int((time.time() - start_time) * 1000)
