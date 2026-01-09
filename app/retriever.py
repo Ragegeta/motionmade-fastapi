@@ -1050,7 +1050,14 @@ def retrieve(
         "rerank_trace": None,
         "final_score": 0,
         "cache_hit": False,
-        "total_ms": 0
+        "total_ms": 0,
+        # Fine-grained timing breakdowns
+        "retrieval_db_ms": 0,
+        "retrieval_db_fts_ms": 0,
+        "retrieval_db_vector_ms": 0,
+        "retrieval_rerank_ms": 0,
+        "retrieval_cache_ms": 0,
+        "retrieval_total_ms": 0
     }
     
     start_time = time.time()
@@ -1113,9 +1120,13 @@ def retrieve(
     # NOW SAFE TO PROCEED WITH NORMAL RETRIEVAL
     # ============================================================================
     
+    retrieval_start_time = time.time()  # Start of actual retrieval (after early checks)
+    
     # Stage 0: Check cache (only after early rejection checks)
+    cache_start_time = time.time()
     if use_cache:
         cached = get_cached_result(tenant_id, normalized_query)
+        trace["retrieval_cache_ms"] += int((time.time() - cache_start_time) * 1000)
         if cached:
             # Double-check cached result isn't a wrong-service hit (defensive)
             # This shouldn't happen if cache was cleared, but be safe
@@ -1129,6 +1140,7 @@ def retrieve(
                 trace["stage"] = "cache"
                 # Set candidate_count from cache if available, otherwise set to 1 (assume valid cached result)
                 trace["candidates_count"] = cached.get("candidates_count", 1)
+                trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
                 trace["total_ms"] = int((time.time() - start_time) * 1000)
                 return cached, trace
             # If cache contains wrong-service, ignore it and continue
@@ -1136,7 +1148,11 @@ def retrieve(
     # Stage 1: Get candidates - FTS PRIMARY, embeddings SECONDARY
     
     # 1a: FTS search (primary - finds keyword matches)
+    fts_start_time = time.time()
     fts_candidates = search_fts(tenant_id, normalized_query, limit=20)
+    fts_db_ms = int((time.time() - fts_start_time) * 1000)
+    trace["retrieval_db_fts_ms"] = fts_db_ms
+    trace["retrieval_db_ms"] += fts_db_ms
     trace["fts_count"] = len(fts_candidates)
     if fts_candidates:
         trace["top_fts_score"] = round(fts_candidates[0].get("fts_score", 0), 4)
@@ -1146,9 +1162,13 @@ def retrieve(
     from app.openai_client import embed_text
     
     vector_candidates = []
+    vector_start_time = time.time()
     query_embedding = embed_text(normalized_query)
     if query_embedding is not None:
         vector_candidates = get_top_candidates(tenant_id, query_embedding, limit=20)
+        vector_db_ms = int((time.time() - vector_start_time) * 1000)
+        trace["retrieval_db_vector_ms"] = vector_db_ms
+        trace["retrieval_db_ms"] += vector_db_ms
         trace["vector_count"] = len(vector_candidates)
         if vector_candidates:
             trace["top_vector_score"] = round(vector_candidates[0].get("score", 0), 4)
@@ -1167,7 +1187,11 @@ def retrieve(
         if has_pricing_intent and query_embedding is not None:
             # Try searching with "price" keyword explicitly
             price_query = normalized_query + " price"
+            fts_price_start_time = time.time()
             fts_price_candidates = search_fts(tenant_id, price_query, limit=20)
+            fts_price_db_ms = int((time.time() - fts_price_start_time) * 1000)
+            trace["retrieval_db_fts_ms"] += fts_price_db_ms
+            trace["retrieval_db_ms"] += fts_price_db_ms
             if fts_price_candidates:
                 candidates = fts_price_candidates
                 trace["fts_count"] = len(candidates)
@@ -1184,6 +1208,7 @@ def retrieve(
         if len(query_tokens) <= 3:
             trace["stage"] = "clarify"  # Very short query with no candidates -> clarify
         
+        trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
     
@@ -1212,7 +1237,13 @@ def retrieve(
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         
         if use_cache:
+            cache_write_start = time.time()
             set_cached_result(tenant_id, normalized_query, result)
+            trace["retrieval_cache_ms"] += int((time.time() - cache_write_start) * 1000)
+        
+        # Calculate total retrieval time (from start of retrieval, excluding early checks)
+        trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
+        trace["total_ms"] = int((time.time() - start_time) * 1000)
         
         return result, trace
     
@@ -1224,6 +1255,7 @@ def retrieve(
     rerank_trace = {}
     use_llm_selector = False
     
+    rerank_start_time = time.time()
     # Try cross-encoder first
     try:
         from app.cross_encoder import rerank as cross_encoder_rerank, should_accept, ENABLE_CROSS_ENCODER
@@ -1266,11 +1298,14 @@ def retrieve(
             rerank_trace["llm_selector_error"] = str(e)[:100]
             reranked = []
     
+    trace["retrieval_rerank_ms"] = int((time.time() - rerank_start_time) * 1000)
+    
     trace["rerank_trace"] = rerank_trace
     
     if not reranked:
         trace["stage"] = "rerank_no_result"
         trace["candidates_count"] = len(candidates)  # Ensure candidate_count is set even on miss
+        trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
     
@@ -1301,6 +1336,7 @@ def retrieve(
     if not accept:
         trace["stage"] = f"rejected_{accept_reason}"
         trace["candidates_count"] = len(candidates)  # Ensure candidate_count is set even on rejection
+        trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
     
@@ -1308,6 +1344,7 @@ def retrieve(
     if len(candidates) == 0:
         trace["stage"] = "no_candidates"
         trace["candidates_count"] = 0
+        trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
     
@@ -1322,10 +1359,13 @@ def retrieve(
         "stage": "rerank",
         "rerank_score": top_rerank_score
     }
+    trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
     trace["total_ms"] = int((time.time() - start_time) * 1000)
     
     if use_cache:
+        cache_write_start = time.time()
         set_cached_result(tenant_id, normalized_query, result)
+        trace["retrieval_cache_ms"] += int((time.time() - cache_write_start) * 1000)
     
     return result, trace
 

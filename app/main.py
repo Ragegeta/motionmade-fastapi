@@ -336,6 +336,18 @@ def _set_timing_headers(req: Request, resp: Response, timings: dict, cache_hit: 
     resp.headers["X-Timing-Normalize"] = str(timings["normalize_split_ms"])
     resp.headers["X-Timing-Embed"] = str(timings["embedding_ms"])
     resp.headers["X-Timing-Retrieval"] = str(timings["retrieval_ms"])
+    
+    # Fine-grained retrieval timing headers (from retrieval_trace if available)
+    retrieval_trace = getattr(resp, "_retrieval_trace", None)
+    if retrieval_trace:
+        if retrieval_trace.get("retrieval_db_ms") is not None:
+            resp.headers["X-Timing-Retrieval-DB"] = str(retrieval_trace["retrieval_db_ms"])
+        if retrieval_trace.get("retrieval_db_fts_ms") is not None:
+            resp.headers["X-Timing-Retrieval-FTS"] = str(retrieval_trace["retrieval_db_fts_ms"])
+        if retrieval_trace.get("retrieval_db_vector_ms") is not None:
+            resp.headers["X-Timing-Retrieval-Vector"] = str(retrieval_trace["retrieval_db_vector_ms"])
+        if retrieval_trace.get("retrieval_rerank_ms") is not None:
+            resp.headers["X-Timing-Retrieval-Rerank"] = str(retrieval_trace["retrieval_rerank_ms"])
     resp.headers["X-Timing-Rewrite"] = str(timings["rewrite_ms"])
     resp.headers["X-Timing-LLM"] = str(timings["llm_ms"])
     resp.headers["X-Timing-Total"] = str(timings["total_ms"])
