@@ -3468,6 +3468,243 @@ async def explain_vector_query(
             return {"error": "Failed to get EXPLAIN plan"}
 
 
+@app.get("/admin/api/tenant/{tenantId}/fts-diagnostics")
+def fts_diagnostics(
+    tenantId: str,
+    query: str,
+    authorization: str = Header(default="")
+):
+    """
+    Admin-only endpoint to diagnose FTS readiness for a tenant.
+    Reports FTS statistics and runs the exact FTS query path.
+    """
+    _check_admin_auth(authorization)
+    
+    from app.retriever import expand_query_synonyms
+    
+    try:
+        with get_conn() as conn:
+            # 1. Get FAQ items count (enabled, non-staged)
+            faq_items_count = conn.execute("""
+                SELECT COUNT(*) 
+                FROM faq_items 
+                WHERE tenant_id = %s 
+                  AND enabled = true 
+                  AND (is_staged = false OR is_staged IS NULL)
+            """, (tenantId,)).fetchone()[0]
+            
+            # 2. Get FAQ items with search_vector count
+            faq_items_with_search_vector_count = conn.execute("""
+                SELECT COUNT(*) 
+                FROM faq_items 
+                WHERE tenant_id = %s 
+                  AND enabled = true 
+                  AND (is_staged = false OR is_staged IS NULL)
+                  AND search_vector IS NOT NULL 
+                  AND search_vector::text != ''
+            """, (tenantId,)).fetchone()[0]
+            
+            # 3. Get sample search_vector rows (up to 3)
+            sample_rows = conn.execute("""
+                SELECT id, question 
+                FROM faq_items 
+                WHERE tenant_id = %s 
+                  AND enabled = true 
+                  AND (is_staged = false OR is_staged IS NULL)
+                  AND search_vector IS NOT NULL 
+                  AND search_vector::text != ''
+                LIMIT 3
+            """, (tenantId,)).fetchall()
+            
+            sample_search_vector_rows = [
+                {"id": int(row[0]), "question": str(row[1])}
+                for row in sample_rows
+            ]
+            
+            # 4. Build the exact same query as search_fts
+            # Pricing intent fallback
+            query_lower = query.lower().strip()
+            pricing_patterns = [
+                "how much", "how much do you charge", "how much do you", "how much does",
+                "cost", "price", "prices", "rates", "rate", "call out", "callout", "call-out",
+                "quote", "quotes", "pricing", "charge", "charges", "fee", "fees", "what do you charge"
+            ]
+            has_pricing_intent = any(pattern in query_lower for pattern in pricing_patterns)
+            
+            if has_pricing_intent:
+                if "price" not in query_lower and "pricing" not in query_lower:
+                    query = query + " price"
+            
+            # Expand query with synonyms
+            expanded_query = expand_query_synonyms(query)
+            
+            # 5. Build tsquery strings (exact same as search_fts)
+            # Try websearch first
+            try:
+                websearch_tsquery = conn.execute("""
+                    SELECT websearch_to_tsquery('english', %s)::text
+                """, (expanded_query,)).fetchone()[0]
+            except:
+                websearch_tsquery = None
+            
+            # Try plainto_tsquery as fallback
+            try:
+                plainto_tsquery_str = conn.execute("""
+                    SELECT plainto_tsquery('english', %s)::text
+                """, (expanded_query,)).fetchone()[0]
+            except:
+                plainto_tsquery_str = None
+            
+            # Use websearch if available, otherwise plainto
+            fts_query_string_used = websearch_tsquery if websearch_tsquery else plainto_tsquery_str
+            
+            # 6. Count FTS matches using exact same WHERE filters and query
+            fts_matches_count = 0
+            fts_top_matches = []
+            
+            if fts_query_string_used:
+                # Try websearch first (same as search_fts)
+                if websearch_tsquery:
+                    try:
+                        count_rows = conn.execute("""
+                            SELECT COUNT(*) 
+                            FROM faq_items fi
+                            WHERE fi.tenant_id = %s
+                              AND fi.enabled = true
+                              AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                              AND fi.search_vector @@ websearch_to_tsquery('english', %s)
+                        """, (tenantId, expanded_query)).fetchone()
+                        fts_matches_count = count_rows[0] if count_rows else 0
+                        
+                        # Get top 5 matches with rank
+                        top_rows = conn.execute("""
+                            SELECT 
+                                fi.id,
+                                fi.question,
+                                ts_rank(fi.search_vector, websearch_to_tsquery('english', %s)) AS fts_score
+                            FROM faq_items fi
+                            WHERE fi.tenant_id = %s
+                              AND fi.enabled = true
+                              AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                              AND fi.search_vector @@ websearch_to_tsquery('english', %s)
+                            ORDER BY fts_score DESC
+                            LIMIT 5
+                        """, (expanded_query, tenantId, expanded_query)).fetchall()
+                        
+                        fts_top_matches = [
+                            {
+                                "id": int(row[0]),
+                                "question": str(row[1]),
+                                "rank_score": float(row[2])
+                            }
+                            for row in top_rows
+                        ]
+                    except Exception as e:
+                        # If websearch fails, try plainto
+                        pass
+                
+                # If websearch didn't work or returned 0, try plainto_tsquery
+                if fts_matches_count == 0 and plainto_tsquery_str:
+                    try:
+                        count_rows = conn.execute("""
+                            SELECT COUNT(*) 
+                            FROM faq_items fi
+                            WHERE fi.tenant_id = %s
+                              AND fi.enabled = true
+                              AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                              AND fi.search_vector @@ plainto_tsquery('english', %s)
+                        """, (tenantId, expanded_query)).fetchone()
+                        fts_matches_count = count_rows[0] if count_rows else 0
+                        
+                        # Get top 5 matches with rank
+                        top_rows = conn.execute("""
+                            SELECT 
+                                fi.id,
+                                fi.question,
+                                ts_rank(fi.search_vector, plainto_tsquery('english', %s)) AS fts_score
+                            FROM faq_items fi
+                            WHERE fi.tenant_id = %s
+                              AND fi.enabled = true
+                              AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                              AND fi.search_vector @@ plainto_tsquery('english', %s)
+                            ORDER BY fts_score DESC
+                            LIMIT 5
+                        """, (expanded_query, tenantId, expanded_query)).fetchall()
+                        
+                        fts_top_matches = [
+                            {
+                                "id": int(row[0]),
+                                "question": str(row[1]),
+                                "rank_score": float(row[2])
+                            }
+                            for row in top_rows
+                        ]
+                    except Exception as e:
+                        pass
+            
+            # 7. Generate notes
+            notes = ""
+            if faq_items_with_search_vector_count == 0:
+                notes = "search_vector not built; need rebuild/backfill"
+            elif faq_items_with_search_vector_count < faq_items_count:
+                notes = f"Only {faq_items_with_search_vector_count}/{faq_items_count} items have search_vector; consider rebuild"
+            elif fts_matches_count == 0:
+                notes = f"FTS query returned 0 matches (query: '{query}', expanded: '{expanded_query}')"
+            else:
+                notes = "FTS appears healthy"
+            
+            return {
+                "tenant_id": tenantId,
+                "faq_items_count": faq_items_count,
+                "faq_items_with_search_vector_count": faq_items_with_search_vector_count,
+                "sample_search_vector_rows": sample_search_vector_rows,
+                "fts_query_string_used": fts_query_string_used,
+                "fts_matches_count": fts_matches_count,
+                "fts_top_matches": fts_top_matches,
+                "notes": notes
+            }
+            
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"FTS diagnostics failed: {str(e)}")
+
+
+@app.post("/admin/api/tenant/{tenantId}/fts-rebuild")
+def fts_rebuild(
+    tenantId: str,
+    authorization: str = Header(default="")
+):
+    """
+    Admin-only endpoint to rebuild/backfill search_vector for all enabled, non-staged FAQs.
+    """
+    _check_admin_auth(authorization)
+    
+    try:
+        with get_conn() as conn:
+            # Update search_vector for all enabled, non-staged FAQs
+            result = conn.execute("""
+                UPDATE faq_items 
+                SET search_vector = to_tsvector('english', COALESCE(question,'') || ' ' || COALESCE(answer,'')) 
+                WHERE tenant_id = %s 
+                  AND enabled = true 
+                  AND (is_staged = false OR is_staged IS NULL)
+            """, (tenantId,))
+            
+            updated_count = result.rowcount
+            conn.commit()
+            
+            return {
+                "tenant_id": tenantId,
+                "updated_rowcount": updated_count
+            }
+            
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"FTS rebuild failed: {str(e)}")
+
+
 @app.post("/admin/api/tenant/{tenantId}/debug-query")
 async def debug_query(
     tenantId: str,
