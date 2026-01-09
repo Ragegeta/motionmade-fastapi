@@ -720,32 +720,57 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
 
     # -----------------------------
     # Check cache first (only for FAQ hits)
+    # But first check for wrong-service keywords to avoid returning cached wrong-service hits
     # -----------------------------
-    cached_result = get_cached_result(tenant_id, primary_query)
+    # Quick wrong-service check before cache (import WRONG_SERVICE_KEYWORDS from retriever)
+    from app.retriever import WRONG_SERVICE_KEYWORDS
+    query_lower = primary_query.lower()
+    wrong_service_keywords_in_query = [
+        kw for kw in WRONG_SERVICE_KEYWORDS 
+        if kw.lower() in query_lower
+    ]
+    # Skip cache if wrong-service keywords detected (let retriever handle it properly)
+    skip_cache_for_wrong_service = len(wrong_service_keywords_in_query) > 0
+    
+    cached_result = None
+    if not skip_cache_for_wrong_service:
+        cached_result = get_cached_result(tenant_id, primary_query)
+    
     if cached_result:
         _cache_hit = True
         resp.headers["X-Cache-Hit"] = "true"
         resp.headers["X-Debug-Branch"] = cached_result.get("debug_branch", "fact_hit")
-        resp.headers["X-Faq-Hit"] = "true"
-        resp.headers["X-Retrieval-Score"] = str(cached_result.get("retrieval_score", ""))
-        if cached_result.get("top_faq_id"):
-            resp.headers["X-Top-Faq-Id"] = str(cached_result["top_faq_id"])
-        payload["replyText"] = cached_result["replyText"]
-        timings["total_ms"] = int((time.time() - _start_time) * 1000)
-        _set_timing_headers(request, resp, timings, _cache_hit)
-        _log_telemetry(
-            tenant_id=tenant_id,
-            query_text=msg,
-            normalized_text=normalized_msg,
-            intent_count=int(resp.headers.get("X-Intent-Count", "1")),
-            debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
-            faq_hit=True,
-            top_faq_id=cached_result.get("top_faq_id"),
-            retrieval_score=cached_result.get("retrieval_score"),
-            rewrite_triggered=False,
-            latency_ms=timings["total_ms"]
-        )
-        return payload
+        
+        # HARD RULE: Never allow faq_hit=true when candidate_count==0
+        # Default to 0 (not 1) to be safe - old cached results without candidate_count should be rejected
+        cached_candidate_count = cached_result.get("candidates_count", 0)
+        if cached_candidate_count == 0:
+            resp.headers["X-Faq-Hit"] = "false"
+            resp.headers["X-Candidate-Count"] = "0"
+            # Don't return cached result if candidate_count is 0
+            cached_result = None
+        else:
+            resp.headers["X-Faq-Hit"] = "true"
+            resp.headers["X-Retrieval-Score"] = str(cached_result.get("retrieval_score", ""))
+            if cached_result.get("top_faq_id"):
+                resp.headers["X-Top-Faq-Id"] = str(cached_result["top_faq_id"])
+            payload["replyText"] = cached_result["replyText"]
+            resp.headers["X-Candidate-Count"] = str(cached_candidate_count)
+            timings["total_ms"] = int((time.time() - _start_time) * 1000)
+            _set_timing_headers(request, resp, timings, _cache_hit)
+            _log_telemetry(
+                tenant_id=tenant_id,
+                query_text=msg,
+                normalized_text=normalized_msg,
+                intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+                debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+                faq_hit=True,
+                top_faq_id=cached_result.get("top_faq_id"),
+                retrieval_score=cached_result.get("retrieval_score"),
+                rewrite_triggered=False,
+                latency_ms=timings["total_ms"]
+            )
+            return payload
 
     # -----------------------------
     # Two-Stage Retrieval (ALWAYS runs)
@@ -805,6 +830,20 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         faq_id = retrieval_result["faq_id"] if retrieval_result else None
         score = retrieval_result["score"] if retrieval_result else retrieval_trace.get("top_score", 0)
         chosen_faq_id = retrieval_trace.get("chosen_faq_id") or faq_id
+        
+        # HARD RULE: Never allow faq_hit=true when candidate_count==0
+        candidate_count = retrieval_trace.get("candidates_count", 0)
+        # Also check merged_count as fallback (in case candidates_count isn't set)
+        merged_count = retrieval_trace.get("merged_count", 0)
+        actual_candidate_count = candidate_count if candidate_count > 0 else merged_count
+        
+        if actual_candidate_count == 0:
+            hit = False
+            retrieval_result = None
+            ans = None
+            faq_id = None
+            # Update trace to reflect this
+            retrieval_trace["candidates_count"] = 0
         
         if faq_id is not None:
             resp.headers["X-Top-Faq-Id"] = str(faq_id)

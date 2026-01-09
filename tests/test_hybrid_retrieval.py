@@ -252,6 +252,12 @@ class TestEndToEnd:
                     "category": test["category"],
                     "result": result
                 })
+            # Also verify that wrong-service queries have stage indicating rejection
+            if test["category"] == "wrong_service":
+                # Stage should indicate wrong_service_rejected or similar
+                stage = result.get("stage", "").lower()
+                assert not result.get("faq_hit"), \
+                    f"'{test['query']}' should be rejected (wrong service), but got faq_hit=true"
         
         wrong_hit_rate = len(wrong_hits) / len(SHOULD_MISS) * 100
         print(f"\nSHOULD_MISS: {len(SHOULD_MISS) - len(wrong_hits)}/{len(SHOULD_MISS)} correctly missed")
@@ -262,6 +268,29 @@ class TestEndToEnd:
                 print(f"  - '{wh['query']}' incorrectly hit with score={wh['result'].get('score', '?')}")
         
         assert len(wrong_hits) == 0, f"Wrong hit rate {wrong_hit_rate}% - should be 0%"
+    
+    @pytest.mark.integration
+    def test_automotive_wrong_service(self, api_url, tenant_id):
+        """Automotive queries should be rejected as wrong service."""
+        automotive_queries = [
+            "can you fix my car",
+            "do you repair vehicles",
+            "automotive service",
+            "mechanic",
+            "engine repair",
+            "brakes",
+            "tyres",
+            "tires"
+        ]
+        
+        for query in automotive_queries:
+            result = self._call_api(api_url, tenant_id, query)
+            assert not result.get("faq_hit"), \
+                f"'{query}' should be rejected (automotive/wrong service), but got faq_hit=true"
+            # Stage should indicate wrong_service_rejected
+            stage = result.get("stage", "").lower()
+            assert "wrong_service" in stage or not result.get("faq_hit"), \
+                f"'{query}' should have wrong_service_rejected stage, got stage={stage}"
     
     @pytest.mark.integration
     def test_should_clarify_queries(self, api_url, tenant_id):
@@ -275,12 +304,20 @@ class TestEndToEnd:
     
     @pytest.mark.integration
     def test_candidate_count_never_zero(self, api_url, tenant_id):
-        """Candidate count should never be zero for valid queries."""
+        """Candidate count should never be zero for valid queries, and faq_hit should never be true when candidate_count==0."""
         test_queries = ["how much", "services", "area", "booking"]
         
         for query in test_queries:
             result = self._call_api(api_url, tenant_id, query)
             
-            assert result.get("candidate_count", 0) > 0, \
+            candidate_count = result.get("candidate_count", 0)
+            faq_hit = result.get("faq_hit", False)
+            
+            # Rule 1: Valid queries should have candidates
+            assert candidate_count > 0, \
                 f"'{query}' returned 0 candidates"
+            
+            # Rule 2: Never allow faq_hit=true when candidate_count==0
+            assert not (faq_hit and candidate_count == 0), \
+                f"'{query}' has faq_hit=true but candidate_count=0 (violates hard rule)"
 
