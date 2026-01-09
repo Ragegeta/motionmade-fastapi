@@ -285,17 +285,63 @@ def _hash_text(text: str) -> str:
     return hashlib.sha256(text.encode('utf-8')).hexdigest()[:16]
 
 
-def _set_timing_headers(resp: Response, timings: dict, cache_hit: bool):
-    """Set timing headers (only in DEBUG mode)."""
-    if settings.DEBUG:
-        resp.headers["X-Timing-Triage"] = str(timings["triage_ms"])
-        resp.headers["X-Timing-NormalizeSplit"] = str(timings["normalize_split_ms"])
-        resp.headers["X-Timing-Embedding"] = str(timings["embedding_ms"])
-        resp.headers["X-Timing-Retrieval"] = str(timings["retrieval_ms"])
-        resp.headers["X-Timing-Rewrite"] = str(timings["rewrite_ms"])
-        resp.headers["X-Timing-LLM"] = str(timings["llm_ms"])
-        resp.headers["X-Timing-Total"] = str(timings["total_ms"])
-        resp.headers["X-Cache-Hit"] = "true" if cache_hit else "false"
+def _set_timing_headers(req: Request, resp: Response, timings: dict, cache_hit: bool):
+    """Set timing headers if admin-gated debug mode is enabled.
+    
+    Requires:
+    - X-Debug-Timings: 1 header in request
+    - Valid admin auth (Bearer ADMIN_TOKEN)
+    
+    Otherwise, no timing headers are emitted. Always sets X-Debug-Timing-Gate
+    header to indicate why timing headers weren't emitted (for debugging).
+    """
+    # Check for X-Debug-Timings header (case-insensitive)
+    # FastAPI/Starlette headers are case-insensitive, try both common forms
+    debug_timings = req.headers.get("x-debug-timings") or req.headers.get("X-Debug-Timings") or ""
+    debug_timings = debug_timings.strip()
+    if not debug_timings or debug_timings != "1":
+        # Missing header - don't emit timing headers or gate header
+        # (only emit gate header when X-Debug-Timings is present)
+        return
+    
+    # Parse Authorization header robustly (case-insensitive Bearer, handle spaces)
+    # FastAPI/Starlette headers are case-insensitive, try both common forms
+    authorization_raw = req.headers.get("authorization") or req.headers.get("Authorization") or ""
+    authorization_raw = authorization_raw.strip()
+    if not authorization_raw:
+        resp.headers["X-Debug-Timing-Gate"] = "missing_auth"
+        return
+    
+    # Extract Bearer token (case-insensitive)
+    auth_parts = authorization_raw.split(None, 1)  # Split on whitespace, max 1 split
+    if len(auth_parts) != 2:
+        resp.headers["X-Debug-Timing-Gate"] = "bad_auth"
+        return
+    
+    auth_scheme = auth_parts[0].strip().lower()
+    auth_token = auth_parts[1].strip()
+    
+    if auth_scheme != "bearer":
+        resp.headers["X-Debug-Timing-Gate"] = "bad_auth"
+        return
+    
+    # Compare token with ADMIN_TOKEN (exact match after stripping)
+    if auth_token != settings.ADMIN_TOKEN:
+        resp.headers["X-Debug-Timing-Gate"] = "bad_auth"
+        return
+    
+    # Both conditions met: emit timing headers
+    resp.headers["X-Debug-Timing-Gate"] = "ok"
+    resp.headers["X-Timing-Triage"] = str(timings["triage_ms"])
+    resp.headers["X-Timing-Normalize"] = str(timings["normalize_split_ms"])
+    resp.headers["X-Timing-Embed"] = str(timings["embedding_ms"])
+    resp.headers["X-Timing-Retrieval"] = str(timings["retrieval_ms"])
+    resp.headers["X-Timing-Rewrite"] = str(timings["rewrite_ms"])
+    resp.headers["X-Timing-LLM"] = str(timings["llm_ms"])
+    resp.headers["X-Timing-Total"] = str(timings["total_ms"])
+    resp.headers["X-Cache-Hit"] = "true" if cache_hit else "false"
+    
+    # X-Retrieval-Stage is already set by the endpoint if available
 
 
 def _log_telemetry(
@@ -610,7 +656,7 @@ def _should_fallback_after_miss(msg: str, domain: str) -> bool:
 
 
 @app.post("/api/v2/generate-quote-reply")
-def generate_quote_reply(req: QuoteRequest, resp: Response):
+def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
     _start_time = time.time()
     tenant_id = (req.tenantId or "").strip()
     msg = (req.customerMessage or "").strip()
@@ -639,7 +685,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         payload = _base_payload()
         payload["replyText"] = CLARIFY_RESPONSE
         timings["total_ms"] = int((time.time() - _start_time) * 1000)
-        _set_timing_headers(resp, timings, _cache_hit)
+        _set_timing_headers(request, resp, timings, _cache_hit)
         _log_telemetry(
             tenant_id=tenant_id,
             query_text=msg,
@@ -686,7 +732,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             resp.headers["X-Top-Faq-Id"] = str(cached_result["top_faq_id"])
         payload["replyText"] = cached_result["replyText"]
         timings["total_ms"] = int((time.time() - _start_time) * 1000)
-        _set_timing_headers(resp, timings, _cache_hit)
+        _set_timing_headers(request, resp, timings, _cache_hit)
         _log_telemetry(
             tenant_id=tenant_id,
             query_text=msg,
@@ -789,7 +835,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
             })
             
             timings["total_ms"] = int((time.time() - _start_time) * 1000)
-            _set_timing_headers(resp, timings, _cache_hit)
+            _set_timing_headers(request, resp, timings, _cache_hit)
             _log_telemetry(
                 tenant_id=tenant_id,
                 query_text=msg,
@@ -873,7 +919,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
                 })
                 
                 timings["total_ms"] = int((time.time() - _start_time) * 1000)
-                _set_timing_headers(resp, timings, _cache_hit)
+                _set_timing_headers(request, resp, timings, _cache_hit)
                 _log_telemetry(
                     tenant_id=tenant_id,
                     query_text=msg,
@@ -894,7 +940,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
         timings["total_ms"] = int((time.time() - _start_time) * 1000)
-        _set_timing_headers(resp, timings, _cache_hit)
+        _set_timing_headers(request, resp, timings, _cache_hit)
         _log_telemetry(
             tenant_id=tenant_id,
             query_text=msg,
@@ -917,7 +963,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
         timings["total_ms"] = int((time.time() - _start_time) * 1000)
-        _set_timing_headers(resp, timings, _cache_hit)
+        _set_timing_headers(request, resp, timings, _cache_hit)
         _log_telemetry(
             tenant_id=tenant_id,
             query_text=msg,
@@ -950,7 +996,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
         timings["total_ms"] = int((time.time() - _start_time) * 1000)
-        _set_timing_headers(resp, timings, _cache_hit)
+        _set_timing_headers(request, resp, timings, _cache_hit)
         _log_telemetry(
             tenant_id=tenant_id,
             query_text=msg,
@@ -970,7 +1016,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
         timings["total_ms"] = int((time.time() - _start_time) * 1000)
-        _set_timing_headers(resp, timings, _cache_hit)
+        _set_timing_headers(request, resp, timings, _cache_hit)
         _log_telemetry(
             tenant_id=tenant_id,
             query_text=msg,
@@ -989,7 +1035,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response):
     resp.headers["X-Faq-Hit"] = "false"
     payload["replyText"] = reply
     timings["total_ms"] = int((time.time() - _start_time) * 1000)
-    _set_timing_headers(resp, timings, _cache_hit)
+    _set_timing_headers(request, resp, timings, _cache_hit)
     _log_telemetry(
         tenant_id=tenant_id,
         query_text=msg,
