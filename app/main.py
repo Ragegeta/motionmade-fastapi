@@ -270,6 +270,61 @@ CREATE INDEX IF NOT EXISTS idx_faq_items_tenant_live
 ON faq_items(tenant_id) 
 WHERE is_staged = false AND enabled = true;
 
+-- Partitioned table for faq_variants (Phase 2: tenant partitioning for ANN index performance)
+-- Parent table with LIST partitioning by tenant_id
+CREATE TABLE IF NOT EXISTS faq_variants_p (
+  id BIGSERIAL,
+  tenant_id TEXT NOT NULL,
+  faq_id BIGINT NOT NULL REFERENCES faq_items(id) ON DELETE CASCADE,
+  variant_question TEXT NOT NULL,
+  variant_embedding vector(1536) NOT NULL,
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  PRIMARY KEY (tenant_id, id)
+) PARTITION BY LIST (tenant_id);
+
+-- Helper function to ensure partition exists for a tenant
+CREATE OR REPLACE FUNCTION ensure_faq_variants_partition(p_tenant_id TEXT)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_partition_name TEXT;
+    v_sanitized_tenant TEXT;
+BEGIN
+    -- Sanitize tenant_id for partition name (lowercase, alnum + underscore only)
+    v_sanitized_tenant := lower(regexp_replace(p_tenant_id, '[^a-z0-9_]', '_', 'g'));
+    v_partition_name := 'faq_variants_p_' || v_sanitized_tenant;
+    
+    -- Check if partition exists
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.relname = v_partition_name AND n.nspname = 'public'
+    ) THEN
+        -- Create partition
+        EXECUTE format('
+            CREATE TABLE IF NOT EXISTS %I PARTITION OF faq_variants_p
+            FOR VALUES IN (%L)
+        ', v_partition_name, p_tenant_id);
+        
+        -- Create ivfflat index on this partition
+        EXECUTE format('
+            CREATE INDEX IF NOT EXISTS %I
+            ON %I USING ivfflat (variant_embedding vector_cosine_ops)
+            WITH (lists = 100)
+            WHERE enabled = true
+        ', v_partition_name || '_embedding_idx', v_partition_name);
+        
+        -- Create supporting indexes
+        EXECUTE format('
+            CREATE INDEX IF NOT EXISTS %I
+            ON %I (faq_id)
+        ', v_partition_name || '_faq_id_idx', v_partition_name);
+    END IF;
+END;
+$$;
+
 CREATE TABLE IF NOT EXISTS telemetry (
   id BIGSERIAL PRIMARY KEY,
   tenant_id TEXT NOT NULL,
@@ -647,12 +702,22 @@ def put_faqs(
                     seen.add(key)
                     variants.append(vv)
 
+                # Ensure partition exists
+                conn.execute("SELECT ensure_faq_variants_partition(%s)", (tenantId,))
+                
                 for vq in variants:
                     v_emb = embed_text(vq)
+                    # Insert into old table
                     conn.execute(
                         "INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled) "
                         "VALUES (%s,%s,%s,true)",
                         (faq_id, vq, Vector(v_emb)),
+                    )
+                    # Insert into partitioned table
+                    conn.execute(
+                        "INSERT INTO faq_variants_p (tenant_id, faq_id, variant_question, variant_embedding, enabled) "
+                        "VALUES (%s,%s,%s,%s,true)",
+                        (tenantId, faq_id, vq, Vector(v_emb)),
                     )
 
                 count += 1
@@ -2019,6 +2084,10 @@ def promote_staged(
         stage = "promote_and_embed"
         stage_start = time.time()
         with get_conn() as conn:
+            # Ensure partition exists for this tenant
+            conn.execute("SELECT ensure_faq_variants_partition(%s)", (tenantId,))
+            conn.commit()
+            
             # NOW promote staged to live (no conflicts possible)
             conn.execute("""
                 UPDATE faq_items SET is_staged=false WHERE tenant_id=%s AND is_staged=true
@@ -2058,8 +2127,9 @@ def promote_staged(
                 # Always include question itself, plus variants
                 all_variants = [q] + [v for v in variants if v and v.lower() != q.lower()]
                 
-                # Delete old variants
+                # Delete old variants from both tables
                 conn.execute("DELETE FROM faq_variants WHERE faq_id=%s", (faq_id,))
+                conn.execute("DELETE FROM faq_variants_p WHERE faq_id=%s AND tenant_id=%s", (faq_id, tenantId))
                 
                 # Embed all variants (limit to 50 per FAQ)
                 embedded_count = 0
@@ -2070,10 +2140,16 @@ def promote_staged(
                     
                     try:
                         v_emb = embed_text(variant)
+                        # Insert into old table (for backward compatibility during migration)
                         conn.execute("""
                             INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled)
                             VALUES (%s, %s, %s, true)
                         """, (faq_id, variant, Vector(v_emb)))
+                        # Insert into partitioned table (primary)
+                        conn.execute("""
+                            INSERT INTO faq_variants_p (tenant_id, faq_id, variant_question, variant_embedding, enabled)
+                            VALUES (%s, %s, %s, %s, true)
+                        """, (tenantId, faq_id, variant, Vector(v_emb)))
                         embedded_count += 1
                     except Exception as e:
                         print(f"Embed error for '{variant[:30]}': {e}")
@@ -2217,6 +2293,9 @@ def promote_staged(
                     DELETE FROM faq_variants 
                     WHERE faq_id IN (SELECT id FROM faq_items WHERE tenant_id=%s)
                 """, (tenantId,))
+                conn.execute("""
+                    DELETE FROM faq_variants_p WHERE tenant_id=%s
+                """, (tenantId,))
                 
                 # Restore last_good FAQs
                 last_good_rows = conn.execute("""
@@ -2233,10 +2312,16 @@ def promote_staged(
                     
                     # Recreate variants (simplified - just question as variant)
                     q_emb = embed_text(q)
+                    # Insert into old table
                     conn.execute("""
                         INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled)
                         VALUES (%s, %s, %s, true)
                     """, (faq_id, q, Vector(q_emb)))
+                    # Insert into partitioned table
+                    conn.execute("""
+                        INSERT INTO faq_variants_p (tenant_id, faq_id, variant_question, variant_embedding, enabled)
+                        VALUES (%s, %s, %s, %s, true)
+                    """, (tenantId, faq_id, q, Vector(q_emb)))
                 
                 # Log failure
                 conn.execute("""
@@ -2329,12 +2414,17 @@ def rollback_tenant(
             if last_good_count == 0:
                 raise HTTPException(status_code=400, detail="No last_good FAQs to rollback to")
             
+            # Ensure partition exists
+            conn.execute("SELECT ensure_faq_variants_partition(%s)", (tenantId,))
+            conn.commit()
+            
             # Delete current live FAQs
             conn.execute("DELETE FROM faq_items WHERE tenant_id=%s AND is_staged=false", (tenantId,))
             conn.execute("""
                 DELETE FROM faq_variants 
                 WHERE faq_id IN (SELECT id FROM faq_items WHERE tenant_id=%s)
             """, (tenantId,))
+            conn.execute("DELETE FROM faq_variants_p WHERE tenant_id=%s", (tenantId,))
             
             # Restore last_good to live
             last_good_rows = conn.execute("""
@@ -2351,10 +2441,16 @@ def rollback_tenant(
                 
                 # Recreate variants
                 q_emb = embed_text(q)
+                # Insert into old table
                 conn.execute("""
                     INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled)
                     VALUES (%s, %s, %s, true)
                 """, (faq_id, q, Vector(q_emb)))
+                # Insert into partitioned table
+                conn.execute("""
+                    INSERT INTO faq_variants_p (tenant_id, faq_id, variant_question, variant_embedding, enabled)
+                    VALUES (%s, %s, %s, %s, true)
+                """, (tenantId, faq_id, q, Vector(q_emb)))
             
             conn.commit()
         
@@ -2759,6 +2855,102 @@ async def analyze_tables(
     }
 
 
+@app.post("/admin/api/db/migrate_faq_variants_to_partitioned")
+async def migrate_faq_variants_to_partitioned(
+    authorization: str = Header(default="")
+):
+    """
+    Admin-only endpoint to migrate faq_variants to partitioned table faq_variants_p.
+    Creates partitions for all distinct tenant_ids and copies data.
+    """
+    _check_admin_auth(authorization)
+    
+    results = {
+        "migration_status": "in_progress",
+        "tenants_processed": [],
+        "total_rows_copied": 0,
+        "errors": []
+    }
+    
+    try:
+        with get_conn() as conn:
+            # Get all distinct tenant_ids from faq_variants via faq_items
+            tenant_rows = conn.execute("""
+                SELECT DISTINCT fi.tenant_id
+                FROM faq_variants fv
+                JOIN faq_items fi ON fi.id = fv.faq_id
+                ORDER BY fi.tenant_id
+            """).fetchall()
+            
+            if not tenant_rows:
+                return {
+                    "migration_status": "completed",
+                    "message": "No data to migrate",
+                    "tenants_processed": [],
+                    "total_rows_copied": 0
+                }
+            
+            total_copied = 0
+            for tenant_row in tenant_rows:
+                tenant_id = tenant_row[0]
+                
+                try:
+                    # Ensure partition exists
+                    conn.execute("SELECT ensure_faq_variants_partition(%s)", (tenant_id,))
+                    conn.commit()
+                    
+                    # Count existing rows in old table for this tenant
+                    old_count = conn.execute("""
+                        SELECT COUNT(*)
+                        FROM faq_variants fv
+                        JOIN faq_items fi ON fi.id = fv.faq_id
+                        WHERE fi.tenant_id = %s
+                    """, (tenant_id,)).fetchone()[0]
+                    
+                    # Copy rows to partitioned table (with tenant_id)
+                    conn.execute("""
+                        INSERT INTO faq_variants_p (id, tenant_id, faq_id, variant_question, variant_embedding, enabled, updated_at)
+                        SELECT fv.id, fi.tenant_id, fv.faq_id, fv.variant_question, fv.variant_embedding, fv.enabled, fv.updated_at
+                        FROM faq_variants fv
+                        JOIN faq_items fi ON fi.id = fv.faq_id
+                        WHERE fi.tenant_id = %s
+                        ON CONFLICT (tenant_id, id) DO NOTHING
+                    """, (tenant_id,))
+                    conn.commit()
+                    
+                    # Verify count
+                    new_count = conn.execute("""
+                        SELECT COUNT(*) FROM faq_variants_p WHERE tenant_id = %s
+                    """, (tenant_id,)).fetchone()[0]
+                    
+                    total_copied += new_count
+                    results["tenants_processed"].append({
+                        "tenant_id": tenant_id,
+                        "old_count": old_count,
+                        "new_count": new_count,
+                        "status": "success"
+                    })
+                except Exception as e:
+                    results["errors"].append({
+                        "tenant_id": tenant_id,
+                        "error": str(e)
+                    })
+                    results["tenants_processed"].append({
+                        "tenant_id": tenant_id,
+                        "status": "error",
+                        "error": str(e)
+                    })
+            
+            results["migration_status"] = "completed"
+            results["total_rows_copied"] = total_copied
+            
+    except Exception as e:
+        results["migration_status"] = "failed"
+        results["error"] = str(e)
+    
+    return results
+
+
 @app.get("/admin/api/vector-indexes")
 def check_vector_indexes(
     authorization: str = Header(default="")
@@ -2766,6 +2958,7 @@ def check_vector_indexes(
     """
     Admin-only endpoint to check pgvector version and indexes on faq_variants/faq_items.
     Returns pgvector version and list of indexes with their types.
+    Also includes partition indexes for faq_variants_p.
     """
     _check_admin_auth(authorization)
     
@@ -2777,7 +2970,7 @@ def check_vector_indexes(
         except Exception:
             pgvector_version = "unknown"
         
-        # Get indexes on faq_variants and faq_items
+        # Get indexes on faq_variants, faq_items, and faq_variants_p partitions
         indexes = conn.execute("""
             SELECT 
                 schemaname,
@@ -2786,7 +2979,19 @@ def check_vector_indexes(
                 indexdef
             FROM pg_indexes 
             WHERE tablename IN ('faq_variants', 'faq_items')
+               OR tablename LIKE 'faq_variants_p_%'
             ORDER BY tablename, indexname
+        """).fetchall()
+        
+        # Get partition information
+        partitions = conn.execute("""
+            SELECT 
+                schemaname,
+                tablename,
+                tableowner
+            FROM pg_tables
+            WHERE tablename LIKE 'faq_variants_p_%'
+            ORDER BY tablename
         """).fetchall()
         
         index_list = []
@@ -2812,19 +3017,38 @@ def check_vector_indexes(
                 where_start = definition.upper().find("WHERE")
                 where_clause = definition[where_start:]
             
+            # Extract tenant_id from partition name if applicable
+            tenant_id = None
+            if table.startswith("faq_variants_p_"):
+                # Try to extract tenant_id from partition name
+                # Partition name format: faq_variants_p_<tenant_id>
+                tenant_id = table.replace("faq_variants_p_", "")
+            
             index_list.append({
                 "table": table,
                 "name": name,
                 "type": index_type,
                 "definition": definition,
                 "is_partial": where_clause is not None,
-                "where_clause": where_clause
+                "where_clause": where_clause,
+                "tenant_id": tenant_id,
+                "is_partition": table.startswith("faq_variants_p_")
             })
+        
+        partition_list = [
+            {
+                "name": row[1],
+                "tenant_id": row[1].replace("faq_variants_p_", "") if row[1].startswith("faq_variants_p_") else None
+            }
+            for row in partitions
+        ]
         
         return {
             "pgvector_version": pgvector_version,
             "indexes": index_list,
-            "total_indexes": len(index_list)
+            "total_indexes": len(index_list),
+            "partitions": partition_list,
+            "total_partitions": len(partition_list)
         }
 
 
@@ -2886,7 +3110,7 @@ async def explain_vector_query(
             except Exception:
                 pass
         
-        # Run EXPLAIN ANALYZE with explicit vector cast
+        # Run EXPLAIN ANALYZE on partitioned table query (same as production)
         plan_text = conn.execute("""
             EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
             WITH vector_candidates AS (
@@ -2895,8 +3119,9 @@ async def explain_vector_query(
                     fv.faq_id,
                     fv.variant_question,
                     (fv.variant_embedding <=> %s::vector) AS distance
-                FROM faq_variants fv
-                WHERE fv.enabled = true
+                FROM faq_variants_p fv
+                WHERE fv.tenant_id = %s
+                  AND fv.enabled = true
                 ORDER BY fv.variant_embedding <=> %s::vector
                 LIMIT %s
             )
@@ -2909,12 +3134,11 @@ async def explain_vector_query(
                 (1 - vc.distance) AS score
             FROM vector_candidates vc
             JOIN faq_items fi ON fi.id = vc.faq_id
-            WHERE fi.tenant_id = %s
-              AND fi.enabled = true
+            WHERE fi.enabled = true
               AND (fi.is_staged = false OR fi.is_staged IS NULL)
             ORDER BY vc.distance ASC
             LIMIT %s
-        """, (qv, qv, limit * 10, tenantId, limit)).fetchall()
+        """, (qv, tenantId, qv, limit * 3, limit)).fetchall()
         
         def analyze_plan(plan_lines):
             """Helper to analyze a plan and extract index usage info."""
@@ -2987,8 +3211,9 @@ async def explain_vector_query(
                                 fv.faq_id,
                                 fv.variant_question,
                                 (fv.variant_embedding <=> %s::vector) AS distance
-                            FROM faq_variants fv
-                            WHERE fv.enabled = true
+                            FROM faq_variants_p fv
+                            WHERE fv.tenant_id = %s
+                              AND fv.enabled = true
                             ORDER BY fv.variant_embedding <=> %s::vector
                             LIMIT %s
                         )
@@ -3001,12 +3226,11 @@ async def explain_vector_query(
                             (1 - vc.distance) AS score
                         FROM vector_candidates vc
                         JOIN faq_items fi ON fi.id = vc.faq_id
-                        WHERE fi.tenant_id = %s
-                          AND fi.enabled = true
+                        WHERE fi.enabled = true
                           AND (fi.is_staged = false OR fi.is_staged IS NULL)
                         ORDER BY vc.distance ASC
                         LIMIT %s
-                    """, (qv, qv, limit * 10, tenantId, limit)).fetchall()
+                    """, (qv, tenantId, qv, limit * 3, limit)).fetchall()
                     
                     if normal_plan_text:
                         normal_plan_lines = [row[0] for row in normal_plan_text]

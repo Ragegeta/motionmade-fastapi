@@ -430,9 +430,9 @@ def get_top_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[
             # Convert to Vector
             qv = Vector(query_embedding)
             
-            # ANN-first query: Use CTE to do vector search FIRST (enables index usage),
-            # then join to faq_items to filter by tenant_id and is_staged.
-            # We fetch more candidates (limit * 10) to account for tenant filtering.
+            # ANN-first query using partitioned table faq_variants_p.
+            # Filter by tenant_id FIRST to enable partition pruning, then do vector search on that partition.
+            # This makes the ivfflat index on the partition viable.
             # Explicit ::vector cast helps planner recognize index usage.
             rows = conn.execute("""
                 WITH vector_candidates AS (
@@ -441,8 +441,9 @@ def get_top_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[
                         fv.faq_id,
                         fv.variant_question,
                         (fv.variant_embedding <=> %s::vector) AS distance
-                    FROM faq_variants fv
-                    WHERE fv.enabled = true
+                    FROM faq_variants_p fv
+                    WHERE fv.tenant_id = %s
+                      AND fv.enabled = true
                     ORDER BY fv.variant_embedding <=> %s::vector
                     LIMIT %s
                 )
@@ -455,12 +456,11 @@ def get_top_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[
                     (1 - vc.distance) AS score
                 FROM vector_candidates vc
                 JOIN faq_items fi ON fi.id = vc.faq_id
-                WHERE fi.tenant_id = %s
-                  AND fi.enabled = true
+                WHERE fi.enabled = true
                   AND (fi.is_staged = false OR fi.is_staged IS NULL)
                 ORDER BY vc.distance ASC
                 LIMIT %s
-            """, (qv, qv, limit * 10, tenant_id, limit * 3)).fetchall()  # Get 10x for tenant filtering, then 3x for dedup
+            """, (qv, tenant_id, qv, limit * 3, limit * 3)).fetchall()  # Get 3x for dedup
         
         if not rows:
             return []
@@ -576,7 +576,8 @@ def retrieve_candidates_v2(
                 
                 qv = Vector(query_embedding)
                 
-                # ANN-first query structure for index usage
+                # ANN-first query using partitioned table faq_variants_p.
+                # Filter by tenant_id FIRST to enable partition pruning.
                 # Explicit ::vector cast helps planner recognize index usage.
                 rows = conn.execute("""
                     WITH vector_candidates AS (
@@ -585,8 +586,9 @@ def retrieve_candidates_v2(
                             fv.faq_id,
                             fv.variant_question,
                             (fv.variant_embedding <=> %s::vector) AS distance
-                        FROM faq_variants fv
-                        WHERE fv.enabled = true
+                        FROM faq_variants_p fv
+                        WHERE fv.tenant_id = %s
+                          AND fv.enabled = true
                         ORDER BY fv.variant_embedding <=> %s::vector
                         LIMIT %s
                     )
@@ -598,12 +600,11 @@ def retrieve_candidates_v2(
                         (1 - vc.distance) AS score
                     FROM vector_candidates vc
                     JOIN faq_items fi ON fi.id = vc.faq_id
-                    WHERE fi.tenant_id = %s
-                      AND fi.enabled = true
+                    WHERE fi.enabled = true
                       AND (fi.is_staged = false OR fi.is_staged IS NULL)
                     ORDER BY fi.id, vc.distance ASC
                     LIMIT %s
-                """, (qv, qv, top_k * 10, tenant_id, top_k * 2)).fetchall()
+                """, (qv, tenant_id, qv, top_k * 3, top_k * 2)).fetchall()
                 
                 for row in rows:
                     faq_id = int(row[0])
