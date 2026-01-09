@@ -2934,6 +2934,67 @@ async def create_faq_variants_partitioned(
         }
 
 
+@app.post("/admin/api/db/ensure_partition/{tenantId}")
+async def ensure_partition_for_tenant(
+    tenantId: str,
+    authorization: str = Header(default="")
+):
+    """
+    Admin-only endpoint to ensure a partition exists for a tenant and create its ivfflat index.
+    Returns partition name and index creation status.
+    """
+    _check_admin_auth(authorization)
+    
+    try:
+        with get_conn() as conn:
+            # Call the helper function
+            conn.execute("SELECT ensure_faq_variants_partition(%s)", (tenantId,))
+            conn.commit()
+            
+            # Get partition name (sanitized)
+            import re
+            sanitized_tenant = re.sub(r'[^a-z0-9_]', '_', tenantId.lower())
+            partition_name = f"faq_variants_p_{sanitized_tenant}"
+            
+            # Check if partition exists
+            partition_exists = conn.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM pg_class c
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE c.relname = %s AND n.nspname = 'public'
+                )
+            """, (partition_name,)).fetchone()[0]
+            
+            # Check if index exists
+            index_name = f"{partition_name}_embedding_idx"
+            index_exists = conn.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM pg_class c
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE c.relname = %s AND n.nspname = 'public'
+                )
+            """, (index_name,)).fetchone()[0]
+            
+            return {
+                "ok": True,
+                "tenant_id": tenantId,
+                "partition_name": partition_name,
+                "partition_exists": partition_exists,
+                "index_name": index_name,
+                "index_exists": index_exists,
+                "message": f"Partition {partition_name} ensured (index: {index_name})"
+            }
+    except Exception as e:
+        error_msg = str(e)
+        import traceback
+        traceback.print_exc()
+        return {
+            "ok": False,
+            "error": error_msg,
+            "error_type": type(e).__name__
+        }
+
+
 @app.post("/admin/api/db/migrate_faq_variants_to_partitioned")
 async def migrate_faq_variants_to_partitioned(
     authorization: str = Header(default="")
