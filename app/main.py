@@ -442,6 +442,16 @@ def _set_timing_headers(req: Request, resp: Response, timings: dict, cache_hit: 
             resp.headers["X-Timing-Retrieval-Vector"] = str(retrieval_trace["retrieval_db_vector_ms"])
         if retrieval_trace.get("retrieval_rerank_ms") is not None:
             resp.headers["X-Timing-Retrieval-Rerank"] = str(retrieval_trace["retrieval_rerank_ms"])
+        
+        # TASK C: Add counters to timing headers
+        if retrieval_trace.get("used_fts_only") is not None:
+            resp.headers["X-Retrieval-Used-FTS-Only"] = "1" if retrieval_trace["used_fts_only"] else "0"
+        if retrieval_trace.get("ran_vector") is not None:
+            resp.headers["X-Retrieval-Ran-Vector"] = "1" if retrieval_trace["ran_vector"] else "0"
+        if retrieval_trace.get("fts_candidate_count") is not None:
+            resp.headers["X-Retrieval-FTS-Candidates"] = str(retrieval_trace["fts_candidate_count"])
+        if retrieval_trace.get("vector_k") is not None:
+            resp.headers["X-Retrieval-Vector-K"] = str(retrieval_trace["vector_k"])
     resp.headers["X-Timing-Rewrite"] = str(timings["rewrite_ms"])
     resp.headers["X-Timing-LLM"] = str(timings["llm_ms"])
     resp.headers["X-Timing-Total"] = str(timings["total_ms"])

@@ -409,7 +409,11 @@ def get_top_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[
     - Orders by distance FIRST (allows index scan)
     - Filters by tenant_id and enabled status
     - Deduplicates by faq_id in Python after getting top candidates
+    
+    TASK B: Vector K is capped at 20 max for performance.
     """
+    # Cap limit at 20 for performance
+    limit = min(limit, 20)
     if not tenant_id or query_embedding is None:
         return []
     
@@ -1174,7 +1178,12 @@ def retrieve(
         "retrieval_db_vector_ms": 0,
         "retrieval_rerank_ms": 0,
         "retrieval_cache_ms": 0,
-        "retrieval_total_ms": 0
+        "retrieval_total_ms": 0,
+        # TASK C: Counters for timing headers
+        "used_fts_only": False,
+        "ran_vector": False,
+        "fts_candidate_count": 0,
+        "vector_k": 0
     }
     
     start_time = time.time()
@@ -1190,6 +1199,9 @@ def retrieve(
     if query_lower in vague_patterns or len(query_lower) < 4:
         trace["stage"] = "clarify_vague"
         trace["total_ms"] = int((time.time() - start_time) * 1000)
+        trace["used_fts_only"] = False
+        trace["ran_vector"] = False
+        trace["vector_k"] = 0
         return None, trace
     
     # Stage 0.2: Wrong-service check - reject ONLY explicit wrong-trade intent
@@ -1231,6 +1243,9 @@ def retrieve(
         trace["stage"] = "wrong_service_rejected"
         trace["wrong_service_keywords"] = wrong_service_keywords_in_query
         trace["total_ms"] = int((time.time() - start_time) * 1000)
+        trace["used_fts_only"] = False
+        trace["ran_vector"] = False
+        trace["vector_k"] = 0
         return None, trace
     
     # ============================================================================
@@ -1257,6 +1272,11 @@ def retrieve(
                 trace["stage"] = "cache"
                 # Set candidate_count from cache if available, otherwise set to 1 (assume valid cached result)
                 trace["candidates_count"] = cached.get("candidates_count", 1)
+                # Set trace fields for cached results (may not be available in cache, so use defaults)
+                trace["used_fts_only"] = cached.get("used_fts_only", False)
+                trace["ran_vector"] = cached.get("ran_vector", False)
+                trace["fts_candidate_count"] = cached.get("fts_candidate_count", 0)
+                trace["vector_k"] = cached.get("vector_k", 0)
                 trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
                 trace["total_ms"] = int((time.time() - start_time) * 1000)
                 return cached, trace
@@ -1271,28 +1291,74 @@ def retrieve(
     trace["retrieval_db_fts_ms"] = fts_db_ms
     trace["retrieval_db_ms"] += fts_db_ms
     trace["fts_count"] = len(fts_candidates)
+    fts_candidate_count = len(fts_candidates)
+    trace["fts_candidate_count"] = fts_candidate_count
+    
+    # Compute FTS metrics for fast-path decision
+    fts_top_score = 0.0
+    fts_gap = 0.0
     if fts_candidates:
-        trace["top_fts_score"] = round(fts_candidates[0].get("fts_score", 0), 4)
+        fts_top_score = fts_candidates[0].get("fts_score", 0.0)
+        trace["top_fts_score"] = round(fts_top_score, 4)
+        if len(fts_candidates) >= 2:
+            fts_second_score = fts_candidates[1].get("fts_score", 0.0)
+            fts_gap = fts_top_score - fts_second_score
+            trace["fts_gap"] = round(fts_gap, 4)
+    
+    # TASK A: FTS-only fast path (high confidence)
+    # If FTS returns high-confidence results, accept immediately without vector or LLM selector
+    use_fts_only_fast_path = False
+    if fts_candidate_count >= 3 and (fts_top_score >= 0.35 or fts_gap >= 0.10):
+        use_fts_only_fast_path = True
+        trace["stage"] = "fts_high_confidence"
+        trace["used_fts_only"] = True
+        trace["ran_vector"] = False
+        trace["vector_k"] = 0
+        result = {
+            "faq_id": fts_candidates[0]["faq_id"],
+            "question": fts_candidates[0]["question"],
+            "answer": fts_candidates[0]["answer"],
+            "score": fts_top_score,
+            "stage": "fts_high_confidence"
+        }
+        trace["final_score"] = fts_top_score
+        trace["candidates_count"] = fts_candidate_count
+        trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
+        trace["total_ms"] = int((time.time() - start_time) * 1000)
+        
+        if use_cache:
+            cache_write_start = time.time()
+            set_cached_result(tenant_id, normalized_query, result)
+            trace["retrieval_cache_ms"] += int((time.time() - cache_write_start) * 1000)
+        
+        return result, trace
     
     # 1b: Vector search (secondary - finds semantic matches)
-    # Skip vector search if FTS returned enough good candidates (>=8) to reduce load
-    # Only run vector when FTS candidate_count < 8 OR query is long and FTS looks weak
+    # Skip vector search if FTS returned enough good candidates (>=8) OR if fast-path would have triggered but we need more candidates
     vector_candidates = []
     vector_start_time = time.time()
-    fts_count = len(fts_candidates)
-    should_skip_vector = fts_count >= 8
+    should_skip_vector = fts_candidate_count >= 8  # Tightened: always skip if >= 8
+    
+    trace["used_fts_only"] = False
+    trace["ran_vector"] = False
+    trace["vector_k"] = 0
     
     if should_skip_vector:
         trace["vector_skipped"] = True
-        trace["vector_skip_reason"] = f"fts_count={fts_count} >= 8"
+        trace["vector_skip_reason"] = f"fts_count={fts_candidate_count} >= 8"
         trace["retrieval_db_vector_ms"] = 0
         trace["vector_count"] = 0
         query_embedding = None  # Don't embed if we're skipping vector
     else:
+        # TASK B: Make vector cheaper - reduce K to max 20 (already 20, but ensure it's capped)
+        vector_k = 20  # Max vector candidates to retrieve
+        trace["ran_vector"] = True
+        trace["vector_k"] = vector_k
+        
         from app.openai_client import embed_text
         query_embedding = embed_text(normalized_query)
         if query_embedding is not None:
-            vector_candidates = get_top_candidates(tenant_id, query_embedding, limit=20)
+            vector_candidates = get_top_candidates(tenant_id, query_embedding, limit=vector_k)
             vector_db_ms = int((time.time() - vector_start_time) * 1000)
             trace["retrieval_db_vector_ms"] = vector_db_ms
             trace["retrieval_db_ms"] += vector_db_ms
@@ -1332,6 +1398,13 @@ def retrieve(
     if not candidates:
         trace["stage"] = "no_candidates"
         trace["candidates_count"] = 0  # Explicitly set to 0
+        # Ensure trace fields are set
+        if "used_fts_only" not in trace:
+            trace["used_fts_only"] = False
+        if "ran_vector" not in trace:
+            trace["ran_vector"] = False
+        if "vector_k" not in trace:
+            trace["vector_k"] = 0
         
         # If query is very short/generic (<=2-3 tokens), return clarify
         query_tokens = normalized_query.split()
@@ -1435,6 +1508,13 @@ def retrieve(
     if not reranked:
         trace["stage"] = "rerank_no_result"
         trace["candidates_count"] = len(candidates)  # Ensure candidate_count is set even on miss
+        # Ensure trace fields are set
+        if "used_fts_only" not in trace:
+            trace["used_fts_only"] = False
+        if "ran_vector" not in trace:
+            trace["ran_vector"] = False
+        if "vector_k" not in trace:
+            trace["vector_k"] = 0
         trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
@@ -1466,6 +1546,13 @@ def retrieve(
     if not accept:
         trace["stage"] = f"rejected_{accept_reason}"
         trace["candidates_count"] = len(candidates)  # Ensure candidate_count is set even on rejection
+        # Ensure trace fields are set
+        if "used_fts_only" not in trace:
+            trace["used_fts_only"] = False
+        if "ran_vector" not in trace:
+            trace["ran_vector"] = False
+        if "vector_k" not in trace:
+            trace["vector_k"] = 0
         trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
