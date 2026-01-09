@@ -3111,34 +3111,71 @@ async def explain_vector_query(
                 pass
         
         # Run EXPLAIN ANALYZE on partitioned table query (same as production)
-        plan_text = conn.execute("""
-            EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
-            WITH vector_candidates AS (
+        # Try partitioned table first, fall back to old table if it doesn't exist
+        try:
+            plan_text = conn.execute("""
+                EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
+                WITH vector_candidates AS (
+                    SELECT 
+                        fv.id AS variant_id,
+                        fv.faq_id,
+                        fv.variant_question,
+                        (fv.variant_embedding <=> %s::vector) AS distance
+                    FROM faq_variants_p fv
+                    WHERE fv.tenant_id = %s
+                      AND fv.enabled = true
+                    ORDER BY fv.variant_embedding <=> %s::vector
+                    LIMIT %s
+                )
                 SELECT 
-                    fv.id AS variant_id,
-                    fv.faq_id,
-                    fv.variant_question,
-                    (fv.variant_embedding <=> %s::vector) AS distance
-                FROM faq_variants_p fv
-                WHERE fv.tenant_id = %s
-                  AND fv.enabled = true
-                ORDER BY fv.variant_embedding <=> %s::vector
+                    fi.id AS faq_id,
+                    fi.question,
+                    fi.answer,
+                    fi.tenant_id,
+                    vc.variant_question AS matched_variant,
+                    (1 - vc.distance) AS score
+                FROM vector_candidates vc
+                JOIN faq_items fi ON fi.id = vc.faq_id
+                WHERE fi.enabled = true
+                  AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                ORDER BY vc.distance ASC
                 LIMIT %s
-            )
-            SELECT 
-                fi.id AS faq_id,
-                fi.question,
-                fi.answer,
-                fi.tenant_id,
-                vc.variant_question AS matched_variant,
-                (1 - vc.distance) AS score
-            FROM vector_candidates vc
-            JOIN faq_items fi ON fi.id = vc.faq_id
-            WHERE fi.enabled = true
-              AND (fi.is_staged = false OR fi.is_staged IS NULL)
-            ORDER BY vc.distance ASC
-            LIMIT %s
-        """, (qv, tenantId, qv, limit * 3, limit)).fetchall()
+            """, (qv, tenantId, qv, limit * 3, limit)).fetchall()
+            using_partitioned = True
+        except Exception as e:
+            # Fallback to old table if partitioned table doesn't exist
+            if "does not exist" in str(e).lower() or "relation" in str(e).lower():
+                plan_text = conn.execute("""
+                    EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
+                    WITH vector_candidates AS (
+                        SELECT 
+                            fv.id AS variant_id,
+                            fv.faq_id,
+                            fv.variant_question,
+                            (fv.variant_embedding <=> %s::vector) AS distance
+                        FROM faq_variants fv
+                        WHERE fv.enabled = true
+                        ORDER BY fv.variant_embedding <=> %s::vector
+                        LIMIT %s
+                    )
+                    SELECT 
+                        fi.id AS faq_id,
+                        fi.question,
+                        fi.answer,
+                        fi.tenant_id,
+                        vc.variant_question AS matched_variant,
+                        (1 - vc.distance) AS score
+                    FROM vector_candidates vc
+                    JOIN faq_items fi ON fi.id = vc.faq_id
+                    WHERE fi.tenant_id = %s
+                      AND fi.enabled = true
+                      AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                    ORDER BY vc.distance ASC
+                    LIMIT %s
+                """, (qv, qv, limit * 10, tenantId, limit)).fetchall()
+                using_partitioned = False
+            else:
+                raise
         
         def analyze_plan(plan_lines):
             """Helper to analyze a plan and extract index usage info."""
@@ -3188,6 +3225,7 @@ async def explain_vector_query(
                 "tenant_id": tenantId,
                 "sample_query": sample_query,
                 "force_index": force_index,
+                "using_partitioned_table": using_partitioned if 'using_partitioned' in locals() else None,
                 **plan_analysis,
                 "plan_text": plan_text_lines[:30],  # First 30 lines
                 "plan_text_combined": "\n".join(plan_text_lines)
@@ -3203,34 +3241,68 @@ async def explain_vector_query(
                     except Exception:
                         pass
                     
-                    normal_plan_text = conn_normal.execute("""
-                        EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
-                        WITH vector_candidates AS (
+                    try:
+                        normal_plan_text = conn_normal.execute("""
+                            EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
+                            WITH vector_candidates AS (
+                                SELECT 
+                                    fv.id AS variant_id,
+                                    fv.faq_id,
+                                    fv.variant_question,
+                                    (fv.variant_embedding <=> %s::vector) AS distance
+                                FROM faq_variants_p fv
+                                WHERE fv.tenant_id = %s
+                                  AND fv.enabled = true
+                                ORDER BY fv.variant_embedding <=> %s::vector
+                                LIMIT %s
+                            )
                             SELECT 
-                                fv.id AS variant_id,
-                                fv.faq_id,
-                                fv.variant_question,
-                                (fv.variant_embedding <=> %s::vector) AS distance
-                            FROM faq_variants_p fv
-                            WHERE fv.tenant_id = %s
-                              AND fv.enabled = true
-                            ORDER BY fv.variant_embedding <=> %s::vector
+                                fi.id AS faq_id,
+                                fi.question,
+                                fi.answer,
+                                fi.tenant_id,
+                                vc.variant_question AS matched_variant,
+                                (1 - vc.distance) AS score
+                            FROM vector_candidates vc
+                            JOIN faq_items fi ON fi.id = vc.faq_id
+                            WHERE fi.enabled = true
+                              AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                            ORDER BY vc.distance ASC
                             LIMIT %s
-                        )
-                        SELECT 
-                            fi.id AS faq_id,
-                            fi.question,
-                            fi.answer,
-                            fi.tenant_id,
-                            vc.variant_question AS matched_variant,
-                            (1 - vc.distance) AS score
-                        FROM vector_candidates vc
-                        JOIN faq_items fi ON fi.id = vc.faq_id
-                        WHERE fi.enabled = true
-                          AND (fi.is_staged = false OR fi.is_staged IS NULL)
-                        ORDER BY vc.distance ASC
-                        LIMIT %s
-                    """, (qv, tenantId, qv, limit * 3, limit)).fetchall()
+                        """, (qv, tenantId, qv, limit * 3, limit)).fetchall()
+                    except Exception as e:
+                        # Fallback to old table
+                        if "does not exist" in str(e).lower() or "relation" in str(e).lower():
+                            normal_plan_text = conn_normal.execute("""
+                                EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
+                                WITH vector_candidates AS (
+                                    SELECT 
+                                        fv.id AS variant_id,
+                                        fv.faq_id,
+                                        fv.variant_question,
+                                        (fv.variant_embedding <=> %s::vector) AS distance
+                                    FROM faq_variants fv
+                                    WHERE fv.enabled = true
+                                    ORDER BY fv.variant_embedding <=> %s::vector
+                                    LIMIT %s
+                                )
+                                SELECT 
+                                    fi.id AS faq_id,
+                                    fi.question,
+                                    fi.answer,
+                                    fi.tenant_id,
+                                    vc.variant_question AS matched_variant,
+                                    (1 - vc.distance) AS score
+                                FROM vector_candidates vc
+                                JOIN faq_items fi ON fi.id = vc.faq_id
+                                WHERE fi.tenant_id = %s
+                                  AND fi.enabled = true
+                                  AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                                ORDER BY vc.distance ASC
+                                LIMIT %s
+                            """, (qv, qv, limit * 10, tenantId, limit)).fetchall()
+                        else:
+                            raise
                     
                     if normal_plan_text:
                         normal_plan_lines = [row[0] for row in normal_plan_text]
