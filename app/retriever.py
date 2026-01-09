@@ -430,25 +430,36 @@ def get_top_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[
             # Convert to Vector
             qv = Vector(query_embedding)
             
-            # Index-friendly query: ORDER BY distance FIRST, then filter and limit
-            # This allows the vector index to be used efficiently
+            # ANN-first query: Use CTE to do vector search FIRST (enables index usage),
+            # then join to faq_items to filter by tenant_id and is_staged.
+            # We fetch more candidates (limit * 10) to account for tenant filtering.
             rows = conn.execute("""
+                WITH vector_candidates AS (
+                    SELECT 
+                        fv.id AS variant_id,
+                        fv.faq_id,
+                        fv.variant_question,
+                        (fv.variant_embedding <=> %s) AS distance
+                    FROM faq_variants fv
+                    WHERE fv.enabled = true
+                    ORDER BY fv.variant_embedding <=> %s
+                    LIMIT %s
+                )
                 SELECT 
                     fi.id AS faq_id,
                     fi.question,
                     fi.answer,
                     fi.tenant_id,
-                    fv.variant_question AS matched_variant,
-                    (1 - (fv.variant_embedding <=> %s)) AS score
-                FROM faq_variants fv
-                JOIN faq_items fi ON fi.id = fv.faq_id
+                    vc.variant_question AS matched_variant,
+                    (1 - vc.distance) AS score
+                FROM vector_candidates vc
+                JOIN faq_items fi ON fi.id = vc.faq_id
                 WHERE fi.tenant_id = %s
                   AND fi.enabled = true
-                  AND fv.enabled = true
                   AND (fi.is_staged = false OR fi.is_staged IS NULL)
-                ORDER BY (fv.variant_embedding <=> %s) ASC
+                ORDER BY vc.distance ASC
                 LIMIT %s
-            """, (qv, tenant_id, qv, limit * 3)).fetchall()  # Get 3x limit to account for deduplication
+            """, (qv, qv, limit * 10, tenant_id, limit * 3)).fetchall()  # Get 10x for tenant filtering, then 3x for dedup
         
         if not rows:
             return []
@@ -555,24 +566,42 @@ def retrieve_candidates_v2(
             
             with get_conn() as conn:
                 register_vector(conn)
+                
+                # Set ivfflat.probes if needed
+                try:
+                    conn.execute("SET LOCAL ivfflat.probes = 10")
+                except Exception:
+                    pass
+                
                 qv = Vector(query_embedding)
                 
+                # ANN-first query structure for index usage
                 rows = conn.execute("""
+                    WITH vector_candidates AS (
+                        SELECT 
+                            fv.id AS variant_id,
+                            fv.faq_id,
+                            fv.variant_question,
+                            (fv.variant_embedding <=> %s) AS distance
+                        FROM faq_variants fv
+                        WHERE fv.enabled = true
+                        ORDER BY fv.variant_embedding <=> %s
+                        LIMIT %s
+                    )
                     SELECT DISTINCT ON (fi.id)
                         fi.id AS faq_id,
                         fi.question,
                         fi.answer,
                         fi.tenant_id,
-                        (1 - (fv.variant_embedding <=> %s)) AS score
-                    FROM faq_variants fv
-                    JOIN faq_items fi ON fi.id = fv.faq_id
+                        (1 - vc.distance) AS score
+                    FROM vector_candidates vc
+                    JOIN faq_items fi ON fi.id = vc.faq_id
                     WHERE fi.tenant_id = %s
                       AND fi.enabled = true
-                      AND fv.enabled = true
                       AND (fi.is_staged = false OR fi.is_staged IS NULL)
-                    ORDER BY fi.id, (fv.variant_embedding <=> %s) ASC
+                    ORDER BY fi.id, vc.distance ASC
                     LIMIT %s
-                """, (qv, tenant_id, qv, top_k * 2)).fetchall()
+                """, (qv, qv, top_k * 10, tenant_id, top_k * 2)).fetchall()
                 
                 for row in rows:
                     faq_id = int(row[0])

@@ -2717,6 +2717,75 @@ def get_embedding_stats(
         }
 
 
+@app.get("/admin/api/vector-indexes")
+def check_vector_indexes(
+    authorization: str = Header(default="")
+):
+    """
+    Admin-only endpoint to check pgvector version and indexes on faq_variants/faq_items.
+    Returns pgvector version and list of indexes with their types.
+    """
+    _check_admin_auth(authorization)
+    
+    with get_conn() as conn:
+        # Get pgvector version
+        try:
+            version_row = conn.execute("SELECT extversion FROM pg_extension WHERE extname = 'vector'").fetchone()
+            pgvector_version = version_row[0] if version_row else "not installed"
+        except Exception:
+            pgvector_version = "unknown"
+        
+        # Get indexes on faq_variants and faq_items
+        indexes = conn.execute("""
+            SELECT 
+                schemaname,
+                tablename,
+                indexname,
+                indexdef
+            FROM pg_indexes 
+            WHERE tablename IN ('faq_variants', 'faq_items')
+            ORDER BY tablename, indexname
+        """).fetchall()
+        
+        index_list = []
+        for row in indexes:
+            schema, table, name, definition = row
+            index_type = "unknown"
+            is_hnsw = "hnsw" in definition.lower()
+            is_ivfflat = "ivfflat" in definition.lower()
+            is_vector = "vector" in definition.lower() or "vector_cosine_ops" in definition.lower() or "vector_l2_ops" in definition.lower()
+            
+            if is_hnsw:
+                index_type = "HNSW"
+            elif is_ivfflat:
+                index_type = "ivfflat"
+            elif is_vector:
+                index_type = "vector (unknown type)"
+            else:
+                index_type = "btree/hash/etc"
+            
+            # Extract WHERE clause if partial index
+            where_clause = None
+            if "WHERE" in definition.upper():
+                where_start = definition.upper().find("WHERE")
+                where_clause = definition[where_start:]
+            
+            index_list.append({
+                "table": table,
+                "name": name,
+                "type": index_type,
+                "definition": definition,
+                "is_partial": where_clause is not None,
+                "where_clause": where_clause
+            })
+        
+        return {
+            "pgvector_version": pgvector_version,
+            "indexes": index_list,
+            "total_indexes": len(index_list)
+        }
+
+
 @app.post("/admin/api/tenant/{tenantId}/explain-vector-query")
 def explain_vector_query(
     tenantId: str,
@@ -2725,6 +2794,7 @@ def explain_vector_query(
     """
     Admin-only endpoint to run EXPLAIN ANALYZE on the vector query.
     Returns the query plan to verify index usage.
+    Uses the NEW ANN-first query structure.
     """
     _check_admin_auth(authorization)
     
@@ -2745,48 +2815,89 @@ def explain_vector_query(
     with get_conn() as conn:
         register_vector(conn)
         
-        # Run EXPLAIN ANALYZE on the exact vector query (text format for readability)
+        # Set ivfflat.probes if needed
+        try:
+            conn.execute("SET LOCAL ivfflat.probes = 10")
+        except Exception:
+            pass
+        
+        # Run EXPLAIN ANALYZE on the NEW ANN-first query structure
         plan_text = conn.execute("""
             EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
+            WITH vector_candidates AS (
+                SELECT 
+                    fv.id AS variant_id,
+                    fv.faq_id,
+                    fv.variant_question,
+                    (fv.variant_embedding <=> %s) AS distance
+                FROM faq_variants fv
+                WHERE fv.enabled = true
+                ORDER BY fv.variant_embedding <=> %s
+                LIMIT %s
+            )
             SELECT 
                 fi.id AS faq_id,
                 fi.question,
                 fi.answer,
                 fi.tenant_id,
-                fv.variant_question AS matched_variant,
-                (1 - (fv.variant_embedding <=> %s)) AS score
-            FROM faq_variants fv
-            JOIN faq_items fi ON fi.id = fv.faq_id
+                vc.variant_question AS matched_variant,
+                (1 - vc.distance) AS score
+            FROM vector_candidates vc
+            JOIN faq_items fi ON fi.id = vc.faq_id
             WHERE fi.tenant_id = %s
               AND fi.enabled = true
-              AND fv.enabled = true
               AND (fi.is_staged = false OR fi.is_staged IS NULL)
-            ORDER BY (fv.variant_embedding <=> %s) ASC
+            ORDER BY vc.distance ASC
             LIMIT %s
-        """, (qv, tenantId, qv, limit)).fetchall()
+        """, (qv, qv, limit * 10, tenantId, limit)).fetchall()
         
         if plan_text:
             plan_text_lines = [row[0] for row in plan_text]
+            plan_text_combined = "\n".join(plan_text_lines)
             
-            # Check if index is being used
+            # Check if ANN index is being used
             uses_index = False
+            index_type = None
             index_name = None
+            uses_seq_scan = False
+            
+            # Check for index usage patterns
             for line in plan_text_lines:
-                if "Index" in line or "index" in line.lower():
+                line_lower = line.lower()
+                if "index scan" in line_lower or "bitmap index scan" in line_lower:
                     uses_index = True
+                    if "hnsw" in line_lower:
+                        index_type = "HNSW"
+                    elif "ivfflat" in line_lower:
+                        index_type = "ivfflat"
                     # Try to extract index name
                     import re
-                    match = re.search(r'Index.*?(\w+_idx|\w+_\w+_idx)', line, re.IGNORECASE)
+                    match = re.search(r'(\w+_embedding_\w+_idx|\w+_embedding_idx)', line, re.IGNORECASE)
                     if match:
                         index_name = match.group(1)
-                    break
+                elif "seq scan" in line_lower and "faq_variants" in line_lower:
+                    uses_seq_scan = True
+            
+            # Determine status
+            if uses_index:
+                status = "✅ INDEX USED"
+                if index_type:
+                    status += f" ({index_type})"
+            elif uses_seq_scan:
+                status = "❌ SEQ SCAN (index not used)"
+            else:
+                status = "⚠️ UNKNOWN (check plan)"
             
             return {
                 "tenant_id": tenantId,
                 "sample_query": sample_query,
+                "status": status,
                 "uses_index": uses_index,
+                "uses_seq_scan": uses_seq_scan,
+                "index_type": index_type,
                 "index_name": index_name,
-                "plan_text": plan_text_lines
+                "plan_text": plan_text_lines,
+                "plan_text_combined": plan_text_combined
             }
         else:
             return {"error": "Failed to get EXPLAIN plan"}
