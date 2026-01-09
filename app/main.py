@@ -2717,6 +2717,48 @@ def get_embedding_stats(
         }
 
 
+@app.post("/admin/api/db/analyze")
+async def analyze_tables(
+    request: Request,
+    authorization: str = Header(default="")
+):
+    """
+    Admin-only endpoint to run ANALYZE on specified tables.
+    Body: {"tables": ["faq_variants", "faq_items"]}
+    """
+    _check_admin_auth(authorization)
+    
+    try:
+        body = await request.json()
+        tables = body.get("tables", [])
+        if not tables:
+            raise HTTPException(status_code=400, detail="tables array required")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON body: {str(e)}")
+    
+    results = []
+    with get_conn() as conn:
+        for table in tables:
+            try:
+                # Validate table name to prevent SQL injection
+                if not table.replace("_", "").replace("-", "").isalnum():
+                    results.append({"table": table, "status": "error", "error": "Invalid table name"})
+                    continue
+                
+                # Run ANALYZE
+                conn.execute(f"ANALYZE {table}")
+                conn.commit()
+                results.append({"table": table, "status": "success"})
+            except Exception as e:
+                results.append({"table": table, "status": "error", "error": str(e)})
+    
+    return {
+        "analyzed_tables": results,
+        "total": len(results),
+        "success_count": len([r for r in results if r["status"] == "success"])
+    }
+
+
 @app.get("/admin/api/vector-indexes")
 def check_vector_indexes(
     authorization: str = Header(default="")
@@ -2787,20 +2829,31 @@ def check_vector_indexes(
 
 
 @app.post("/admin/api/tenant/{tenantId}/explain-vector-query")
-def explain_vector_query(
+async def explain_vector_query(
     tenantId: str,
+    request: Request,
     authorization: str = Header(default="")
 ):
     """
     Admin-only endpoint to run EXPLAIN ANALYZE on the vector query.
     Returns the query plan to verify index usage.
     Uses the NEW ANN-first query structure.
+    
+    Optional body: {"force_index": true} to force index usage for testing.
     """
     _check_admin_auth(authorization)
     
     from pgvector.psycopg import register_vector
     from pgvector import Vector
     from app.openai_client import embed_text
+    
+    # Check for force_index flag
+    force_index = False
+    try:
+        body = await request.json()
+        force_index = body.get("force_index", False)
+    except Exception:
+        pass  # No body or invalid JSON, use defaults
     
     # Use a sample query to generate embedding
     sample_query = "how much do you charge"
@@ -2812,16 +2865,28 @@ def explain_vector_query(
     qv = Vector(query_embedding)
     limit = 20
     
+    # Convert embedding to string for explicit casting in SQL
+    embedding_str = str(list(query_embedding))
+    
     with get_conn() as conn:
         register_vector(conn)
         
-        # Set ivfflat.probes if needed
+        # Set ivfflat.probes
         try:
             conn.execute("SET LOCAL ivfflat.probes = 10")
         except Exception:
             pass
         
-        # Run EXPLAIN ANALYZE on the NEW ANN-first query structure
+        # If force_index, disable seq scan and enable index scans
+        if force_index:
+            try:
+                conn.execute("SET LOCAL enable_seqscan = off")
+                conn.execute("SET LOCAL enable_bitmapscan = on")
+                conn.execute("SET LOCAL enable_indexscan = on")
+            except Exception:
+                pass
+        
+        # Run EXPLAIN ANALYZE with explicit vector cast
         plan_text = conn.execute("""
             EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
             WITH vector_candidates AS (
@@ -2829,10 +2894,10 @@ def explain_vector_query(
                     fv.id AS variant_id,
                     fv.faq_id,
                     fv.variant_question,
-                    (fv.variant_embedding <=> %s) AS distance
+                    (fv.variant_embedding <=> %s::vector) AS distance
                 FROM faq_variants fv
                 WHERE fv.enabled = true
-                ORDER BY fv.variant_embedding <=> %s
+                ORDER BY fv.variant_embedding <=> %s::vector
                 LIMIT %s
             )
             SELECT 
@@ -2851,18 +2916,14 @@ def explain_vector_query(
             LIMIT %s
         """, (qv, qv, limit * 10, tenantId, limit)).fetchall()
         
-        if plan_text:
-            plan_text_lines = [row[0] for row in plan_text]
-            plan_text_combined = "\n".join(plan_text_lines)
-            
-            # Check if ANN index is being used
+        def analyze_plan(plan_lines):
+            """Helper to analyze a plan and extract index usage info."""
             uses_index = False
             index_type = None
             index_name = None
             uses_seq_scan = False
             
-            # Check for index usage patterns
-            for line in plan_text_lines:
+            for line in plan_lines:
                 line_lower = line.lower()
                 if "index scan" in line_lower or "bitmap index scan" in line_lower:
                     uses_index = True
@@ -2878,7 +2939,6 @@ def explain_vector_query(
                 elif "seq scan" in line_lower and "faq_variants" in line_lower:
                     uses_seq_scan = True
             
-            # Determine status
             if uses_index:
                 status = "✅ INDEX USED"
                 if index_type:
@@ -2889,16 +2949,74 @@ def explain_vector_query(
                 status = "⚠️ UNKNOWN (check plan)"
             
             return {
-                "tenant_id": tenantId,
-                "sample_query": sample_query,
                 "status": status,
                 "uses_index": uses_index,
                 "uses_seq_scan": uses_seq_scan,
                 "index_type": index_type,
-                "index_name": index_name,
-                "plan_text": plan_text_lines,
-                "plan_text_combined": plan_text_combined
+                "index_name": index_name
             }
+        
+        if plan_text:
+            plan_text_lines = [row[0] for row in plan_text]
+            plan_analysis = analyze_plan(plan_text_lines)
+            
+            result = {
+                "tenant_id": tenantId,
+                "sample_query": sample_query,
+                "force_index": force_index,
+                **plan_analysis,
+                "plan_text": plan_text_lines[:30],  # First 30 lines
+                "plan_text_combined": "\n".join(plan_text_lines)
+            }
+            
+            # If force_index was requested, also run normal plan for comparison
+            if force_index:
+                # Reset settings and run normal plan
+                with get_conn() as conn_normal:
+                    register_vector(conn_normal)
+                    try:
+                        conn_normal.execute("SET LOCAL ivfflat.probes = 10")
+                    except Exception:
+                        pass
+                    
+                    normal_plan_text = conn_normal.execute("""
+                        EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
+                        WITH vector_candidates AS (
+                            SELECT 
+                                fv.id AS variant_id,
+                                fv.faq_id,
+                                fv.variant_question,
+                                (fv.variant_embedding <=> %s::vector) AS distance
+                            FROM faq_variants fv
+                            WHERE fv.enabled = true
+                            ORDER BY fv.variant_embedding <=> %s::vector
+                            LIMIT %s
+                        )
+                        SELECT 
+                            fi.id AS faq_id,
+                            fi.question,
+                            fi.answer,
+                            fi.tenant_id,
+                            vc.variant_question AS matched_variant,
+                            (1 - vc.distance) AS score
+                        FROM vector_candidates vc
+                        JOIN faq_items fi ON fi.id = vc.faq_id
+                        WHERE fi.tenant_id = %s
+                          AND fi.enabled = true
+                          AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                        ORDER BY vc.distance ASC
+                        LIMIT %s
+                    """, (qv, qv, limit * 10, tenantId, limit)).fetchall()
+                    
+                    if normal_plan_text:
+                        normal_plan_lines = [row[0] for row in normal_plan_text]
+                        normal_analysis = analyze_plan(normal_plan_lines)
+                        result["normal_plan"] = {
+                            **normal_analysis,
+                            "plan_text": normal_plan_lines[:30]
+                        }
+            
+            return result
         else:
             return {"error": "Failed to get EXPLAIN plan"}
 

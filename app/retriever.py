@@ -433,16 +433,17 @@ def get_top_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[
             # ANN-first query: Use CTE to do vector search FIRST (enables index usage),
             # then join to faq_items to filter by tenant_id and is_staged.
             # We fetch more candidates (limit * 10) to account for tenant filtering.
+            # Explicit ::vector cast helps planner recognize index usage.
             rows = conn.execute("""
                 WITH vector_candidates AS (
                     SELECT 
                         fv.id AS variant_id,
                         fv.faq_id,
                         fv.variant_question,
-                        (fv.variant_embedding <=> %s) AS distance
+                        (fv.variant_embedding <=> %s::vector) AS distance
                     FROM faq_variants fv
                     WHERE fv.enabled = true
-                    ORDER BY fv.variant_embedding <=> %s
+                    ORDER BY fv.variant_embedding <=> %s::vector
                     LIMIT %s
                 )
                 SELECT 
@@ -576,16 +577,17 @@ def retrieve_candidates_v2(
                 qv = Vector(query_embedding)
                 
                 # ANN-first query structure for index usage
+                # Explicit ::vector cast helps planner recognize index usage.
                 rows = conn.execute("""
                     WITH vector_candidates AS (
                         SELECT 
                             fv.id AS variant_id,
                             fv.faq_id,
                             fv.variant_question,
-                            (fv.variant_embedding <=> %s) AS distance
+                            (fv.variant_embedding <=> %s::vector) AS distance
                         FROM faq_variants fv
                         WHERE fv.enabled = true
-                        ORDER BY fv.variant_embedding <=> %s
+                        ORDER BY fv.variant_embedding <=> %s::vector
                         LIMIT %s
                     )
                     SELECT DISTINCT ON (fi.id)
