@@ -190,13 +190,14 @@ def expand_query_synonyms(query: str) -> str:
         "plug": ["powerpoint", "outlet", "socket"],
         "wall socket": ["powerpoint", "outlet", "socket", "wall plug"],
         # Pricing intent synonyms
-        "how much": ["price", "pricing", "cost", "quote", "call-out", "callout", "fee", "fees", "charge", "charges", "rates", "rate"],
-        "call out": ["callout", "call-out", "call out fee", "callout fee"],
-        "callout": ["call-out", "call out", "call out fee", "callout fee"],
-        "call-out": ["callout", "call out", "call out fee", "callout fee"],
-        "call out fee": ["callout", "call-out", "call out", "callout fee"],
-        "callout fee": ["call-out", "call out", "call out fee"],
-        "fee": ["call-out", "callout", "call out fee", "callout fee", "price", "pricing", "cost", "charge", "charges"],
+        # Note: "out" is a PostgreSQL english stopword, so avoid multi-word tokens containing "out" (like "call out")
+        # Prefer single-token alternatives: "callout" only (avoid "call-out" which would split into "call & out" in tsquery)
+        "how much": ["price", "pricing", "cost", "quote", "callout", "fee", "fees", "charge", "charges", "rates", "rate"],
+        "call out": ["callout"],  # Map to single token to avoid "(call & out)" where "out" is dropped
+        "callout": [],  # Single token, no synonyms needed
+        "call-out": ["callout"],  # Map hyphenated version to single token (avoid splitting)
+        "call out fee": ["callout", "fee"],  # Handle as phrase, but synonyms avoid "out"
+        "fee": ["callout", "price", "pricing", "cost", "charge", "charges"],  # Keep single tokens only
     }
     
     # Pricing intent patterns - if query matches pricing intent, return ONLY pricing synonyms
@@ -209,18 +210,11 @@ def expand_query_synonyms(query: str) -> str:
         meaningful_words_count = len([w for w in words if w not in STOP_WORDS])
         if meaningful_words_count <= 1:
             # Replace entirely with pricing synonyms
-            synonyms = SYNONYMS.get("how much", ["price", "pricing", "cost", "quote", "call-out", "fee"])
+            # Note: Only use single-token synonyms (no multi-word tokens with "out" which is a stopword)
+            synonyms = SYNONYMS.get("how much", ["price", "pricing", "cost", "quote", "callout", "fee"])
             # Build OR group: (price | pricing | cost | ...)
-            # For multi-word synonyms, convert to AND groups: "call-out" => (call & out)
-            or_parts = []
-            for s in synonyms:
-                if " " in s or "-" in s:
-                    # Multi-word synonym: split into AND group
-                    phrase_words = s.replace("-", " ").split()
-                    phrase_query = " & ".join(phrase_words)
-                    or_parts.append(f"({phrase_query})")
-                else:
-                    or_parts.append(s)
+            # All synonyms are already single tokens (no spaces, no splitting needed)
+            or_parts = [s for s in synonyms if " " not in s]  # Filter any multi-word (shouldn't happen, but safe)
             return f"({' | '.join(or_parts)})"
     
     # Filter out stop words and get meaningful tokens
@@ -243,15 +237,23 @@ def expand_query_synonyms(query: str) -> str:
                 # Found 3-word phrase with synonyms
                 all_terms = [phrase3] + SYNONYMS[phrase3]
                 # Build OR group, handling multi-word terms
+                # Note: Remove any terms containing "out" (PostgreSQL stopword) to avoid "(call & out)" pattern
                 or_parts = []
                 for term in all_terms:
+                    # Filter out multi-word tokens containing "out" - prefer single tokens like "callout"
                     if " " in term or "-" in term:
-                        # Multi-word: split into AND group
+                        # Check if it contains "out" - if so, skip it (stopword issue)
+                        term_lower = term.replace("-", " ").lower()
+                        if " out " in term_lower or term_lower.startswith("out ") or term_lower.endswith(" out"):
+                            continue  # Skip multi-word terms with "out"
+                        # Multi-word: split into AND group (but we've filtered out "out" cases)
                         term_words = term.replace("-", " ").split()
                         or_parts.append(f"({' & '.join(term_words)})")
                     else:
+                        # Single token - keep it
                         or_parts.append(term)
-                query_groups.append(f"({' | '.join(or_parts)})")
+                if or_parts:  # Only add if we have valid terms
+                    query_groups.append(f"({' | '.join(or_parts)})")
                 i += 3  # Skip all three words
                 continue
         
@@ -262,15 +264,23 @@ def expand_query_synonyms(query: str) -> str:
                 # Found 2-word phrase with synonyms
                 all_terms = [phrase2] + SYNONYMS[phrase2]
                 # Build OR group, handling multi-word terms
+                # Note: Remove any terms containing "out" (PostgreSQL stopword) to avoid "(call & out)" pattern
                 or_parts = []
                 for term in all_terms:
+                    # Filter out multi-word tokens containing "out" - prefer single tokens like "callout"
                     if " " in term or "-" in term:
-                        # Multi-word: split into AND group
+                        # Check if it contains "out" - if so, skip it (stopword issue)
+                        term_lower = term.replace("-", " ").lower()
+                        if " out " in term_lower or term_lower.startswith("out ") or term_lower.endswith(" out") or term_lower == "out":
+                            continue  # Skip multi-word terms with "out"
+                        # Multi-word: split into AND group (but we've filtered out "out" cases)
                         term_words = term.replace("-", " ").split()
                         or_parts.append(f"({' & '.join(term_words)})")
                     else:
+                        # Single token - keep it
                         or_parts.append(term)
-                query_groups.append(f"({' | '.join(or_parts)})")
+                if or_parts:  # Only add if we have valid terms
+                    query_groups.append(f"({' | '.join(or_parts)})")
                 i += 2  # Skip both words
                 continue
         
@@ -280,15 +290,26 @@ def expand_query_synonyms(query: str) -> str:
             # Word has synonyms
             all_terms = [word] + SYNONYMS[word]
             # Build OR group, handling multi-word synonyms
+            # Note: Remove any terms containing "out" (PostgreSQL stopword) to avoid "(call & out)" pattern
             or_parts = []
             for term in all_terms:
+                # Filter out multi-word tokens containing "out" - prefer single tokens like "callout"
                 if " " in term or "-" in term:
-                    # Multi-word synonym: split into AND group
+                    # Check if it contains "out" - if so, skip it (stopword issue)
+                    term_lower = term.replace("-", " ").lower()
+                    if " out " in term_lower or term_lower.startswith("out ") or term_lower.endswith(" out") or term_lower == "out":
+                        continue  # Skip multi-word terms with "out"
+                    # Multi-word synonym: split into AND group (but we've filtered out "out" cases)
                     term_words = term.replace("-", " ").split()
                     or_parts.append(f"({' & '.join(term_words)})")
                 else:
+                    # Single token - keep it
                     or_parts.append(term)
-            query_groups.append(f"({' | '.join(or_parts)})")
+            if or_parts:  # Only add if we have valid terms
+                query_groups.append(f"({' | '.join(or_parts)})")
+            else:
+                # If all synonyms were filtered, use the original word
+                query_groups.append(word)
         else:
             # Word has no synonyms, use as-is
             query_groups.append(word)
@@ -1407,8 +1428,9 @@ def retrieve(
     
     # TASK A: FTS-only fast path (high confidence)
     # If FTS returns high-confidence results, accept immediately without vector or LLM selector
+    # Adjusted thresholds: observed FTS rank scores are ~0.04-0.20, so previous thresholds were impossible
     use_fts_only_fast_path = False
-    if fts_candidate_count >= 3 and (fts_top_score >= 0.35 or fts_gap >= 0.10):
+    if fts_candidate_count >= 1 and (fts_top_score >= 0.12 or (fts_candidate_count >= 2 and fts_gap >= 0.03)):
         use_fts_only_fast_path = True
         trace["stage"] = "fts_high_confidence"
         trace["used_fts_only"] = True
