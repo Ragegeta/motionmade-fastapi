@@ -1304,7 +1304,8 @@ def retrieve(
         "used_fts_only": False,
         "ran_vector": False,
         "fts_candidate_count": 0,
-        "vector_k": 0
+        "vector_k": 0,
+        "selector_called": False  # Initialize selector_called to False
     }
     
     start_time = time.time()
@@ -1323,6 +1324,7 @@ def retrieve(
         trace["used_fts_only"] = False
         trace["ran_vector"] = False
         trace["vector_k"] = 0
+        trace["selector_called"] = False
         return None, trace
     
     # Stage 0.2: Wrong-service check - reject ONLY explicit wrong-trade intent
@@ -1367,6 +1369,7 @@ def retrieve(
         trace["used_fts_only"] = False
         trace["ran_vector"] = False
         trace["vector_k"] = 0
+        trace["selector_called"] = False
         return None, trace
     
     # ============================================================================
@@ -1436,6 +1439,7 @@ def retrieve(
         trace["used_fts_only"] = True
         trace["ran_vector"] = False
         trace["vector_k"] = 0
+        trace["selector_called"] = False  # FTS-only fast path doesn't use selector
         result = {
             "faq_id": fts_candidates[0]["faq_id"],
             "question": fts_candidates[0]["question"],
@@ -1527,6 +1531,8 @@ def retrieve(
             trace["ran_vector"] = False
         if "vector_k" not in trace:
             trace["vector_k"] = 0
+        if "selector_called" not in trace:
+            trace["selector_called"] = False
         
         # If query is very short/generic (<=2-3 tokens), return clarify
         query_tokens = normalized_query.split()
@@ -1551,6 +1557,7 @@ def retrieve(
     if top_combined_score >= 0.5:
         trace["stage"] = "hybrid_high_confidence"
         trace["candidates_count"] = len(candidates)  # Ensure candidate_count is set
+        trace["selector_called"] = False  # High confidence hybrid doesn't use selector
         result = {
             "faq_id": candidates[0]["faq_id"],
             "question": candidates[0]["question"],
@@ -1637,6 +1644,8 @@ def retrieve(
             trace["ran_vector"] = False
         if "vector_k" not in trace:
             trace["vector_k"] = 0
+        if "selector_called" not in trace:
+            trace["selector_called"] = False
         trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
@@ -1675,6 +1684,8 @@ def retrieve(
             trace["ran_vector"] = False
         if "vector_k" not in trace:
             trace["vector_k"] = 0
+        if "selector_called" not in trace:
+            trace["selector_called"] = False
         trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
@@ -1690,6 +1701,9 @@ def retrieve(
     # Success
     trace["stage"] = f"{rerank_method}_accepted"
     trace["candidates_count"] = len(candidates)  # Ensure candidate_count is set on success
+    # selector_called should already be set: True if LLM selector was called, False if cross-encoder was used
+    if "selector_called" not in trace:
+        trace["selector_called"] = False  # Shouldn't happen, but defensive check
     result = {
         "faq_id": reranked[0]["faq_id"],
         "question": reranked[0]["question"],

@@ -951,7 +951,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         resp.headers["X-Cache-Hit"] = str(retrieval_trace.get("cache_hit", False)).lower()
         resp.headers["X-Retrieval-Mode"] = retrieval_trace.get("retrieval_mode", "unknown")
         resp.headers["X-Candidate-Count"] = str(retrieval_trace.get("candidates_count", 0))
-        resp.headers["X-Selector-Called"] = str(retrieval_trace.get("selector_called", False)).lower()
+        resp.headers["X-Selector-Called"] = "1" if retrieval_trace.get("selector_called", False) else "0"
         if retrieval_trace.get("selector_confidence") is not None:
             resp.headers["X-Selector-Confidence"] = str(retrieval_trace.get("selector_confidence", 0))
         resp.headers["X-Retrieval-Ms"] = str(retrieval_trace.get("retrieval_ms", 0))
@@ -971,9 +971,6 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             resp.headers["X-Rerank-Ms"] = str(rt.get("duration_ms", 0))
             if rt.get("safety_gate"):
                 resp.headers["X-Rerank-Gate"] = rt.get("safety_gate", "")[:50]
-        
-        # LLM selector headers
-        resp.headers["X-Selector-Called"] = str(retrieval_trace.get("selector_called", False)).lower()
         if retrieval_trace.get("selector_confidence") is not None:
             resp.headers["X-Selector-Confidence"] = str(retrieval_trace["selector_confidence"])
         
@@ -3786,7 +3783,7 @@ async def debug_query(
             "normalized_input": resp.headers.get("X-Normalized-Input", ""),
             "candidates": retrieval_trace.get("candidates", []) if retrieval_trace else [],
             "candidate_count": retrieval_trace.get("candidates_count", 0) if retrieval_trace else 0,
-            "selector_called": resp.headers.get("X-Selector-Called", "false").lower() == "true",
+            "selector_called": resp.headers.get("X-Selector-Called", "0") == "1",
             "selector_confidence": resp.headers.get("X-Selector-Confidence"),
             "selector_choice": retrieval_trace.get("selector_choice") if retrieval_trace else None,
             "selector_trace": retrieval_trace.get("selector_trace") if retrieval_trace else None,
