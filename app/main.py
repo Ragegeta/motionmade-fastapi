@@ -3519,25 +3519,24 @@ def fts_diagnostics(
             ]
             
             # 4. Build the exact same query as search_fts - use same exact logic
-            # Expand query with synonyms - returns tsquery format if synonyms found, otherwise natural language
+            # Expand query with synonyms - returns plain text (never tsquery operators)
             expanded_query = expand_query_synonyms(query)
             
-            # Check if expanded_query is already in tsquery format (has operators) - same logic as search_fts
-            is_tsquery_format = ('(' in expanded_query and (')' in expanded_query)) or ('|' in expanded_query) or ('&' in expanded_query)
-            
             # 5. Build tsquery strings (exact same as search_fts) - get the actual tsquery string used
+            # Check if query is explicitly a tsquery (prefixed with "TSQUERY:")
             fts_query_string_used = None
             fts_matches_count = 0
             fts_top_matches = []
             
             # Use exact same logic as search_fts()
-            if is_tsquery_format:
-                # Use to_tsquery() for manually constructed tsquery strings
+            if query.startswith("TSQUERY:"):
+                # Extract the actual tsquery string
+                tsquery_str = query[8:].strip()
                 try:
                     # Get the tsquery string
                     fts_query_string_used = conn.execute("""
                         SELECT to_tsquery('english', %s)::text
-                    """, (expanded_query,)).fetchone()[0]
+                    """, (tsquery_str,)).fetchone()[0]
                     
                     # Count matches using exact same WHERE filters as search_fts
                     count_rows = conn.execute("""
@@ -3547,7 +3546,7 @@ def fts_diagnostics(
                           AND fi.enabled = true
                           AND (fi.is_staged = false OR fi.is_staged IS NULL)
                           AND fi.search_vector @@ to_tsquery('english', %s)
-                    """, (tenantId, expanded_query)).fetchone()
+                    """, (tenantId, tsquery_str)).fetchone()
                     fts_matches_count = count_rows[0] if count_rows else 0
                     
                     # Get top 5 matches with rank
@@ -3563,7 +3562,7 @@ def fts_diagnostics(
                           AND fi.search_vector @@ to_tsquery('english', %s)
                         ORDER BY fts_score DESC
                         LIMIT 5
-                    """, (expanded_query, tenantId, expanded_query)).fetchall()
+                    """, (tsquery_str, tenantId, tsquery_str)).fetchall()
                     
                     fts_top_matches = [
                         {
@@ -3577,7 +3576,7 @@ def fts_diagnostics(
                     # If to_tsquery fails, fts_query_string_used stays None
                     pass
             else:
-                # Use websearch_to_tsquery first, then fallback to plainto_tsquery (same as search_fts)
+                # Default path: always use websearch_to_tsquery first, then fallback to plainto_tsquery (same as search_fts)
                 try:
                     fts_query_string_used = conn.execute("""
                         SELECT websearch_to_tsquery('english', %s)::text

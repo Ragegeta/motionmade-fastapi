@@ -491,6 +491,15 @@ for ($run = 1; $run -le $Runs; $run++) {
         $totalCaseLatenciesMs += $totalCaseMs
         $questionResult.total_case_ms = $totalCaseMs
         
+        # Log per-request details (one line per case)
+        $hdrs = $questionResult.headers
+        $ftsOnly = if ($hdrs -and $hdrs.ContainsKey("x-retrieval-used-fts-only")) { $hdrs["x-retrieval-used-fts-only"] } else { "?" }
+        $vectorRan = if ($hdrs -and $hdrs.ContainsKey("x-retrieval-ran-vector")) { $hdrs["x-retrieval-ran-vector"] } else { "?" }
+        $retrievalMs = if ($hdrs -and $hdrs.ContainsKey("x-timing-retrieval")) { $hdrs["x-timing-retrieval"] } elseif ($questionResult.timing_retrieval_ms) { $questionResult.timing_retrieval_ms } else { "?" }
+        $statusCode = if ($questionResult.status_code) { $questionResult.status_code } else { "?" }
+        $totalTimeSec = [math]::Round($totalCaseMs / 1000.0, 2)
+        Write-Host "[$questionCount/$totalQuestions] HTTP=$statusCode FTS-only=$ftsOnly Vector=$vectorRan Retrieval=${retrievalMs}ms Total=${totalTimeSec}s" -ForegroundColor Gray
+        
         # Add to both runData and allResults immediately
         $runData.questions += $questionResult
         $allResults += $questionResult
@@ -530,6 +539,15 @@ for ($run = 1; $run -le $Runs; $run++) {
         $totalCaseLatenciesMs += $totalCaseMs
         $questionResult.total_case_ms = $totalCaseMs
         
+        # Log per-request details (one line per case)
+        $hdrs = $questionResult.headers
+        $ftsOnly = if ($hdrs -and $hdrs.ContainsKey("x-retrieval-used-fts-only")) { $hdrs["x-retrieval-used-fts-only"] } else { "?" }
+        $vectorRan = if ($hdrs -and $hdrs.ContainsKey("x-retrieval-ran-vector")) { $hdrs["x-retrieval-ran-vector"] } else { "?" }
+        $retrievalMs = if ($hdrs -and $hdrs.ContainsKey("x-timing-retrieval")) { $hdrs["x-timing-retrieval"] } elseif ($questionResult.timing_retrieval_ms) { $questionResult.timing_retrieval_ms } else { "?" }
+        $statusCode = if ($questionResult.status_code) { $questionResult.status_code } else { "?" }
+        $totalTimeSec = [math]::Round($totalCaseMs / 1000.0, 2)
+        Write-Host "[$questionCount/$totalQuestions] HTTP=$statusCode FTS-only=$ftsOnly Vector=$vectorRan Retrieval=${retrievalMs}ms Total=${totalTimeSec}s" -ForegroundColor Gray
+        
         # Add to both runData and allResults immediately
         $runData.questions += $questionResult
         $allResults += $questionResult
@@ -568,6 +586,15 @@ for ($run = 1; $run -le $Runs; $run++) {
         $totalCaseMs = (($caseEnd - $caseStart).TotalMilliseconds)
         $totalCaseLatenciesMs += $totalCaseMs
         $questionResult.total_case_ms = $totalCaseMs
+        
+        # Log per-request details (one line per case)
+        $hdrs = $questionResult.headers
+        $ftsOnly = if ($hdrs -and $hdrs.ContainsKey("x-retrieval-used-fts-only")) { $hdrs["x-retrieval-used-fts-only"] } else { "?" }
+        $vectorRan = if ($hdrs -and $hdrs.ContainsKey("x-retrieval-ran-vector")) { $hdrs["x-retrieval-ran-vector"] } else { "?" }
+        $retrievalMs = if ($hdrs -and $hdrs.ContainsKey("x-timing-retrieval")) { $hdrs["x-timing-retrieval"] } elseif ($questionResult.timing_retrieval_ms) { $questionResult.timing_retrieval_ms } else { "?" }
+        $statusCode = if ($questionResult.status_code) { $questionResult.status_code } else { "?" }
+        $totalTimeSec = [math]::Round($totalCaseMs / 1000.0, 2)
+        Write-Host "[$questionCount/$totalQuestions] HTTP=$statusCode FTS-only=$ftsOnly Vector=$vectorRan Retrieval=${retrievalMs}ms Total=${totalTimeSec}s" -ForegroundColor Gray
         
         # Add to both runData and allResults immediately
         $runData.questions += $questionResult
