@@ -108,7 +108,7 @@ web: uvicorn main:app --host 0.0.0.0 --port $PORT
 The smoke test (`tests/test_ping_smoke.py`) should run in CI:
 
 ```bash
-pytest tests/test_ping_smoke.py -v
+python -m pytest -q tests/test_ping_smoke.py
 ```
 
 This ensures `/ping` is always fast and reliable.

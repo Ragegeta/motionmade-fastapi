@@ -1,0 +1,15 @@
+﻿{
+    "should_hit":  [
+                       "my powerpoint stopped working",
+                       "lights flickering",
+                       "smoke alarm beeping"
+                   ],
+    "edge_unclear":  [
+                         "help",
+                         "???"
+                     ],
+    "should_miss":  [
+                        "toilet blocked",
+                        "gas heater broken"
+                    ]
+}

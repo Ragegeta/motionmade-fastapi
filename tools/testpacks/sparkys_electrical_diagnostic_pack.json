@@ -1,0 +1,26 @@
+{
+  "name": "Sparky's Electrical Diagnostic Pack",
+  "description": "Small diagnostic pack for timing analysis (10 should-hit, 3 should-miss)",
+  "should_hit": [
+    "my powerpoint stopped working can you fix it",
+    "sparks coming from wall socket",
+    "lights dimming when ac turns on",
+    "circuit breaker keeps flipping",
+    "smoke alarm beeping every few minutes",
+    "how much for ceiling fan install",
+    "when can u come to logan",
+    "safety switch tripping constantly",
+    "power went out in half the house",
+    "outlet feels hot to touch"
+  ],
+  "should_miss": [
+    "toilet won't stop running need a plumber",
+    "gas stove not lighting properly",
+    "solar panels not generating enough power"
+  ],
+  "edge_unclear": []
+}
+
+
+
+

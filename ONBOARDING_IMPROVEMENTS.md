@@ -106,7 +106,7 @@ If not set, sync endpoint provides manual instructions.
 
 ### 1. Local Tests
 ```powershell
-pytest -q
+python -m pytest -q tests
 ```
 ✅ All 25 tests pass
 

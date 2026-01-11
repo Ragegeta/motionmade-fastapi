@@ -43,7 +43,7 @@ WRONG_SERVICE_KEYWORDS = [
     # Plumbing (explicit)
     "plumber", "plumbing", "toilet", "tap", "drain", "pipe", "leak", "water heater", "hot water system",
     # HVAC (explicit repair/install - but allow voltage drop mentions)
-    "air conditioning repair", "air con repair", "aircon repair", "ac repair", "heating repair",
+    "air conditioning", "air con", "aircon", "air conditioning repair", "air con repair", "aircon repair", "ac repair", "heating repair",
     "hvac repair", "ducted system", "split system install", "install air con", "install ac",
     # Gas (explicit)
     "gas plumber", "gas heater", "gas stove", "gas line", "gas fitting", "gas repair",
@@ -466,6 +466,26 @@ def merge_candidates(
     result = sorted(merged.values(), key=lambda x: x["combined_score"], reverse=True)
     
     return result
+
+
+def _get_tenant_faq_count(tenant_id: str) -> int:
+    """Get count of enabled FAQs for a tenant (cached per-request).
+    
+    Returns 0 if tenant doesn't exist or query fails.
+    """
+    try:
+        with get_conn() as conn:
+            row = conn.execute("""
+                SELECT COUNT(*) 
+                FROM faq_items 
+                WHERE tenant_id = %s 
+                  AND enabled = true 
+                  AND (is_staged = false OR is_staged IS NULL)
+            """, (tenant_id,)).fetchone()
+            return int(row[0]) if row and row[0] else 0
+    except Exception as e:
+        print(f"Error getting tenant FAQ count for {tenant_id}: {e}")
+        return 0
 
 
 def get_top_candidates(tenant_id: str, query_embedding, limit: int = 5) -> list[Dict]:
@@ -1393,6 +1413,42 @@ def retrieve(
             "stage": "fts_high_confidence"
         }
         trace["final_score"] = fts_top_score
+        trace["candidates_count"] = fts_candidate_count
+        trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
+        trace["total_ms"] = int((time.time() - start_time) * 1000)
+        
+        if use_cache:
+            cache_write_start = time.time()
+            set_cached_result(tenant_id, normalized_query, result)
+            trace["retrieval_cache_ms"] += int((time.time() - cache_write_start) * 1000)
+        
+        return result, trace
+    
+    # Small tenant fast path: Skip vector search for small tenants when FTS has candidates
+    # For tenants with <= 50 FAQs, if FTS returns any candidates, skip expensive vector search
+    SMALL_TENANT_FAQ_THRESHOLD = 50
+    tenant_faq_count = _get_tenant_faq_count(tenant_id)
+    trace["tenant_faq_count"] = tenant_faq_count
+    trace["fts_candidate_count_at_small_check"] = fts_candidate_count
+    trace["small_tenant_threshold"] = SMALL_TENANT_FAQ_THRESHOLD
+    trace["small_tenant_check_result"] = fts_candidate_count >= 1 and tenant_faq_count <= SMALL_TENANT_FAQ_THRESHOLD
+    
+    if fts_candidate_count >= 1 and tenant_faq_count <= SMALL_TENANT_FAQ_THRESHOLD:
+        trace["stage"] = "fts_small_tenant_fast_path"
+        trace["used_fts_only"] = True
+        trace["ran_vector"] = False
+        trace["vector_k"] = 0
+        trace["selector_called"] = False
+        trace["vector_skipped"] = True
+        trace["vector_skip_reason"] = "fts_small_tenant"
+        result = {
+            "faq_id": fts_candidates[0]["faq_id"],
+            "question": fts_candidates[0]["question"],
+            "answer": fts_candidates[0]["answer"],
+            "score": fts_top_score if fts_top_score > 0 else 0.7,  # Use FTS score or default for small tenant
+            "stage": "fts_small_tenant_fast_path"
+        }
+        trace["final_score"] = result["score"]
         trace["candidates_count"] = fts_candidate_count
         trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
         trace["total_ms"] = int((time.time() - start_time) * 1000)

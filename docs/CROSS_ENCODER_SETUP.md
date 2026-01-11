@@ -90,7 +90,7 @@ The cross-encoder model is **never loaded at import time**:
 Verify app imports without sentence-transformers:
 
 ```bash
-pytest tests/test_import_smoke.py -v
+python -m pytest -q tests/test_import_smoke.py
 ```
 
 This ensures:
@@ -110,7 +110,7 @@ pip install -r requirements-cross-encoder.txt
 export ENABLE_CROSS_ENCODER=true
 
 # Run tests
-pytest tests/ -v
+python -m pytest -q tests
 ```
 
 ## Troubleshooting
