@@ -290,18 +290,13 @@ def expand_query_synonyms(query: str) -> str:
 
 def search_fts(tenant_id: str, query: str, limit: int = 20) -> list[dict]:
     """
-    Full-text search using PostgreSQL.
-    Expands query with synonyms (as plain text) before searching to improve recall.
-    ALWAYS uses websearch_to_tsquery() with fallback to plainto_tsquery().
-    Only uses to_tsquery() if query is explicitly prefixed with "TSQUERY:".
+    Full-text search using OR logic (match any term).
     """
     if not tenant_id or not query:
         return []
     
     # Check if query is explicitly a tsquery (prefixed with "TSQUERY:")
-    # This allows manual tsquery strings for testing/debugging
     if query.startswith("TSQUERY:"):
-        # Extract the actual tsquery string
         tsquery_str = query[8:].strip()
         try:
             with get_conn() as conn:
@@ -321,81 +316,47 @@ def search_fts(tenant_id: str, query: str, limit: int = 20) -> list[dict]:
                     LIMIT %s
                 """, (tsquery_str, tenant_id, tsquery_str, limit)).fetchall()
                 
-                results = []
-                for row in rows:
-                    results.append({
+                return [
+                    {
                         "faq_id": int(row[0]),
                         "question": str(row[1]),
                         "answer": str(row[2]),
                         "tenant_id": str(row[3]),
-                        "fts_score": float(row[4])
-                    })
-                return results
+                        "fts_score": float(row[4]),
+                        "source": "fts"
+                    }
+                    for row in rows
+                ]
         except Exception as e:
-            # If tsquery fails, fall through to websearch path
-            pass
+            print(f"FTS search error (TSQUERY: prefix): {e}")
+            return []
     
-    # Default path: expand synonyms and use websearch_to_tsquery()
-    expanded_query = expand_query_synonyms(query)
+    # Extract words and build OR query
+    words = [w.strip() for w in query.lower().split() if len(w.strip()) > 2]
+    
+    if not words:
+        return []
+    
+    # Build OR tsquery: 'smoke' | 'alarm' | 'beep'
+    or_terms = ' | '.join(words)
     
     try:
         with get_conn() as conn:
-            # Always use websearch_to_tsquery first (handles natural language intelligently)
             rows = conn.execute("""
                 SELECT 
                     fi.id AS faq_id,
                     fi.question,
                     fi.answer,
                     fi.tenant_id,
-                    ts_rank(fi.search_vector, websearch_to_tsquery('english', %s)) AS fts_score
+                    ts_rank(fi.search_vector, to_tsquery('english', %s)) AS fts_score
                 FROM faq_items fi
                 WHERE fi.tenant_id = %s
                   AND fi.enabled = true
                   AND (fi.is_staged = false OR fi.is_staged IS NULL)
-                  AND fi.search_vector @@ websearch_to_tsquery('english', %s)
+                  AND fi.search_vector @@ to_tsquery('english', %s)
                 ORDER BY fts_score DESC
                 LIMIT %s
-            """, (expanded_query, tenant_id, expanded_query, limit)).fetchall()
-            
-            # If no results, try simpler plainto_tsquery as fallback
-            if not rows:
-                rows = conn.execute("""
-                    SELECT 
-                        fi.id AS faq_id,
-                        fi.question,
-                        fi.answer,
-                        fi.tenant_id,
-                        ts_rank(fi.search_vector, plainto_tsquery('english', %s)) AS fts_score
-                    FROM faq_items fi
-                    WHERE fi.tenant_id = %s
-                      AND fi.enabled = true
-                      AND (fi.is_staged = false OR fi.is_staged IS NULL)
-                      AND fi.search_vector @@ plainto_tsquery('english', %s)
-                    ORDER BY fts_score DESC
-                    LIMIT %s
-                """, (expanded_query, tenant_id, expanded_query, limit)).fetchall()
-            
-            # If still no results, try ILIKE on question/answer (last resort)
-            if not rows:
-                # Extract words from query
-                words = [w for w in query.lower().split() if len(w) > 2]
-                if words:
-                    # Search for any word match
-                    like_pattern = '%' + '%'.join(words[:3]) + '%'
-                    rows = conn.execute("""
-                        SELECT 
-                            fi.id AS faq_id,
-                            fi.question,
-                            fi.answer,
-                            fi.tenant_id,
-                            0.5 AS fts_score
-                        FROM faq_items fi
-                        WHERE fi.tenant_id = %s
-                          AND fi.enabled = true
-                          AND (fi.is_staged = false OR fi.is_staged IS NULL)
-                          AND (LOWER(fi.question || ' ' || fi.answer) LIKE %s)
-                        LIMIT %s
-                    """, (tenant_id, like_pattern, limit)).fetchall()
+            """, (or_terms, tenant_id, or_terms, limit)).fetchall()
             
             return [
                 {
