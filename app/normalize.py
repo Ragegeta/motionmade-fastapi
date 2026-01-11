@@ -38,8 +38,10 @@ SLANG_MAP = [
     (r'\bwat\b', 'what'),
     (r'\bwut\b', 'what'),
     (r'\bhwo\b', 'how'),
+    (r'\bhw\b', 'how'),          # "hw much" -> "how much"
     (r'\bwhr\b', 'where'),
     (r'\bwen\b', 'when'),
+    (r'\bcn\b', 'can'),          # "cn u" -> "can you"
     
     # Contractions/shortcuts
     (r'\bgonna\b', 'going to'),
@@ -83,6 +85,19 @@ SLANG_MAP = [
     (r'\bcleaing\b', 'cleaning'),
     (r'\bservcie\b', 'service'),
     (r'\bsrevice\b', 'service'),
+    
+    # Electrical/technical typos
+    (r'\bpwr\b', 'power'),           # "pwr out" -> "power out"
+    (r'\bsaftey\b', 'safety'),       # "saftey switch" -> "safety switch"
+    (r'\bswich\b', 'switch'),        # "swich" -> "switch"
+    (r'\bswitchbord\b', 'switchboard'),  # "switchbord" -> "switchboard"
+    (r'\blicenced\b', 'licensed'),   # "licenced" -> "licensed"
+    (r'\bgoin\b', 'going'),          # "goin off" -> "going off"
+    (r'\bbeepin\b', 'beeping'),      # "beepin" -> "beeping"
+    (r'\bflickring\b', 'flickering'),  # "flickring" -> "flickering"
+    (r'\bplumbr\b', 'plumber'),      # "plumbr" -> "plumber"
+    (r'\bpanls\b', 'panels'),        # "solar panls" -> "solar panels"
+    (r'\baircon\b', 'air con'),      # "aircon" -> "air con" (normalize to space-separated form)
 ]
 
 FLUFF_PREFIXES = [
