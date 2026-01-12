@@ -1265,6 +1265,9 @@ def retrieve(
         "retrieval_db_ms": 0,
         "retrieval_db_fts_ms": 0,
         "retrieval_db_vector_ms": 0,
+        "retrieval_db_tenant_count_ms": 0,
+        "retrieval_db_cache_read_ms": 0,
+        "retrieval_db_cache_write_ms": 0,
         "retrieval_rerank_ms": 0,
         "retrieval_cache_ms": 0,
         "retrieval_total_ms": 0,
@@ -1363,7 +1366,11 @@ def retrieve(
     # Stage 0: Check cache (only after early rejection checks)
     cache_start_time = time.time()
     if use_cache:
+        cache_read_db_start = time.time()
         cached = get_cached_result(tenant_id, normalized_query)
+        cache_read_db_ms = int((time.time() - cache_read_db_start) * 1000)
+        trace["retrieval_db_cache_read_ms"] = cache_read_db_ms
+        trace["retrieval_db_ms"] += cache_read_db_ms
         trace["retrieval_cache_ms"] += int((time.time() - cache_start_time) * 1000)
         if cached:
             # Double-check cached result isn't a wrong-service hit (defensive)
@@ -1436,7 +1443,11 @@ def retrieve(
         
         if use_cache:
             cache_write_start = time.time()
+            cache_write_db_start = time.time()
             set_cached_result(tenant_id, normalized_query, result)
+            cache_write_db_ms = int((time.time() - cache_write_db_start) * 1000)
+            trace["retrieval_db_cache_write_ms"] = cache_write_db_ms
+            trace["retrieval_db_ms"] += cache_write_db_ms
             trace["retrieval_cache_ms"] += int((time.time() - cache_write_start) * 1000)
         
         return result, trace
@@ -1444,7 +1455,11 @@ def retrieve(
     # Small tenant fast path: Skip vector search for small tenants when FTS has candidates
     # For tenants with <= 50 FAQs, if FTS returns any candidates, skip expensive vector search
     SMALL_TENANT_FAQ_THRESHOLD = 50
+    tenant_count_start_time = time.time()
     tenant_faq_count = _get_tenant_faq_count(tenant_id)
+    tenant_count_db_ms = int((time.time() - tenant_count_start_time) * 1000)
+    trace["retrieval_db_tenant_count_ms"] = tenant_count_db_ms
+    trace["retrieval_db_ms"] += tenant_count_db_ms
     trace["tenant_faq_count"] = tenant_faq_count
     trace["fts_candidate_count_at_small_check"] = fts_candidate_count
     trace["small_tenant_threshold"] = SMALL_TENANT_FAQ_THRESHOLD
@@ -1472,7 +1487,11 @@ def retrieve(
         
         if use_cache:
             cache_write_start = time.time()
+            cache_write_db_start = time.time()
             set_cached_result(tenant_id, normalized_query, result)
+            cache_write_db_ms = int((time.time() - cache_write_db_start) * 1000)
+            trace["retrieval_db_cache_write_ms"] = cache_write_db_ms
+            trace["retrieval_db_ms"] += cache_write_db_ms
             trace["retrieval_cache_ms"] += int((time.time() - cache_write_start) * 1000)
         
         return result, trace
@@ -1588,7 +1607,11 @@ def retrieve(
         
         if use_cache:
             cache_write_start = time.time()
+            cache_write_db_start = time.time()
             set_cached_result(tenant_id, normalized_query, result)
+            cache_write_db_ms = int((time.time() - cache_write_db_start) * 1000)
+            trace["retrieval_db_cache_write_ms"] = cache_write_db_ms
+            trace["retrieval_db_ms"] += cache_write_db_ms
             trace["retrieval_cache_ms"] += int((time.time() - cache_write_start) * 1000)
         
         # Calculate total retrieval time (from start of retrieval, excluding early checks)
@@ -1735,7 +1758,11 @@ def retrieve(
     
     if use_cache:
         cache_write_start = time.time()
+        cache_write_db_start = time.time()
         set_cached_result(tenant_id, normalized_query, result)
+        cache_write_db_ms = int((time.time() - cache_write_db_start) * 1000)
+        trace["retrieval_db_cache_write_ms"] = cache_write_db_ms
+        trace["retrieval_db_ms"] += cache_write_db_ms
         trace["retrieval_cache_ms"] += int((time.time() - cache_write_start) * 1000)
     
     return result, trace

@@ -440,6 +440,12 @@ def _set_timing_headers(req: Request, resp: Response, timings: dict, cache_hit: 
             resp.headers["X-Timing-Retrieval-FTS"] = str(retrieval_trace["retrieval_db_fts_ms"])
         if retrieval_trace.get("retrieval_db_vector_ms") is not None:
             resp.headers["X-Timing-Retrieval-Vector"] = str(retrieval_trace["retrieval_db_vector_ms"])
+        if retrieval_trace.get("retrieval_db_tenant_count_ms") is not None:
+            resp.headers["X-Timing-Retrieval-Tenant-Count"] = str(retrieval_trace["retrieval_db_tenant_count_ms"])
+        if retrieval_trace.get("retrieval_db_cache_read_ms") is not None:
+            resp.headers["X-Timing-Retrieval-Cache-Read"] = str(retrieval_trace["retrieval_db_cache_read_ms"])
+        if retrieval_trace.get("retrieval_db_cache_write_ms") is not None:
+            resp.headers["X-Timing-Retrieval-Cache-Write"] = str(retrieval_trace["retrieval_db_cache_write_ms"])
         if retrieval_trace.get("retrieval_rerank_ms") is not None:
             resp.headers["X-Timing-Retrieval-Rerank"] = str(retrieval_trace["retrieval_rerank_ms"])
         
