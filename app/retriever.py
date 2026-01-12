@@ -34,6 +34,11 @@ THETA_RERANK = 0.40     # Rerank zone: 0.40-0.82
 # Cache TTL (seconds)
 CACHE_TTL = 86400  # 24 hours (updated per requirements)
 
+# Tenant FAQ count cache (in-memory, per-process)
+# Format: {tenant_id: (count, timestamp)}
+_tenant_count_cache = {}
+TENANT_COUNT_CACHE_TTL = 300  # 5 minutes (tenant FAQ counts rarely change)
+
 # Selector confidence threshold
 SELECTOR_CONFIDENCE_THRESHOLD = 0.6  # Minimum confidence for selector to accept
 
@@ -471,11 +476,30 @@ def merge_candidates(
     return result
 
 
+def _invalidate_tenant_count_cache(tenant_id: str):
+    """Invalidate cached tenant FAQ count (call when FAQs are uploaded/promoted)."""
+    if tenant_id in _tenant_count_cache:
+        del _tenant_count_cache[tenant_id]
+
+
 def _get_tenant_faq_count(tenant_id: str) -> int:
-    """Get count of enabled FAQs for a tenant (cached per-request).
+    """Get count of enabled FAQs for a tenant (in-memory cached with TTL).
+    
+    Cache TTL: 5 minutes (tenant FAQ counts rarely change).
+    Cache is invalidated automatically after TTL expires, or manually via _invalidate_tenant_count_cache().
     
     Returns 0 if tenant doesn't exist or query fails.
     """
+    now = time.time()
+    
+    # Check cache first
+    if tenant_id in _tenant_count_cache:
+        count, cached_time = _tenant_count_cache[tenant_id]
+        if now - cached_time < TENANT_COUNT_CACHE_TTL:
+            # Cache hit - return cached value (saves ~1.4s DB query)
+            return count
+    
+    # Cache miss or expired - query DB
     try:
         with get_conn() as conn:
             row = conn.execute("""
@@ -485,7 +509,11 @@ def _get_tenant_faq_count(tenant_id: str) -> int:
                   AND enabled = true 
                   AND (is_staged = false OR is_staged IS NULL)
             """, (tenant_id,)).fetchone()
-            return int(row[0]) if row and row[0] else 0
+            count = int(row[0]) if row and row[0] else 0
+        
+        # Update cache
+        _tenant_count_cache[tenant_id] = (count, now)
+        return count
     except Exception as e:
         print(f"Error getting tenant FAQ count for {tenant_id}: {e}")
         return 0

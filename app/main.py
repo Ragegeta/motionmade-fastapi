@@ -18,6 +18,7 @@ from .settings import settings
 from .guardrails import FALLBACK, violates_general_safety, classify_fact_domain, is_capability_question, is_logistics_question
 from .openai_client import embed_text, chat_once
 from .retrieval import retrieve_faq_answer
+from .retriever import _invalidate_tenant_count_cache
 from .db import get_conn
 from .triage import triage_input, CLARIFY_RESPONSE
 from .normalize import normalize_message
@@ -2332,6 +2333,11 @@ def promote_staged(
                     INSERT INTO tenant_promote_history (tenant_id, status, suite_result)
                     VALUES (%s, 'success', %s)
                 """, (tenantId, json_lib.dumps(suite_result)))
+                
+                conn.commit()
+                
+                # Invalidate tenant FAQ count cache (count may have changed)
+                _invalidate_tenant_count_cache(tenantId)
             else:
                 # Rollback: restore live from last_good, move current back to staged
                 # First, move current (failed) back to staged
