@@ -39,6 +39,12 @@ CACHE_TTL = 86400  # 24 hours (updated per requirements)
 _tenant_count_cache = {}
 TENANT_COUNT_CACHE_TTL = 300  # 5 minutes (tenant FAQ counts rarely change)
 
+# Query result cache (in-memory, per-process)
+# Format: {(tenant_id, query_hash): (result_dict, timestamp)}
+# This sits BEFORE the DB cache to skip DB read/write on repeated queries
+_query_result_cache = {}
+QUERY_RESULT_CACHE_TTL = 300  # 5 minutes (same as tenant count)
+
 # Selector confidence threshold
 SELECTOR_CONFIDENCE_THRESHOLD = 0.6  # Minimum confidence for selector to accept
 
@@ -127,6 +133,11 @@ def get_cache_key(tenant_id: str, normalized_query: str) -> str:
     """Generate cache key from tenant + normalized query."""
     h = hashlib.sha256(f"{tenant_id}:{normalized_query}".encode()).hexdigest()[:16]
     return f"retr:{tenant_id}:{h}"
+
+
+def _get_query_hash(tenant_id: str, normalized_query: str) -> str:
+    """Generate hash for in-memory cache key."""
+    return hashlib.sha256(f"{tenant_id}:{normalized_query}".encode()).hexdigest()[:16]
 
 
 def get_cached_result(tenant_id: str, normalized_query: str) -> Optional[Dict]:
@@ -1394,6 +1405,34 @@ def retrieve(
     # Stage 0: Check cache (only after early rejection checks)
     cache_start_time = time.time()
     if use_cache:
+        # First check in-memory cache (fast, no DB query)
+        query_hash = _get_query_hash(tenant_id, normalized_query)
+        cache_key = (tenant_id, query_hash)
+        now = time.time()
+        
+        in_memory_hit = False
+        if cache_key in _query_result_cache:
+            cached_result, cached_time = _query_result_cache[cache_key]
+            if now - cached_time < QUERY_RESULT_CACHE_TTL:
+                # In-memory cache hit - return immediately (saves ~2.8s: DB read + write)
+                in_memory_hit = True
+                trace["cache_hit"] = True
+                trace["cache_hit_type"] = "in_memory"
+                trace["stage"] = "cache_in_memory"
+                trace["retrieval_db_cache_read_ms"] = 0  # Skipped DB read
+                trace["retrieval_db_cache_write_ms"] = 0  # Will skip DB write
+                trace["retrieval_cache_ms"] = int((time.time() - cache_start_time) * 1000)
+                trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
+                trace["total_ms"] = int((time.time() - start_time) * 1000)
+                # Set trace fields for cached results
+                trace["used_fts_only"] = cached_result.get("used_fts_only", False)
+                trace["ran_vector"] = cached_result.get("ran_vector", False)
+                trace["fts_candidate_count"] = cached_result.get("fts_candidate_count", 0)
+                trace["vector_k"] = cached_result.get("vector_k", 0)
+                trace["candidates_count"] = cached_result.get("candidates_count", 1)
+                return cached_result, trace
+        
+        # In-memory miss - check DB cache
         cache_read_db_start = time.time()
         cached = get_cached_result(tenant_id, normalized_query)
         cache_read_db_ms = int((time.time() - cache_read_db_start) * 1000)
@@ -1401,6 +1440,8 @@ def retrieve(
         trace["retrieval_db_ms"] += cache_read_db_ms
         trace["retrieval_cache_ms"] += int((time.time() - cache_start_time) * 1000)
         if cached:
+            # DB cache hit - populate in-memory cache for next time
+            _query_result_cache[cache_key] = (cached, now)
             # Double-check cached result isn't a wrong-service hit (defensive)
             # This shouldn't happen if cache was cleared, but be safe
             cached_query_lower = normalized_query.lower()
@@ -1471,6 +1512,12 @@ def retrieve(
         
         if use_cache:
             cache_write_start = time.time()
+            # Write to in-memory cache first (fast)
+            query_hash = _get_query_hash(tenant_id, normalized_query)
+            cache_key = (tenant_id, query_hash)
+            _query_result_cache[cache_key] = (result, time.time())
+            
+            # Also write to DB cache (for persistence across restarts)
             cache_write_db_start = time.time()
             set_cached_result(tenant_id, normalized_query, result)
             cache_write_db_ms = int((time.time() - cache_write_db_start) * 1000)
@@ -1515,6 +1562,12 @@ def retrieve(
         
         if use_cache:
             cache_write_start = time.time()
+            # Write to in-memory cache first (fast)
+            query_hash = _get_query_hash(tenant_id, normalized_query)
+            cache_key = (tenant_id, query_hash)
+            _query_result_cache[cache_key] = (result, time.time())
+            
+            # Also write to DB cache (for persistence across restarts)
             cache_write_db_start = time.time()
             set_cached_result(tenant_id, normalized_query, result)
             cache_write_db_ms = int((time.time() - cache_write_db_start) * 1000)
@@ -1635,6 +1688,12 @@ def retrieve(
         
         if use_cache:
             cache_write_start = time.time()
+            # Write to in-memory cache first (fast)
+            query_hash = _get_query_hash(tenant_id, normalized_query)
+            cache_key = (tenant_id, query_hash)
+            _query_result_cache[cache_key] = (result, time.time())
+            
+            # Also write to DB cache (for persistence across restarts)
             cache_write_db_start = time.time()
             set_cached_result(tenant_id, normalized_query, result)
             cache_write_db_ms = int((time.time() - cache_write_db_start) * 1000)
