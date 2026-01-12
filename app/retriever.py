@@ -1333,6 +1333,17 @@ def retrieve(
     # 1. Query contains wrong-service keyword AND
     # 2. Query does NOT have electrical intent signal AND
     # 3. Query is not about switchboard (always allow switchboard - it's electrical)
+    # 4. Tenant is NOT an electrical tenant (allow electrical keywords for electrical tenants)
+    # Check if tenant is electrical (tenant_id contains "electrical" or "sparky")
+    is_electrical_tenant = "electrical" in tenant_id.lower() or "sparky" in tenant_id.lower()
+    
+    # For electrical tenants, don't reject electrical keywords (sparky, powerpoint, electrician, etc.)
+    # Only reject non-electrical wrong-service keywords (plumbing, painting, etc.)
+    if is_electrical_tenant:
+        # Filter out electrical keywords from wrong-service check for electrical tenants
+        electrical_keywords = ["sparky", "electrician", "powerpoint", "power point", "socket", "outlet", "switchboard", "wiring", "electrical"]
+        wrong_service_keywords_in_query = [kw for kw in wrong_service_keywords_in_query if kw.lower() not in electrical_keywords]
+    
     if wrong_service_keywords_in_query and not has_electrical_intent and "switchboard" not in query_lower:
         trace["stage"] = "wrong_service_rejected"
         trace["wrong_service_keywords"] = wrong_service_keywords_in_query
