@@ -50,8 +50,11 @@ WRONG_SERVICE_KEYWORDS = [
     # Solar (explicit)
     "solar panel", "solar installation", "solar power install", "solar system install",
     # Building/Construction
-    "painting", "painter", "roofing", "roofer", "carpentry", "carpenter", "tiling", "tiler",
+    "painting", "painter", "paint", "roofing", "roofer", "carpentry", "carpenter", "tiling", "tiler",
     "plastering", "plasterer", "concreting", "concrete", "fencing", "fence",
+    # Electrical (for non-electrical tenants - these should be rejected)
+    "electrician", "sparky", "powerpoint", "power point", "socket", "outlet", "switchboard", "wiring",
+    "electrical", "electrical work", "electrical repair", "lighting installation", "circuit breaker",
     # Gardening
     "gardening", "landscaping", "lawn", "mowing", "tree", "hedge",
     # Security systems (NOT smoke/fire alarms - those are electrical)
