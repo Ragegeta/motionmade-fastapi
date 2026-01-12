@@ -1300,11 +1300,14 @@ def retrieve(
     # This MUST run before cache, before retrieval, before everything
     
     # Electrical intent signals - if query contains these, allow even if wrong-service keyword present
+    # NOTE: Single-word electrical terms (powerpoint, outlet, socket) should NOT be here - they're in WRONG_SERVICE_KEYWORDS
+    # Only include phrases that indicate actual electrical problems/context
     ELECTRICAL_INTENT_SIGNALS = [
         # Power/voltage issues
         "lights flicker", "lights dim", "lights dimming", "voltage drop", "power trips", "power cuts",
         "power went out", "power out", "power cutting", "safety switch", "rcd", "circuit breaker",
-        "fuse box", "switchboard", "electrical panel", "powerpoint", "outlet", "socket",
+        "fuse box", "switchboard", "electrical panel", "powerpoint not working", "outlet not working", "socket not working",
+        "powerpoint sparks", "outlet sparks", "hot outlet", "powerpoint dead", "outlet dead",
         # Smoke/fire alarms (beeping/chirping = electrical issue, not security system)
         "smoke alarm beep", "smoke alarm chirp", "fire alarm beep", "fire alarm chirp",
         "smoke detector beep", "smoke detector chirp", "alarm beep", "alarm chirp", "beeping",
