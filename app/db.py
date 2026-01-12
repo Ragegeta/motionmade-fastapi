@@ -5,13 +5,14 @@ from .settings import settings
 
 # Global connection pool (initialized on first use)
 _pool = None
+_pool_type = None  # Track which pooling method is active
 
 def _init_pool():
     """Initialize the connection pool (lazy initialization).
     
     Uses psycopg_pool if available, otherwise falls back to thread-local connections.
     """
-    global _pool
+    global _pool, _pool_type
     if _pool is None:
         try:
             # Try to use psycopg_pool (separate package for psycopg3)
@@ -22,6 +23,7 @@ def _init_pool():
                 max_size=10,
                 open=True  # Open pool immediately
             )
+            _pool_type = "psycopg_pool"
             print("[db] Using psycopg_pool for connection pooling")
         except ImportError:
             # Fallback: use thread-local connection reuse (simple pooling)
@@ -36,6 +38,7 @@ def _init_pool():
                 return _thread_local.conn
             
             _pool = {"type": "thread_local", "get_conn": _get_thread_conn, "local": _thread_local}
+            _pool_type = "thread_local"
             print("[db] Using thread-local connection reuse (psycopg_pool not available)")
     return _pool
 
@@ -68,3 +71,28 @@ def get_conn():
         with pool.connection() as conn:
             register_vector(conn)
             yield conn
+
+def get_pool_status():
+    """Get connection pool status for debugging."""
+    global _pool, _pool_type
+    if _pool is None:
+        return {"status": "not_initialized", "type": None}
+    
+    if _pool_type == "psycopg_pool":
+        try:
+            return {
+                "status": "active",
+                "type": "psycopg_pool",
+                "min_size": _pool.min_size if hasattr(_pool, 'min_size') else None,
+                "max_size": _pool.max_size if hasattr(_pool, 'max_size') else None,
+            }
+        except:
+            return {"status": "active", "type": "psycopg_pool", "details": "unknown"}
+    elif _pool_type == "thread_local":
+        return {
+            "status": "active",
+            "type": "thread_local",
+            "note": "Fallback mode - psycopg_pool not available"
+        }
+    else:
+        return {"status": "unknown", "type": None}

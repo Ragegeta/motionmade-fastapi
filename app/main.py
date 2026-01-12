@@ -1255,6 +1255,7 @@ def ping():
 @app.get("/api/health")
 def health():
     """Health check endpoint with git SHA detection."""
+    from .db import get_pool_status
     # Try multiple sources for git SHA (in order of preference)
     git_sha = (
         os.getenv("RENDER_GIT_COMMIT") or
@@ -1270,11 +1271,15 @@ def health():
         "unknown"
     )
     
+    # Get connection pool status
+    pool_status = get_pool_status()
+    
     return {
         "ok": True,
         "gitSha": git_sha,
         "release": release,
-        "deployed": git_sha != "unknown"
+        "deployed": git_sha != "unknown",
+        "db_pool": pool_status
     }
 
 
