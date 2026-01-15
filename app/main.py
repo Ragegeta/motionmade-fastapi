@@ -1159,80 +1159,26 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         return payload
 
     # -----------------------------
-    # Retrieval miss -> decide fallback vs general
+    # Retrieval miss -> strict fallback
     # -----------------------------
-    if _should_fallback_after_miss(msg, domain):
-        resp.headers["X-Debug-Branch"] = "fact_miss"
-        resp.headers["X-Faq-Hit"] = "false"
-        payload["replyText"] = FALLBACK
-        timings["total_ms"] = int((time.time() - _start_time) * 1000)
-        _set_timing_headers(request, resp, timings, _cache_hit)
-        _log_telemetry(
-            tenant_id=tenant_id,
-            query_text=msg,
-            normalized_text=normalized_msg,
-            intent_count=int(resp.headers.get("X-Intent-Count", "1")),
-            debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
-            faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
-            top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
-            retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
-            rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=timings["total_ms"]
-        )
-        return payload
-
-    # -----------------------------
-    # General chat (only truly non-business)
-    # -----------------------------
-    _t0 = time.time()
-    try:
-        system = (
-            "Reply in one short paragraph. Do not ask follow-up questions. "
-            "Do not state or imply any business facts like prices, durations, policies, inclusions, or fees. "
-            f"If the user asks anything that sounds like business specifics, reply exactly: {FALLBACK}"
-        )
-        reply = chat_once(system, msg, temperature=0.6)
-        timings["llm_ms"] = int((time.time() - _t0) * 1000)
-    except Exception:
-        timings["llm_ms"] = int((time.time() - _t0) * 1000)
-        resp.headers["X-Debug-Branch"] = "error"
-        resp.headers["X-Faq-Hit"] = "false"
-        payload["replyText"] = FALLBACK
-        timings["total_ms"] = int((time.time() - _start_time) * 1000)
-        _set_timing_headers(request, resp, timings, _cache_hit)
-        _log_telemetry(
-            tenant_id=tenant_id,
-            query_text=msg,
-            normalized_text=normalized_msg if 'normalized_msg' in locals() else msg,
-            intent_count=int(resp.headers.get("X-Intent-Count", "1")),
-            debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
-            faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
-            top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
-            retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
-            rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=timings["total_ms"]
-        )
-        return payload
-
-    if violates_general_safety(reply):
-        resp.headers["X-Debug-Branch"] = "general_fallback"
-        resp.headers["X-Faq-Hit"] = "false"
-        payload["replyText"] = FALLBACK
-        timings["total_ms"] = int((time.time() - _start_time) * 1000)
-        _set_timing_headers(request, resp, timings, _cache_hit)
-        _log_telemetry(
-            tenant_id=tenant_id,
-            query_text=msg,
-            normalized_text=normalized_msg,
-            intent_count=int(resp.headers.get("X-Intent-Count", "1")),
-            debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
-            faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
-            top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
-            retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
-            rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=timings["total_ms"]
-        )
-        return payload
+    resp.headers["X-Debug-Branch"] = "fact_miss"
+    resp.headers["X-Faq-Hit"] = "false"
+    payload["replyText"] = FALLBACK
+    timings["total_ms"] = int((time.time() - _start_time) * 1000)
+    _set_timing_headers(request, resp, timings, _cache_hit)
+    _log_telemetry(
+        tenant_id=tenant_id,
+        query_text=msg,
+        normalized_text=normalized_msg,
+        intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+        debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+        faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
+        top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
+        retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
+        rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+        latency_ms=timings["total_ms"]
+    )
+    return payload
 
     resp.headers["X-Debug-Branch"] = "general_ok"
     resp.headers["X-Faq-Hit"] = "false"
