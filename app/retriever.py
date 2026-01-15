@@ -78,6 +78,17 @@ WRONG_SERVICE_KEYWORDS = [
 ]
 
 
+def _keyword_in_query(keyword: str, query_lower: str) -> bool:
+    """Match keyword in query with word boundaries for single tokens."""
+    kw = (keyword or "").strip().lower()
+    if not kw:
+        return False
+    if " " in kw:
+        return kw in query_lower
+    # Single token: require word boundary to avoid substring hits (e.g., car -> carpets)
+    return re.search(rf"\b{re.escape(kw)}\b", query_lower) is not None
+
+
 def _tenant_has_keyword_in_faqs(tenant_id: str, keywords: list[str]) -> bool:
     """Check if any tenant FAQ mentions a keyword (question/answer or variants)."""
     if not tenant_id or not keywords:
@@ -1418,7 +1429,7 @@ def retrieve(
     # Check if query contains wrong-service keywords
     wrong_service_keywords_in_query = [
         kw for kw in WRONG_SERVICE_KEYWORDS 
-        if kw.lower() in query_lower
+        if _keyword_in_query(kw, query_lower)
     ]
     
     # Reject ONLY if:
