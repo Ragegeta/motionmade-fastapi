@@ -78,6 +78,56 @@ WRONG_SERVICE_KEYWORDS = [
 ]
 
 
+def _tenant_has_keyword_in_faqs(tenant_id: str, keywords: list[str]) -> bool:
+    """Check if any tenant FAQ mentions a keyword (question/answer or variants)."""
+    if not tenant_id or not keywords:
+        return False
+
+    try:
+        with get_conn() as conn:
+            for kw in keywords:
+                kw = (kw or "").strip().lower()
+                if not kw:
+                    continue
+                pattern = f"%{kw}%"
+                row = conn.execute(
+                    """
+                    SELECT 1
+                    FROM faq_items fi
+                    WHERE fi.tenant_id = %s
+                      AND fi.enabled = true
+                      AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                      AND (LOWER(fi.question) LIKE %s OR LOWER(fi.answer) LIKE %s)
+                    LIMIT 1
+                    """,
+                    (tenant_id, pattern, pattern),
+                ).fetchone()
+                if row:
+                    return True
+
+                # Also check variants if they exist
+                row = conn.execute(
+                    """
+                    SELECT 1
+                    FROM faq_variants fv
+                    JOIN faq_items fi ON fi.id = fv.faq_id
+                    WHERE fi.tenant_id = %s
+                      AND fi.enabled = true
+                      AND (fi.is_staged = false OR fi.is_staged IS NULL)
+                      AND fv.enabled = true
+                      AND LOWER(fv.variant_question) LIKE %s
+                    LIMIT 1
+                    """,
+                    (tenant_id, pattern),
+                ).fetchone()
+                if row:
+                    return True
+    except Exception as e:
+        print(f"Keyword check error for tenant {tenant_id}: {e}")
+
+    return False
+
+
 SELECTOR_PROMPT = """You are a precise FAQ selector. Match the customer question to the best FAQ.
 
 Customer question: "{question}"
@@ -1387,6 +1437,11 @@ def retrieve(
         wrong_service_keywords_in_query = [kw for kw in wrong_service_keywords_in_query if kw.lower() not in electrical_keywords]
     
     if wrong_service_keywords_in_query and not has_electrical_intent and "switchboard" not in query_lower:
+        # Allow if tenant FAQs actually cover one of these keywords
+        if _tenant_has_keyword_in_faqs(tenant_id, wrong_service_keywords_in_query):
+            trace["wrong_service_allowed_by_faq"] = True
+        else:
+            trace["wrong_service_allowed_by_faq"] = False
         trace["stage"] = "wrong_service_rejected"
         trace["wrong_service_keywords"] = wrong_service_keywords_in_query
         trace["total_ms"] = int((time.time() - start_time) * 1000)
