@@ -1,4 +1,4 @@
-﻿from typing import List
+from typing import List
 
 from openai import OpenAI
 from .settings import settings
@@ -40,8 +40,6 @@ def chat_once(system: str, user: str, temperature: float = 0.6, model: str = Non
     Returns:
         Response text
     """
-    import signal
-    
     model = model or settings.CHAT_MODEL
     
     # Create request params
@@ -57,10 +55,10 @@ def chat_once(system: str, user: str, temperature: float = 0.6, model: str = Non
         params["max_tokens"] = max_tokens
     
     # Handle timeout if specified
-    if timeout:
-        # Use OpenAI client's timeout parameter
+    if timeout is not None:
+        # Use OpenAI client's request options for reliable timeouts
         try:
-            r = client.chat.completions.create(**params, timeout=timeout)
+            r = client.with_options(timeout=timeout).chat.completions.create(**params)
         except Exception as e:
             if "timeout" in str(e).lower() or "timed out" in str(e).lower():
                 raise TimeoutError(f"LLM request timed out after {timeout}s")
