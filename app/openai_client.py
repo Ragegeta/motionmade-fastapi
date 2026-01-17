@@ -56,9 +56,18 @@ def chat_once(system: str, user: str, temperature: float = 0.6, model: str = Non
     
     # Handle timeout if specified
     if timeout is not None:
-        # Use OpenAI client's request options for reliable timeouts
+        # Enforce timeouts even if the SDK doesn't abort promptly
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
+
+        def _call():
+            return client.with_options(timeout=timeout).chat.completions.create(**params)
+
         try:
-            r = client.with_options(timeout=timeout).chat.completions.create(**params)
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_call)
+                r = future.result(timeout=timeout)
+        except FutureTimeoutError:
+            raise TimeoutError(f"LLM request timed out after {timeout}s")
         except Exception as e:
             if "timeout" in str(e).lower() or "timed out" in str(e).lower():
                 raise TimeoutError(f"LLM request timed out after {timeout}s")
