@@ -1174,7 +1174,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             "Do not ask follow-up questions. Do not include pricing, guarantees, "
             "or business-specific promises."
         )
-        reply = chat_once(system, msg, temperature=0.4, max_tokens=150, timeout=8)
+        reply = chat_once(system, msg, temperature=0.4, max_tokens=150, timeout=8, model="gpt-3.5-turbo")
         timings["llm_ms"] = int((time.time() - _t0) * 1000)
     except Exception:
         timings["llm_ms"] = int((time.time() - _t0) * 1000)
