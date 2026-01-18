@@ -1020,13 +1020,18 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         WRONG_SERVICE_KEYWORDS = []
         resp.headers["X-Wrong-Service-Check"] = "error"
         resp.headers["X-Wrong-Service-Error"] = str(e)[:80]
-    query_lower = primary_query.lower()
-    wrong_service_keywords_in_query = [
-        kw for kw in WRONG_SERVICE_KEYWORDS 
-        if kw.lower() in query_lower
-    ]
-    # Skip cache if wrong-service keywords detected (let retriever handle it properly)
-    skip_cache_for_wrong_service = len(wrong_service_keywords_in_query) > 0
+    try:
+        query_lower = primary_query.lower()
+        wrong_service_keywords_in_query = [
+            kw for kw in WRONG_SERVICE_KEYWORDS 
+            if kw.lower() in query_lower
+        ]
+        # Skip cache if wrong-service keywords detected (let retriever handle it properly)
+        skip_cache_for_wrong_service = len(wrong_service_keywords_in_query) > 0
+    except Exception as e:
+        resp.headers["X-Wrong-Service-Check"] = "error"
+        resp.headers["X-Wrong-Service-Error"] = str(e)[:80]
+        skip_cache_for_wrong_service = True
     
     cached_result = None
     if not skip_cache_for_wrong_service:
