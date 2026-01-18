@@ -1040,7 +1040,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
     if cached_result:
         _cache_hit = True
         resp.headers["X-Cache-Hit"] = "true"
-        resp.headers["X-Debug-Branch"] = cached_result.get("debug_branch", "fact_hit")
+        resp.headers["X-Debug-Branch"] = cached_result.get("debug_branch") or "fact_hit"
         
         # HARD RULE: Never allow faq_hit=true when candidate_count==0
         # Default to 0 (not 1) to be safe - old cached results without candidate_count should be rejected
