@@ -1,0 +1,134 @@
+[
+  {
+    "name": "pricing_whats_it_cost",
+    "question": "whats it cost",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "pricing_how_much",
+    "question": "how much",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "pricing_how_much_cost",
+    "question": "how much does it cost",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "pricing_keyword",
+    "question": "pricing",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "pricing_price",
+    "question": "price",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "pricing_what_do_you_charge",
+    "question": "what do you charge",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "pricing_hw_much",
+    "question": "hw much",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "service_what_do_you_do",
+    "question": "what do you do",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "service_what_services",
+    "question": "what services",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "service_how_does_it_work",
+    "question": "how does it work",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "service_what_is_motionmade",
+    "question": "what is motionmade",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "business_what_businesses_for",
+    "question": "what businesses is this for",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "business_who_is_this_for",
+    "question": "who is this for",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "feature_free_trial",
+    "question": "free trial",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "feature_have_trial",
+    "question": "do you have a trial",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "feature_typos",
+    "question": "can it handle typos",
+    "expect_faq_hit": true,
+    "expect_debug_branch_any": ["fact_hit", "rerank_hit", "selector_hit", "cache_hit", "fact_rewrite_hit"]
+  },
+  {
+    "name": "general_sun",
+    "question": "what is the sun",
+    "expect_faq_hit": false,
+    "expect_debug_branch_any": ["general_ok", "general_fast"]
+  },
+  {
+    "name": "general_joke",
+    "question": "tell me a joke",
+    "expect_faq_hit": false,
+    "expect_debug_branch_any": ["general_ok", "general_fast"]
+  },
+  {
+    "name": "general_math",
+    "question": "what is 2+2",
+    "expect_faq_hit": false,
+    "expect_debug_branch_any": ["general_ok", "general_fast"]
+  },
+  {
+    "name": "greeting_hi",
+    "question": "hi",
+    "expect_faq_hit": false,
+    "expect_debug_branch_any": ["general_ok", "general_fast"]
+  },
+  {
+    "name": "greeting_hello",
+    "question": "hello",
+    "expect_faq_hit": false,
+    "expect_debug_branch_any": ["general_ok", "general_fast"]
+  },
+  {
+    "name": "greeting_thanks",
+    "question": "thanks",
+    "expect_faq_hit": false,
+    "expect_debug_branch_any": ["general_ok", "general_fast"]
+  }
+]

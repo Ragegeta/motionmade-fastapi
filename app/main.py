@@ -542,6 +542,10 @@ _GENERAL_PATTERNS = [
     r"\bexplain\b",
     r"\bwhy is\b",
     r"\bhow does\b",
+    r"\bhi\b",
+    r"\bhello\b",
+    r"\bthanks\b",
+    r"\bthank you\b",
 ]
 
 _BUSINESS_KEYWORDS = [
@@ -1010,7 +1014,12 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
     # But first check for wrong-service keywords to avoid returning cached wrong-service hits
     # -----------------------------
     # Quick wrong-service check before cache (import WRONG_SERVICE_KEYWORDS from retriever)
-    from app.retriever import WRONG_SERVICE_KEYWORDS
+    try:
+        from app.retriever import WRONG_SERVICE_KEYWORDS
+    except Exception as e:
+        WRONG_SERVICE_KEYWORDS = []
+        resp.headers["X-Wrong-Service-Check"] = "error"
+        resp.headers["X-Wrong-Service-Error"] = str(e)[:80]
     query_lower = primary_query.lower()
     wrong_service_keywords_in_query = [
         kw for kw in WRONG_SERVICE_KEYWORDS 
