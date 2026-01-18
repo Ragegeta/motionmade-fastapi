@@ -598,7 +598,7 @@ def _init_debug_headers(resp: Response, tenant_id: str, msg: str) -> str:
     _set_common_headers(resp, tenant_id)
 
     domain = _replica_fact_domain(msg)
-    resp.headers["X-Fact-Domain"] = domain
+    resp.headers["X-Fact-Domain"] = domain or "none"
     resp.headers["X-Fact-Gate-Hit"] = "true" if domain != "none" else "false"
 
     resp.headers["X-Faq-Hit"] = "false"
@@ -873,7 +873,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
     _t0 = time.time()
     triage_result, should_continue = triage_input(msg)
     timings["triage_ms"] = int((time.time() - _t0) * 1000)
-    resp.headers["X-Triage-Result"] = triage_result
+    resp.headers["X-Triage-Result"] = triage_result or "pass"
     
     if not should_continue:
         resp.headers["X-Debug-Branch"] = "clarify"
