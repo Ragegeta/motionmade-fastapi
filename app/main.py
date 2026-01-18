@@ -556,6 +556,13 @@ _BUSINESS_KEYWORDS = [
     "payment", "invoice", "refund", "cancel", "discount",
 ]
 
+_BUSINESS_INTENT_PHRASES = [
+    "what do you do",
+    "how does it work",
+    "what is motionmade",
+    "who is this for",
+]
+
 
 def _is_obvious_general_question(msg: str) -> bool:
     t = (msg or "").strip().lower()
@@ -563,6 +570,8 @@ def _is_obvious_general_question(msg: str) -> bool:
         return False
 
     # Block anything that looks business-related or capability/logistics
+    if any(p in t for p in _BUSINESS_INTENT_PHRASES):
+        return False
     if classify_fact_domain(t) != "none":
         return False
     if is_capability_question(t) or is_logistics_question(t):

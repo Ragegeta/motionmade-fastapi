@@ -33,6 +33,10 @@ def triage_input(text: str) -> tuple:
     if not t:
         return ("clarify", False)
 
+    # Allow short greetings to pass through
+    if t.lower() in {"hi", "hello", "hey"}:
+        return ("pass", True)
+
     if _count_meaningful_chars(t) < 3:
         return ("clarify", False)
 
@@ -57,6 +61,9 @@ def triage_input(text: str) -> tuple:
         return ("clarify", False)
 
     return ("pass", True)
+
+
+
 
 
 
