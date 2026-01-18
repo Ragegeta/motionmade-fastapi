@@ -531,6 +531,46 @@ def _replica_fact_domain(msg: str) -> str:
     if re.search(r"\b(why|explain|what is|what's|how does|define)\b", t):
         return "none"
 
+
+_GENERAL_PATTERNS = [
+    r"\bwhat is (the )?(sun|moon|sky|weather|rain|snow|clouds)\b",
+    r"\btell me a joke\b",
+    r"\btell me about\b",
+    r"\bwho is\b",
+    r"\bwhat is\b",
+    r"\bdefine\b",
+    r"\bexplain\b",
+    r"\bwhy is\b",
+    r"\bhow does\b",
+]
+
+_BUSINESS_KEYWORDS = [
+    "price", "pricing", "cost", "quote", "estimate", "booking", "book", "appointment",
+    "availability", "available", "schedule", "hours", "opening", "closing",
+    "address", "location", "contact", "phone", "email",
+    "service", "services", "business", "company", "guarantee", "warranty",
+    "payment", "invoice", "refund", "cancel", "discount",
+]
+
+
+def _is_obvious_general_question(msg: str) -> bool:
+    t = (msg or "").strip().lower()
+    if not t:
+        return False
+
+    # Block anything that looks business-related or capability/logistics
+    if classify_fact_domain(t) != "none":
+        return False
+    if is_capability_question(t) or is_logistics_question(t):
+        return False
+    if any(k in t for k in _BUSINESS_KEYWORDS):
+        return False
+
+    # Simple math and obvious general prompts
+    if re.search(r"\b\d+\s*[\+\-\*/]\s*\d+\b", t):
+        return True
+    return any(re.search(p, t) for p in _GENERAL_PATTERNS)
+
     # Universal capability phrasing -> business
     if re.search(r"\b(can|could)\s+(you|u|ya)\b", t) or re.search(r"\bdo\s+(you|u|ya)\b", t) or "do you offer" in t or "are you able to" in t:
         return "capability"
@@ -870,6 +910,101 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
     domain = _init_debug_headers(resp, tenant_id, primary_query)
     payload = _base_payload()
 
+    def _respond_general(ok_branch: str, fallback_branch: str) -> dict:
+        _t0 = time.time()
+        _general_start = _t0
+        try:
+            system = (
+                "Answer this question helpfully and professionally. Keep it brief. "
+                "Do not ask follow-up questions. Do not include pricing, guarantees, "
+                "or business-specific promises."
+            )
+            reply = chat_once(
+                system,
+                msg,
+                temperature=0.4,
+                max_tokens=150,
+                timeout=8,
+                model="gpt-3.5-turbo",
+            )
+            timings["llm_ms"] = int((time.time() - _t0) * 1000)
+            timings["general_llm_ms"] = timings["llm_ms"]
+        except Exception:
+            timings["llm_ms"] = int((time.time() - _t0) * 1000)
+            timings["general_llm_ms"] = timings["llm_ms"]
+            resp.headers["X-Debug-Branch"] = "error"
+            resp.headers["X-Faq-Hit"] = "false"
+            payload["replyText"] = FALLBACK
+            timings["general_total_ms"] = int((time.time() - _general_start) * 1000)
+            timings["total_ms"] = int((time.time() - _start_time) * 1000)
+            _set_timing_headers(request, resp, timings, _cache_hit)
+            _log_telemetry(
+                tenant_id=tenant_id,
+                query_text=msg,
+                normalized_text=normalized_msg if 'normalized_msg' in locals() else msg,
+                intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+                debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+                faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
+                top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
+                retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
+                rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+                latency_ms=timings["total_ms"]
+            )
+            return payload
+
+        _t0 = time.time()
+        if violates_general_safety(reply):
+            timings["general_safety_ms"] = int((time.time() - _t0) * 1000)
+            resp.headers["X-Debug-Branch"] = fallback_branch
+            resp.headers["X-Faq-Hit"] = "false"
+            payload["replyText"] = FALLBACK
+            timings["general_total_ms"] = int((time.time() - _general_start) * 1000)
+            timings["total_ms"] = int((time.time() - _start_time) * 1000)
+            _set_timing_headers(request, resp, timings, _cache_hit)
+            _log_telemetry(
+                tenant_id=tenant_id,
+                query_text=msg,
+                normalized_text=normalized_msg,
+                intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+                debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+                faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
+                top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
+                retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
+                rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+                latency_ms=timings["total_ms"]
+            )
+            return payload
+
+        timings["general_safety_ms"] = int((time.time() - _t0) * 1000)
+        resp.headers["X-Debug-Branch"] = ok_branch
+        resp.headers["X-Faq-Hit"] = "false"
+        payload["replyText"] = reply
+        timings["general_total_ms"] = int((time.time() - _general_start) * 1000)
+        timings["total_ms"] = int((time.time() - _start_time) * 1000)
+        _set_timing_headers(request, resp, timings, _cache_hit)
+        _log_telemetry(
+            tenant_id=tenant_id,
+            query_text=msg,
+            normalized_text=normalized_msg,
+            intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+            debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+            faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
+            top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
+            retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
+            rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+            latency_ms=timings["total_ms"]
+        )
+        return payload
+
+    # -----------------------------
+    # Fast path: obvious general questions skip retrieval
+    # -----------------------------
+    if _is_obvious_general_question(primary_query):
+        resp.headers["X-Retrieval-Stage"] = "skipped_general"
+        resp.headers["X-Retrieval-Skip-Reason"] = "obvious_general"
+        resp.headers["X-Cache-Hit"] = "false"
+        return _respond_general("general_fast", "general_fast_fallback")
+
     # -----------------------------
     # Check cache first (only for FAQ hits)
     # But first check for wrong-service keywords to avoid returning cached wrong-service hits
@@ -1176,102 +1311,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
     # -----------------------------
     # General chat (professional tone, brief)
     # -----------------------------
-    _t0 = time.time()
-    _general_start = _t0
-    try:
-        system = (
-            "Answer this question helpfully and professionally. Keep it brief. "
-            "Do not ask follow-up questions. Do not include pricing, guarantees, "
-            "or business-specific promises."
-        )
-        reply = chat_once(system, msg, temperature=0.4, max_tokens=150, timeout=8, model="gpt-3.5-turbo")
-        timings["llm_ms"] = int((time.time() - _t0) * 1000)
-        timings["general_llm_ms"] = timings["llm_ms"]
-    except Exception:
-        timings["llm_ms"] = int((time.time() - _t0) * 1000)
-        timings["general_llm_ms"] = timings["llm_ms"]
-        resp.headers["X-Debug-Branch"] = "error"
-        resp.headers["X-Faq-Hit"] = "false"
-        payload["replyText"] = FALLBACK
-        timings["general_total_ms"] = int((time.time() - _general_start) * 1000)
-        timings["total_ms"] = int((time.time() - _start_time) * 1000)
-        _set_timing_headers(request, resp, timings, _cache_hit)
-        _log_telemetry(
-            tenant_id=tenant_id,
-            query_text=msg,
-            normalized_text=normalized_msg if 'normalized_msg' in locals() else msg,
-            intent_count=int(resp.headers.get("X-Intent-Count", "1")),
-            debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
-            faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
-            top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
-            retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
-            rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=timings["total_ms"]
-        )
-        return payload
-
-    _t0 = time.time()
-    if violates_general_safety(reply):
-        timings["general_safety_ms"] = int((time.time() - _t0) * 1000)
-        resp.headers["X-Debug-Branch"] = "general_fallback"
-        resp.headers["X-Faq-Hit"] = "false"
-        payload["replyText"] = FALLBACK
-        timings["general_total_ms"] = int((time.time() - _general_start) * 1000)
-        timings["total_ms"] = int((time.time() - _start_time) * 1000)
-        _set_timing_headers(request, resp, timings, _cache_hit)
-        _log_telemetry(
-            tenant_id=tenant_id,
-            query_text=msg,
-            normalized_text=normalized_msg,
-            intent_count=int(resp.headers.get("X-Intent-Count", "1")),
-            debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
-            faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
-            top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
-            retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
-            rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=timings["total_ms"]
-        )
-        return payload
-
-    timings["general_safety_ms"] = int((time.time() - _t0) * 1000)
-    resp.headers["X-Debug-Branch"] = "general_ok"
-    resp.headers["X-Faq-Hit"] = "false"
-    payload["replyText"] = reply
-    timings["general_total_ms"] = int((time.time() - _general_start) * 1000)
-    timings["total_ms"] = int((time.time() - _start_time) * 1000)
-    _set_timing_headers(request, resp, timings, _cache_hit)
-    _log_telemetry(
-        tenant_id=tenant_id,
-        query_text=msg,
-        normalized_text=normalized_msg,
-        intent_count=int(resp.headers.get("X-Intent-Count", "1")),
-        debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
-        faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
-        top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
-        retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
-        rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-        latency_ms=timings["total_ms"]
-    )
-    return payload
-
-    resp.headers["X-Debug-Branch"] = "general_ok"
-    resp.headers["X-Faq-Hit"] = "false"
-    payload["replyText"] = reply
-    timings["total_ms"] = int((time.time() - _start_time) * 1000)
-    _set_timing_headers(request, resp, timings, _cache_hit)
-    _log_telemetry(
-        tenant_id=tenant_id,
-        query_text=msg,
-        normalized_text=normalized_msg,
-        intent_count=int(resp.headers.get("X-Intent-Count", "1")),
-        debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
-        faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
-        top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
-        retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
-        rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-        latency_ms=timings["total_ms"]
-    )
-    return payload
+    return _respond_general("general_ok", "general_fallback")
 
 @app.get("/ping")
 def ping():
