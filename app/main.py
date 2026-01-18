@@ -461,6 +461,12 @@ def _set_timing_headers(req: Request, resp: Response, timings: dict, cache_hit: 
             resp.headers["X-Retrieval-Vector-K"] = str(retrieval_trace["vector_k"])
     resp.headers["X-Timing-Rewrite"] = str(timings["rewrite_ms"])
     resp.headers["X-Timing-LLM"] = str(timings["llm_ms"])
+    if "general_llm_ms" in timings:
+        resp.headers["X-Timing-General-LLM"] = str(timings["general_llm_ms"])
+    if "general_safety_ms" in timings:
+        resp.headers["X-Timing-General-Safety"] = str(timings["general_safety_ms"])
+    if "general_total_ms" in timings:
+        resp.headers["X-Timing-General-Total"] = str(timings["general_total_ms"])
     resp.headers["X-Timing-Total"] = str(timings["total_ms"])
     resp.headers["X-Cache-Hit"] = "true" if cache_hit else "false"
     
@@ -812,6 +818,9 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         "retrieval_ms": 0,
         "rewrite_ms": 0,
         "llm_ms": 0,
+        "general_llm_ms": 0,
+        "general_safety_ms": 0,
+        "general_total_ms": 0,
         "total_ms": 0
     }
     _cache_hit = False
@@ -1168,6 +1177,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
     # General chat (professional tone, brief)
     # -----------------------------
     _t0 = time.time()
+    _general_start = _t0
     try:
         system = (
             "Answer this question helpfully and professionally. Keep it brief. "
@@ -1176,11 +1186,14 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         )
         reply = chat_once(system, msg, temperature=0.4, max_tokens=150, timeout=8, model="gpt-3.5-turbo")
         timings["llm_ms"] = int((time.time() - _t0) * 1000)
+        timings["general_llm_ms"] = timings["llm_ms"]
     except Exception:
         timings["llm_ms"] = int((time.time() - _t0) * 1000)
+        timings["general_llm_ms"] = timings["llm_ms"]
         resp.headers["X-Debug-Branch"] = "error"
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
+        timings["general_total_ms"] = int((time.time() - _general_start) * 1000)
         timings["total_ms"] = int((time.time() - _start_time) * 1000)
         _set_timing_headers(request, resp, timings, _cache_hit)
         _log_telemetry(
@@ -1197,10 +1210,13 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         )
         return payload
 
+    _t0 = time.time()
     if violates_general_safety(reply):
+        timings["general_safety_ms"] = int((time.time() - _t0) * 1000)
         resp.headers["X-Debug-Branch"] = "general_fallback"
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
+        timings["general_total_ms"] = int((time.time() - _general_start) * 1000)
         timings["total_ms"] = int((time.time() - _start_time) * 1000)
         _set_timing_headers(request, resp, timings, _cache_hit)
         _log_telemetry(
@@ -1217,9 +1233,11 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         )
         return payload
 
+    timings["general_safety_ms"] = int((time.time() - _t0) * 1000)
     resp.headers["X-Debug-Branch"] = "general_ok"
     resp.headers["X-Faq-Hit"] = "false"
     payload["replyText"] = reply
+    timings["general_total_ms"] = int((time.time() - _general_start) * 1000)
     timings["total_ms"] = int((time.time() - _start_time) * 1000)
     _set_timing_headers(request, resp, timings, _cache_hit)
     _log_telemetry(
