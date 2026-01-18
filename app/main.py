@@ -1093,11 +1093,11 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         resp._retrieval_trace = retrieval_trace
         
         # Set debug headers from trace
-        resp.headers["X-Retrieval-Stage"] = retrieval_trace.get("stage", "unknown")
+        resp.headers["X-Retrieval-Stage"] = retrieval_trace.get("stage") or "unknown"
         if retrieval_trace.get("top_score") is not None:
             resp.headers["X-Retrieval-Score"] = str(retrieval_trace.get("top_score", 0))
         resp.headers["X-Cache-Hit"] = str(retrieval_trace.get("cache_hit", False)).lower()
-        resp.headers["X-Retrieval-Mode"] = retrieval_trace.get("retrieval_mode", "unknown")
+        resp.headers["X-Retrieval-Mode"] = retrieval_trace.get("retrieval_mode") or "unknown"
         resp.headers["X-Candidate-Count"] = str(retrieval_trace.get("candidates_count", 0))
         resp.headers["X-Selector-Called"] = "1" if retrieval_trace.get("selector_called", False) else "0"
         if retrieval_trace.get("selector_confidence") is not None:
@@ -1111,7 +1111,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         resp.headers["X-FTS-Count"] = str(retrieval_trace.get("fts_count", 0))
         resp.headers["X-Merged-Count"] = str(retrieval_trace.get("merged_count", 0))
         resp.headers["X-Final-Score"] = str(retrieval_trace.get("final_score", 0))
-        resp.headers["X-Accept-Reason"] = retrieval_trace.get("accept_reason", "")[:50]
+        resp.headers["X-Accept-Reason"] = (retrieval_trace.get("accept_reason") or "")[:50]
         if retrieval_trace.get("vector_skip_reason"):
             resp.headers["X-Retrieval-Skip-Vector-Reason"] = retrieval_trace.get("vector_skip_reason")[:50]
         resp.headers["X-Retrieval-Used-FTS-Only"] = "1" if retrieval_trace.get("used_fts_only", False) else "0"
@@ -1122,7 +1122,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         
         if retrieval_trace.get("rerank_trace"):
             rt = retrieval_trace["rerank_trace"]
-            resp.headers["X-Rerank-Method"] = rt.get("method", "none")
+            resp.headers["X-Rerank-Method"] = rt.get("method") or "none"
             resp.headers["X-Rerank-Ms"] = str(rt.get("duration_ms", 0))
             if rt.get("safety_gate"):
                 resp.headers["X-Rerank-Gate"] = rt.get("safety_gate", "")[:50]
