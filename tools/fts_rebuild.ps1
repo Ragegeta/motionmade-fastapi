@@ -1,10 +1,9 @@
-$ProgressPreference = "SilentlyContinue"
-
 param(
     [string]$TenantId = "motionmade_demo",
     [string]$BaseUrl = "https://motionmade-fastapi.onrender.com"
 )
 
+$ProgressPreference = "SilentlyContinue"
 $token = (Get-Content .env | Where-Object { $_ -match "^ADMIN_TOKEN=" }) -replace "^ADMIN_TOKEN=", ""
 if (-not $token) {
     Write-Host "ADMIN_TOKEN not found in .env" -ForegroundColor Red
