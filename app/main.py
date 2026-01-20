@@ -2320,14 +2320,17 @@ def promote_staged(
                         except:
                             variants = []
                     
-                    # Combine question, answer, and all variants for FTS
-                    all_text = (question or "") + " " + (answer or "") + " " + " ".join(variants)
+                    # Build weighted FTS vector: prioritize question/variants over answer text
+                    question_variants_text = (question or "") + " " + " ".join(variants)
+                    answer_text = answer or ""
                     
                     conn.execute("""
                         UPDATE faq_items 
-                        SET search_vector = to_tsvector('english', %s)
+                        SET search_vector =
+                            setweight(to_tsvector('english', %s), 'A') ||
+                            setweight(to_tsvector('english', %s), 'C')
                         WHERE id = %s
-                    """, (all_text, faq_id))
+                    """, (question_variants_text, answer_text, faq_id))
             except Exception as e:
                 # FTS update is non-critical, log but don't fail
                 print(f"FTS update error (non-critical): {e}")
@@ -3677,7 +3680,7 @@ def fts_diagnostics(
                         SELECT 
                             fi.id,
                             fi.question,
-                            ts_rank(fi.search_vector, to_tsquery('english', %s)) AS fts_score
+                            ts_rank_cd(ARRAY[0.1, 0.2, 0.4, 1.0], fi.search_vector, to_tsquery('english', %s)) AS fts_score
                         FROM faq_items fi
                         WHERE fi.tenant_id = %s
                           AND fi.enabled = true
@@ -3724,7 +3727,7 @@ def fts_diagnostics(
                         SELECT 
                             fi.id,
                             fi.question,
-                            ts_rank(fi.search_vector, to_tsquery('english', %s)) AS fts_score
+                            ts_rank_cd(ARRAY[0.1, 0.2, 0.4, 1.0], fi.search_vector, to_tsquery('english', %s)) AS fts_score
                         FROM faq_items fi
                         WHERE fi.tenant_id = %s
                           AND fi.enabled = true
@@ -3773,7 +3776,7 @@ def fts_diagnostics(
                         SELECT 
                             fi.id,
                             fi.question,
-                            ts_rank(fi.search_vector, plainto_tsquery('english', %s)) AS fts_score
+                            ts_rank_cd(ARRAY[0.1, 0.2, 0.4, 1.0], fi.search_vector, plainto_tsquery('english', %s)) AS fts_score
                         FROM faq_items fi
                         WHERE fi.tenant_id = %s
                           AND fi.enabled = true
@@ -3838,10 +3841,26 @@ def fts_rebuild(
     
     try:
         with get_conn() as conn:
-            # Update search_vector for all enabled, non-staged FAQs
+            # Update search_vector for all enabled, non-staged FAQs (weighted)
             result = conn.execute("""
                 UPDATE faq_items 
-                SET search_vector = to_tsvector('english', COALESCE(question,'') || ' ' || COALESCE(answer,'')) 
+                SET search_vector =
+                    setweight(
+                        to_tsvector(
+                            'english',
+                            COALESCE(question, '') || ' ' ||
+                            CASE
+                                WHEN faq_items.variants_json IS NULL THEN ''
+                                WHEN jsonb_typeof(faq_items.variants_json) <> 'array' THEN ''
+                                ELSE COALESCE((
+                                    SELECT string_agg(value, ' ')
+                                    FROM jsonb_array_elements_text(faq_items.variants_json)
+                                ), '')
+                            END
+                        ),
+                        'A'
+                    ) ||
+                    setweight(to_tsvector('english', COALESCE(answer, '')), 'C')
                 WHERE tenant_id = %s 
                   AND enabled = true 
                   AND (is_staged = false OR is_staged IS NULL)

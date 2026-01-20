@@ -386,7 +386,7 @@ def search_fts(tenant_id: str, query: str, limit: int = 20) -> list[dict]:
                         fi.question,
                         fi.answer,
                         fi.tenant_id,
-                        ts_rank(fi.search_vector, to_tsquery('english', %s)) AS fts_score
+                        ts_rank_cd(ARRAY[0.1, 0.2, 0.4, 1.0], fi.search_vector, to_tsquery('english', %s)) AS fts_score
                     FROM faq_items fi
                     WHERE fi.tenant_id = %s
                       AND fi.enabled = true
@@ -428,7 +428,7 @@ def search_fts(tenant_id: str, query: str, limit: int = 20) -> list[dict]:
                     fi.question,
                     fi.answer,
                     fi.tenant_id,
-                    ts_rank(fi.search_vector, to_tsquery('english', %s)) AS fts_score
+                    ts_rank_cd(ARRAY[0.1, 0.2, 0.4, 1.0], fi.search_vector, to_tsquery('english', %s)) AS fts_score
                 FROM faq_items fi
                 WHERE fi.tenant_id = %s
                   AND fi.enabled = true
