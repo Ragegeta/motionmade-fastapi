@@ -1,0 +1,14 @@
+{
+  "tenant_id": "brissy_cleaners",
+  "business_name": "Brissy Cleaners Brisbane",
+  "industry": "cleaning",
+  "services": ["house cleaning", "end of lease cleaning", "office cleaning", "carpet cleaning", "window cleaning"],
+  "service_area": ["Brisbane", "Gold Coast", "Sunshine Coast", "Logan", "Ipswich"],
+  "pricing": {
+    "hourly_rate": "$45/hour",
+    "end_of_lease": "From $250",
+    "office": "Custom quote"
+  }
+}
+
+

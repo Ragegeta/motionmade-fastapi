@@ -1,0 +1,17 @@
+{
+  "wrong_service_keywords": [
+    "electrician", "electrical", "powerpoint", "wiring", "switchboard",
+    "plumber", "plumbing", "toilet", "tap", "drain", "pipe",
+    "gas", "gas fitting", "gas heater",
+    "carpenter", "carpentry", "cabinet",
+    "painter", "painting",
+    "gardener", "gardening", "landscaping", "lawn", "mowing",
+    "pest control", "termite",
+    "locksmith", "security",
+    "mechanic", "car repair",
+    "roofing", "roofer", "roof",
+    "air conditioning", "aircon", "hvac"
+  ]
+}
+
+

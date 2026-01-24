@@ -1,0 +1,91 @@
+﻿[
+    {
+        "question":  "What is MotionMade AI",
+        "answer":  "MotionMade AI is a chat widget that automatically answers customer questions for local service businesses. It uses your FAQs to give instant, accurate responses 24/7 - no more repetitive questions."
+    },
+    {
+        "question":  "How much does it cost",
+        "answer":  "Setup is $200-500 depending on complexity. Monthly is $50-150 depending on query volume. No lock-in contracts - cancel anytime.",
+        "variants":  [
+                         "pricing",
+                         "price",
+                         "cost",
+                         "how much",
+                         "what do you charge",
+                         "rates",
+                         "fees"
+                     ]
+    },
+    {
+        "question":  "How does it work",
+        "answer":  "We gather your common customer questions, create FAQs, and install a chat widget on your website. It starts answering questions automatically within 30 minutes of setup."
+    },
+    {
+        "question":  "What businesses is this for",
+        "answer":  "Local service businesses like electricians, cleaners, plumbers, tradies, landscapers, and other service providers who get repetitive customer questions."
+    },
+    {
+        "question":  "Can it handle typos and slang",
+        "answer":  "Yes! It understands messy text, typos, and slang like \u0027hw much do u charge\u0027 or \u0027r u available 2morrow\u0027. Built for how real customers actually type."
+    },
+    {
+        "question":  "What if it doesnt know the answer",
+        "answer":  "If the question isn\u0027t covered by your FAQs, it politely asks the customer to contact you directly. It never makes up answers or guesses."
+    },
+    {
+        "question":  "How long does setup take",
+        "answer":  "About 30 minutes. We gather your FAQs, configure the widget, and install it on your site. Most businesses are live the same day."
+    },
+    {
+        "question":  "Do I need technical skills",
+        "answer":  "No. We handle all the technical setup. You just need to provide your business info and common customer questions. We do the rest."
+    },
+    {
+        "question":  "Can I customize the widget",
+        "answer":  "Yes. You can customize the color, position, greeting message, and header text to match your brand."
+    },
+    {
+        "question":  "What questions can it answer",
+        "answer":  "Any question you add to your FAQs - pricing, service areas, availability, what you offer, qualifications, guarantees, and more."
+    },
+    {
+        "question":  "How do I add or change FAQs",
+        "answer":  "You can update FAQs anytime through our admin dashboard. Changes go live within seconds."
+    },
+    {
+        "question":  "Does it work on mobile",
+        "answer":  "Yes. The widget is fully responsive and works on phones, tablets, and desktops."
+    },
+    {
+        "question":  "Can it handle multiple questions at once",
+        "answer":  "It answers one question at a time for accuracy. If a customer asks multiple questions, it addresses the main one and invites them to ask more."
+    },
+    {
+        "question":  "Is there a free trial",
+        "answer":  "We offer a 2-week pilot period for new customers. Try it on your site, see how it performs, then decide if you want to continue."
+    },
+    {
+        "question":  "What about wrong service questions",
+        "answer":  "If someone asks about a service you don\u0027t offer (like asking an electrician about plumbing), it politely redirects them. No wrong answers."
+    },
+    {
+        "question":  "How fast does it respond",
+        "answer":  "Most responses take 2-4 seconds. Fast enough to feel instant, thorough enough to be helpful."
+    },
+    {
+        "question":  "Do you offer support",
+        "answer":  "Yes. Email support is included. We help with FAQ optimization, troubleshooting, and any questions you have."
+    },
+    {
+        "question":  "Can I see analytics",
+        "answer":  "Yes. The admin dashboard shows total queries, hit rate, common questions, and response times so you can see how it\u0027s performing."
+    },
+    {
+        "question":  "What areas do you service",
+        "answer":  "We work with businesses anywhere in Australia. Setup is done remotely - no on-site visit needed."
+    },
+    {
+        "question":  "How do I get started",
+        "answer":  "Contact us with your business name, website, and a list of common customer questions. We\u0027ll have you set up within 24-48 hours."
+    }
+]

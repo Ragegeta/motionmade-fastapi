@@ -1,0 +1,82 @@
+﻿[
+    {
+        "expect":  "hit",
+        "q":  "u clean houses?"
+    },
+    {
+        "expect":  "hit",
+        "q":  "need someone 2 clean my place b4 inspection"
+    },
+    {
+        "expect":  "hit",
+        "q":  "how much 4 end of lease clean"
+    },
+    {
+        "expect":  "hit",
+        "q":  "do u do carpet cleaning"
+    },
+    {
+        "expect":  "hit",
+        "q":  "can u come today urgent"
+    },
+    {
+        "expect":  "hit",
+        "q":  "what areas u cover"
+    },
+    {
+        "expect":  "hit",
+        "q":  "bond back guarantee?"
+    },
+    {
+        "expect":  "hit",
+        "q":  "r u insured"
+    },
+    {
+        "expect":  "hit",
+        "q":  "how long does it take"
+    },
+    {
+        "expect":  "hit",
+        "q":  "do u bring supplies"
+    },
+    {
+        "expect":  "hit",
+        "q":  "window cleaning available?"
+    },
+    {
+        "expect":  "hit",
+        "q":  "office cleaning rates"
+    },
+    {
+        "expect":  "miss",
+        "q":  "fix my powerpoint"
+    },
+    {
+        "expect":  "miss",
+        "q":  "paint my house"
+    },
+    {
+        "expect":  "miss",
+        "q":  "plumber needed"
+    },
+    {
+        "expect":  "miss",
+        "q":  "gardening service"
+    },
+    {
+        "expect":  "miss",
+        "q":  "fix my car"
+    },
+    {
+        "expect":  "miss",
+        "q":  "asdfghjkl"
+    },
+    {
+        "expect":  "miss",
+        "q":  "what\u0027s the weather"
+    },
+    {
+        "expect":  "miss",
+        "q":  "tell me a joke"
+    }
+]

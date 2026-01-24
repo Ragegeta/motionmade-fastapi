@@ -55,3 +55,6 @@ def test_get_tenant_faq_count(mock_get_conn):
     assert count == 0  # Should return 0 on error
 
 
+
+
+
