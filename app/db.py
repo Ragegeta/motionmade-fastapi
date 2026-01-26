@@ -1,7 +1,10 @@
-﻿import psycopg
+import psycopg
 from contextlib import contextmanager
 from pgvector.psycopg import register_vector
 from .settings import settings
+
+# Track connections that have already had register_vector() called (avoids ~250ms overhead per retrieval)
+_registered_connections = set()
 
 # Global connection pool (initialized on first use)
 _pool = None
@@ -69,7 +72,10 @@ def get_conn():
     else:
         # Use psycopg_pool ConnectionPool
         with pool.connection() as conn:
-            register_vector(conn)
+            conn_id = id(conn)
+            if conn_id not in _registered_connections:
+                register_vector(conn)
+                _registered_connections.add(conn_id)
             yield conn
 
 def get_pool_status():
