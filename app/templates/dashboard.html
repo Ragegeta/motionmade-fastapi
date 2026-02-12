@@ -493,12 +493,20 @@
         <!-- Widget install (always visible) -->
         <div class="embed-section">
             <h2>Your widget</h2>
+            <p style="font-size: 14px; color: #6B7280; margin-bottom: 16px;">Choose a style — paste the code before the <code>&lt;/body&gt;</code> tag (inline: put the div where you want the widget).</p>
+            <p style="font-weight: 600; font-size: 14px; color: #111827; margin-bottom: 6px;">Floating button (recommended for most sites)</p>
+            <p style="font-size: 13px; color: #6B7280; margin-bottom: 8px;">Shows a "Got a question?" button in the corner.</p>
             <div class="embed-code">
                 <pre id="embedSnippet"></pre>
                 <button type="button" class="copy-btn" id="copyEmbedBtn">Copy</button>
             </div>
-            <p style="font-size: 14px; color: #6B7280; margin-bottom: 12px;">Paste this before the <code>&lt;/body&gt;</code> tag on your website.</p>
-            <details class="install-details">
+            <p style="font-weight: 600; font-size: 14px; color: #111827; margin-top: 20px; margin-bottom: 6px;">Inline embed (for landing pages)</p>
+            <p style="font-size: 13px; color: #6B7280; margin-bottom: 8px;">Embeds the Q&amp;A directly in your page.</p>
+            <div class="embed-code">
+                <pre id="embedSnippetInline"></pre>
+                <button type="button" class="copy-btn" id="copyEmbedBtnInline">Copy</button>
+            </div>
+            <details class="install-details" style="margin-top: 16px;">
                 <summary>How to install</summary>
                 <ul>
                     <li><strong>WordPress:</strong> Appearance → Theme Editor → footer.php → paste before &lt;/body&gt;</li>
@@ -572,11 +580,14 @@
 
             function setEmbedSnippet() {
                 var base = window.location.origin;
-                var snippet = '<!-- MotionMade AI - Instant Answers for ' + (tenantName || 'Your Business') + ' -->\n<script src="' + base + '/widget.js"\n  data-tenant="' + (tenantId || '') + '"\n  data-name="' + (tenantName || '') + '"\n  data-phone="' + (tenantPhone || '') + '"\n  data-color="' + (embedColor || '#2563EB') + '"\n  data-api="' + base + '"><\/script>';
+                var floatSnippet = '<!-- MotionMade AI - Instant Answers for ' + (tenantName || 'Your Business') + ' -->\n<script src="' + base + '/widget.js"\n  data-tenant="' + (tenantId || '') + '"\n  data-name="' + (tenantName || '') + '"\n  data-phone="' + (tenantPhone || '') + '"\n  data-color="' + (embedColor || '#2563EB') + '"\n  data-mode="float"\n  data-api="' + base + '"><\/script>';
+                var inlineSnippet = '<!-- MotionMade AI - Inline widget -->\n<div id="motionmade-widget"><\/div>\n<script src="' + base + '/widget.js"\n  data-tenant="' + (tenantId || '') + '"\n  data-name="' + (tenantName || '') + '"\n  data-phone="' + (tenantPhone || '') + '"\n  data-color="' + (embedColor || '#2563EB') + '"\n  data-mode="inline"\n  data-api="' + base + '"><\/script>';
                 var el = document.getElementById('embedSnippet');
-                if (el) el.textContent = snippet;
+                if (el) el.textContent = floatSnippet;
+                var elInline = document.getElementById('embedSnippetInline');
+                if (elInline) elInline.textContent = inlineSnippet;
                 var emptyEl = document.getElementById('emptyStateSnippet');
-                if (emptyEl) emptyEl.textContent = snippet;
+                if (emptyEl) emptyEl.textContent = floatSnippet;
             }
 
             function renderStats(data) {
@@ -745,6 +756,14 @@
 
             document.getElementById('copyEmbedBtn').addEventListener('click', function () {
                 var pre = document.getElementById('embedSnippet');
+                if (pre) {
+                    copyText(pre.textContent, this, 'Copied! ✓');
+                    this.classList.add('copied');
+                    setTimeout(function (btn) { btn.classList.remove('copied'); }, 2000, this);
+                }
+            });
+            document.getElementById('copyEmbedBtnInline').addEventListener('click', function () {
+                var pre = document.getElementById('embedSnippetInline');
                 if (pre) {
                     copyText(pre.textContent, this, 'Copied! ✓');
                     this.classList.add('copied');

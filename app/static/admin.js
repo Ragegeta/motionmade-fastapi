@@ -226,17 +226,24 @@ async function showTenantDetail(tenantId) {
                 `).join('')}
             </div>
             <div class="section">
-                <h2>Widget install code</h2>
-                <p style="color:#6b7280;margin-bottom:12px;">Paste this before the <code>&lt;/body&gt;</code> tag on your website.</p>
+                <h2>Widget install — choose a style</h2>
                 <div class="form-group">
                     <label>Contact phone (for fallback message)</label>
                     <input type="text" id="installContactPhone" placeholder="0412 345 678" value="${escapeHtml(tenant.contact_phone || '')}" />
                 </div>
-                <div style="margin-top:12px;">
+                <div style="margin-top:16px;">
+                    <p style="font-weight:600;color:#111827;margin-bottom:8px;">📌 Floating button (recommended for most sites)</p>
+                    <p style="font-size:14px;color:#6b7280;margin-bottom:8px;">Shows a "Got a question?" button in the corner of every page.</p>
                     <code id="installSnippet" style="display:block;background:#f9fafb;padding:12px;border-radius:8px;font-size:13px;white-space:pre-wrap;word-break:break-all;"></code>
-                    <button type="button" class="btn-primary" id="copyButton" style="margin-top:8px;">Copy</button>
-                    <span id="copySuccess" style="display:none;color:#059669;margin-left:8px;">Copied! ✓</span>
+                    <button type="button" class="btn-primary copyInstallBtn" data-target="installSnippet" style="margin-top:8px;">Copy</button>
                 </div>
+                <div style="margin-top:24px;">
+                    <p style="font-weight:600;color:#111827;margin-bottom:8px;">📋 Inline embed (recommended for landing pages)</p>
+                    <p style="font-size:14px;color:#6b7280;margin-bottom:8px;">Embeds the Q&amp;A directly into your page where you place it.</p>
+                    <code id="installSnippetInline" style="display:block;background:#f9fafb;padding:12px;border-radius:8px;font-size:13px;white-space:pre-wrap;word-break:break-all;"></code>
+                    <button type="button" class="btn-primary copyInstallBtn" data-target="installSnippetInline" style="margin-top:8px;">Copy</button>
+                </div>
+                <p style="color:#6b7280;margin-top:12px;font-size:14px;">Paste the code before <code>&lt;/body&gt;</code> (inline: put the div where you want the widget).</p>
             </div>
         `;
         updateInstallSnippet();
@@ -257,9 +264,12 @@ function updateInstallSnippet() {
     const tenantId = (detail && detail.getAttribute('data-tenant-id')) || '';
     const phoneEl = document.getElementById('installContactPhone');
     const phone = (phoneEl && phoneEl.value.trim()) || (detail && detail.getAttribute('data-tenant-phone')) || '';
-    const snippet = '<!-- MotionMade AI - Instant Answers for ' + escapeHtml(name) + ' -->\n<script src="' + escapeHtml(apiBase) + '/widget.js"\n  data-tenant="' + escapeHtml(tenantId) + '"\n  data-color="#2563EB"\n  data-name="' + escapeHtml(name) + '"\n  data-phone="' + escapeHtml(phone) + '"\n  data-api="' + escapeHtml(apiBase) + '"></script>';
-    const el = document.getElementById('installSnippet');
-    if (el) el.textContent = snippet;
+    const floatSnippet = '<!-- MotionMade AI - Instant Answers for ' + escapeHtml(name) + ' -->\n<script src="' + escapeHtml(apiBase) + '/widget.js"\n  data-tenant="' + escapeHtml(tenantId) + '"\n  data-name="' + escapeHtml(name) + '"\n  data-phone="' + escapeHtml(phone) + '"\n  data-color="#2563EB"\n  data-mode="float"\n  data-api="' + escapeHtml(apiBase) + '"><\/script>';
+    const inlineSnippet = '<!-- MotionMade AI - Inline widget for ' + escapeHtml(name) + ' -->\n<div id="motionmade-widget"><\/div>\n<script src="' + escapeHtml(apiBase) + '/widget.js"\n  data-tenant="' + escapeHtml(tenantId) + '"\n  data-name="' + escapeHtml(name) + '"\n  data-phone="' + escapeHtml(phone) + '"\n  data-color="#2563EB"\n  data-mode="inline"\n  data-api="' + escapeHtml(apiBase) + '"><\/script>';
+    const elFloat = document.getElementById('installSnippet');
+    const elInline = document.getElementById('installSnippetInline');
+    if (elFloat) elFloat.textContent = floatSnippet;
+    if (elInline) elInline.textContent = inlineSnippet;
 }
 
 async function addDomain(tenantId) {
@@ -405,13 +415,14 @@ async function rollbackTenant(tenantId) {
     }
 }
 
-async function copyInstallSnippet() {
-    const el = document.getElementById('installSnippet');
-    const ok = document.getElementById('copySuccess');
+function copyInstallSnippetTarget(targetId) {
+    const el = document.getElementById(targetId);
     if (!el) return;
+    const btn = document.querySelector('.copyInstallBtn[data-target="' + targetId + '"]');
     try {
-        await navigator.clipboard.writeText(el.textContent);
-        if (ok) { ok.style.display = 'inline'; ok.textContent = 'Copied! ✓'; setTimeout(() => { ok.style.display = 'none'; }, 2000); }
+        navigator.clipboard.writeText(el.textContent).then(function () {
+            if (btn) { btn.textContent = 'Copied! ✓'; setTimeout(function () { btn.textContent = 'Copy'; }, 2000); }
+        });
     } catch (e) {
         const ta = document.createElement('textarea');
         ta.value = el.textContent;
@@ -421,7 +432,7 @@ async function copyInstallSnippet() {
         ta.select();
         document.execCommand('copy');
         document.body.removeChild(ta);
-        if (ok) { ok.style.display = 'inline'; ok.textContent = 'Copied! ✓'; setTimeout(() => { ok.style.display = 'none'; }, 2000); }
+        if (btn) { btn.textContent = 'Copied! ✓'; setTimeout(function () { btn.textContent = 'Copy'; }, 2000); }
     }
 }
 
@@ -656,8 +667,11 @@ async function wizardSaveAndGoLive() {
         document.getElementById('wizardStep3').classList.add('active');
         document.getElementById('wizLiveTitle').textContent = '✓ ' + escapeHtml(wizardBusinessName) + ' is live!';
         loadWizardSuggested();
-        var embedSnippet = '<!-- MotionMade AI - Instant Answers for ' + escapeHtml(wizardBusinessName) + ' -->\n<script src="' + escapeHtml(API_BASE) + '/widget.js"\n  data-tenant="' + escapeHtml(wizardTenantId) + '"\n  data-color="#2563EB"\n  data-name="' + escapeHtml(wizardBusinessName) + '"\n  data-phone="' + escapeHtml(wizardContactPhone) + '"\n  data-api="' + escapeHtml(API_BASE) + '"></script>';
-        document.getElementById('wizEmbedCode').textContent = embedSnippet;
+        var floatSnippet = '<!-- MotionMade AI - Instant Answers for ' + escapeHtml(wizardBusinessName) + ' -->\n<script src="' + escapeHtml(API_BASE) + '/widget.js"\n  data-tenant="' + escapeHtml(wizardTenantId) + '"\n  data-name="' + escapeHtml(wizardBusinessName) + '"\n  data-phone="' + escapeHtml(wizardContactPhone) + '"\n  data-color="#2563EB"\n  data-mode="float"\n  data-api="' + escapeHtml(API_BASE) + '"><\/script>';
+        var inlineSnippet = '<!-- MotionMade AI - Inline widget -->\n<div id="motionmade-widget"><\/div>\n<script src="' + escapeHtml(API_BASE) + '/widget.js"\n  data-tenant="' + escapeHtml(wizardTenantId) + '"\n  data-name="' + escapeHtml(wizardBusinessName) + '"\n  data-phone="' + escapeHtml(wizardContactPhone) + '"\n  data-color="#2563EB"\n  data-mode="inline"\n  data-api="' + escapeHtml(API_BASE) + '"><\/script>';
+        document.getElementById('wizEmbedCode').textContent = floatSnippet;
+        var elInline = document.getElementById('wizEmbedCodeInline');
+        if (elInline) elInline.textContent = inlineSnippet;
     } catch (e) {
         errEl.textContent = e.message;
         progressEl.style.display = 'none';
@@ -731,10 +745,12 @@ function wizardAskQuestion(questionText) {
         });
 }
 
-function wizardCopyEmbed() {
-    const el = document.getElementById('wizEmbedCode');
-    const btn = document.getElementById('wizCopyEmbed');
-    if (!el) return;
+function wizardCopyEmbed(targetId, btnId) {
+    targetId = targetId || 'wizEmbedCode';
+    btnId = btnId || 'wizCopyEmbed';
+    const el = document.getElementById(targetId);
+    const btn = document.getElementById(btnId);
+    if (!el || !btn) return;
     navigator.clipboard.writeText(el.textContent).then(() => {
         btn.textContent = 'Copied! ✓';
         btn.classList.add('copied');
@@ -774,7 +790,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('wizAddFaq').addEventListener('click', wizardAddFaq);
     document.getElementById('wizFaqAnswer').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); wizardAddFaq(); } });
     document.getElementById('wizSaveAndGoLive').addEventListener('click', wizardSaveAndGoLive);
-    document.getElementById('wizCopyEmbed').addEventListener('click', wizardCopyEmbed);
+    document.getElementById('wizCopyEmbed').addEventListener('click', function () { wizardCopyEmbed('wizEmbedCode', 'wizCopyEmbed'); });
+    var wizCopyInline = document.getElementById('wizCopyEmbedInline');
+    if (wizCopyInline) wizCopyInline.addEventListener('click', function () { wizardCopyEmbed('wizEmbedCodeInline', 'wizCopyEmbedInline'); });
     document.getElementById('wizBackToBusinesses').addEventListener('click', loadTenants);
 
     document.addEventListener('click', function (e) {
@@ -846,9 +864,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const sid = e.target.getAttribute('data-suggestion-id');
             if (tid && sid) rejectSuggestion(tid, sid);
         }
-        if (e.target.id === 'copyButton') {
+        if (e.target.classList.contains('copyInstallBtn')) {
             e.preventDefault();
-            copyInstallSnippet();
+            const targetId = e.target.getAttribute('data-target');
+            if (targetId) copyInstallSnippetTarget(targetId);
         }
     });
 });

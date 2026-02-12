@@ -7,13 +7,25 @@
   var name = (script.getAttribute('data-name') || 'this business').trim();
   var phone = (script.getAttribute('data-phone') || '').trim();
   var apiBase = (script.getAttribute('data-api') || '').trim().replace(/\/$/, '');
+  var mode = (script.getAttribute('data-mode') || 'float').trim().toLowerCase();
   if (!apiBase) apiBase = window.location.origin;
   if (!tenant) return;
 
+  var isInline = (mode === 'inline');
   var root = document.createElement('div');
   root.id = 'mm-widget-root';
   root.setAttribute('data-motionmade', '1');
-  document.body.appendChild(root);
+  if (isInline) {
+    var container = document.getElementById('motionmade-widget');
+    if (container) {
+      container.appendChild(root);
+    } else {
+      document.body.appendChild(root);
+    }
+  } else {
+    document.body.appendChild(root);
+  }
+  if (isInline) root.classList.add('mm-inline');
 
   var sheet = document.createElement('style');
   sheet.textContent = [
@@ -21,6 +33,8 @@
     '#mm-widget-root .mm-btn{position:fixed;bottom:20px;right:20px;z-index:99998;padding:12px 20px;border:none;border-radius:999px;font-size:15px;font-weight:500;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:transform .15s,box-shadow .15s}',
     '#mm-widget-root .mm-btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,0.2)}',
     '#mm-widget-root .mm-panel{position:fixed;bottom:80px;right:20px;width:min(380px,calc(100vw - 40px));max-height:min(420px,calc(100vh - 120px));z-index:99997;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);display:flex;flex-direction:column;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;font-size:15px}',
+    '#mm-widget-root.mm-inline .mm-panel{position:relative;bottom:auto;right:auto;width:100%;max-width:500px;max-height:none;margin:0 auto;box-shadow:0 1px 3px rgba(0,0,0,0.1);border:1px solid #e5e7eb}',
+    '#mm-widget-root.mm-inline .mm-panel-hdr .mm-panel-close{display:none}',
     '#mm-widget-root .mm-panel-hdr{padding:14px 16px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center}',
     '#mm-widget-root .mm-panel-hdr h3{margin:0;font-size:16px;font-weight:600;color:#111827}',
     '#mm-widget-root .mm-panel-hdr .mm-sub{font-size:12px;color:#6b7280;margin-top:2px}',
@@ -80,7 +94,7 @@
   function renderPanel() {
     var panel = document.createElement('div');
     panel.className = 'mm-panel';
-    panel.style.display = 'none';
+    panel.style.display = isInline ? 'flex' : 'none';
 
     var hdr = document.createElement('div');
     hdr.className = 'mm-panel-hdr';
@@ -114,19 +128,22 @@
   }
 
   function fetchSuggested() {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', apiBase + '/api/v2/tenant/' + encodeURIComponent(tenant) + '/suggested-questions', true);
-    xhr.onload = function () {
-      if (xhr.status === 200) {
-        try {
-          var data = JSON.parse(xhr.responseText);
-          suggested = data.questions || [];
-        } catch (e) { suggested = []; }
-      }
-      renderMain();
-    };
-    xhr.onerror = function () { suggested = []; apiLoadFailed = true; renderMain(); };
-    xhr.send();
+    var url = apiBase + '/api/v2/tenant/' + encodeURIComponent(tenant) + '/suggested-questions';
+    fetch(url, { method: 'GET', mode: 'cors', credentials: 'omit' })
+      .then(function (res) {
+        if (res.ok) return res.json();
+        apiLoadFailed = true;
+        return { questions: [] };
+      })
+      .then(function (data) {
+        suggested = (data && Array.isArray(data.questions)) ? data.questions : [];
+        renderMain();
+      })
+      .catch(function () {
+        suggested = [];
+        apiLoadFailed = true;
+        renderMain();
+      });
   }
 
   function renderMain() {
@@ -137,9 +154,18 @@
     currentAnswer = '';
 
     if (apiLoadFailed && suggested.length === 0) {
-      body.innerHTML += '<div class="mm-err" style="margin-bottom:12px">' + escapeHtml(networkErrorMessage()) + '</div>';
+      body.appendChild((function () {
+        var d = document.createElement('div');
+        d.className = 'mm-err';
+        d.style.marginBottom = '12px';
+        d.textContent = networkErrorMessage();
+        return d;
+      })());
     }
-    body.innerHTML += '<div class="mm-suggest">Common questions:</div>';
+    var suggestLabel = document.createElement('div');
+    suggestLabel.className = 'mm-suggest';
+    suggestLabel.textContent = 'Common questions:';
+    body.appendChild(suggestLabel);
     var ul = document.createElement('ul');
     ul.className = 'mm-qlist';
     suggested.forEach(function (q) {
@@ -149,7 +175,10 @@
       ul.appendChild(li);
     });
     body.appendChild(ul);
-    body.innerHTML += '<div class="mm-or">Or ask your own:</div>';
+    var orLabel = document.createElement('div');
+    orLabel.className = 'mm-or';
+    orLabel.textContent = 'Or ask your own:';
+    body.appendChild(orLabel);
     var row = document.createElement('div');
     row.className = 'mm-inrow';
     var input = document.createElement('input');
@@ -204,8 +233,12 @@
     xhr.send(JSON.stringify({ tenantId: tenant, customerMessage: questionText }));
   }
 
-  renderButton();
+  if (!isInline) renderButton();
   var out = renderPanel();
   var panel = out.panel;
   var panelBody = out.body;
+  if (isInline) {
+    open = true;
+    fetchSuggested();
+  }
 })();

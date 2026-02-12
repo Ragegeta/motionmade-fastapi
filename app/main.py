@@ -1043,7 +1043,7 @@ def _should_fallback_after_miss(msg: str, domain: str) -> bool:
 
 @app.get("/api/v2/tenant/{tenant_id}/suggested-questions")
 def get_suggested_questions(tenant_id: str):
-    """Return top 3 FAQ questions for the widget (first 3 by ID, live only)."""
+    """Return top 5 FAQ questions for the widget (first 5 by ID, live only). CORS allowed for widget embed."""
     tid = (tenant_id or "").strip()
     if not tid:
         return {"questions": []}
@@ -1054,7 +1054,7 @@ def get_suggested_questions(tenant_id: str):
                 SELECT question FROM faq_items
                 WHERE tenant_id = %s AND is_staged = false AND enabled = true
                 ORDER BY id ASC
-                LIMIT 3
+                LIMIT 5
                 """,
                 (tid,),
             ).fetchall()
