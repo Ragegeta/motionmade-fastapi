@@ -3,74 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MotionMade – Your Dashboard</title>
+    <title>MotionMade AI – Your Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f8fafc;
-            color: #1f2937;
-            padding: 20px;
+            background: #FFFFFF;
+            color: #374151;
             font-size: 16px;
+            line-height: 1.5;
         }
-        .container { max-width: 900px; margin: 0 auto; }
-        header {
+        .container { max-width: 800px; margin: 0 auto; padding: 24px; }
+        @media (max-width: 480px) { .container { padding: 16px; } }
+
+        /* Header */
+        .dash-header {
+            background: #FFFFFF;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 0 24px;
+            margin-bottom: 24px;
+        }
+        .dash-header-top {
             display: flex;
-            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 28px;
-            gap: 16px;
+            margin-bottom: 20px;
         }
-        .header-text h1 { font-size: 22px; color: #111827; }
-        .header-text .tenant { color: #6b7280; font-size: 14px; margin-top: 4px; }
-        .logout {
+        .dash-logo { font-size: 16px; font-weight: 600; color: #2563EB; }
+        .logout-btn {
             padding: 10px 18px;
+            min-height: 44px;
             background: #f3f4f6;
             color: #374151;
             border: none;
             border-radius: 8px;
             font-size: 14px;
             cursor: pointer;
-            min-height: 44px;
         }
-        .logout:hover { background: #e5e7eb; }
-        .period-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-        }
-        .period-tabs button {
-            padding: 10px 18px;
-            border: 1px solid #e5e7eb;
-            background: white;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            min-height: 44px;
-        }
-        .period-tabs button.active {
-            background: #2563EB;
-            color: white;
-            border-color: #2563EB;
-        }
-        .period-tabs button:not(.active):hover { background: #f9fafb; }
+        .logout-btn:hover { background: #e5e7eb; }
+        .dash-greeting { font-size: 26px; font-weight: 600; color: #111827; margin-bottom: 4px; }
+        .dash-tenant { font-size: 14px; color: #6B7280; }
+
+        /* Stats cards */
         .cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 32px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 640px) {
+            .cards { grid-template-columns: 1fr; }
         }
         .card {
-            background: white;
-            border-radius: 12px;
+            background: #FFFFFF;
+            border-radius: 8px;
             padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
         }
         .card .label {
             font-size: 14px;
-            color: #6b7280;
+            color: #6B7280;
             margin-bottom: 8px;
         }
         .card .value {
@@ -79,82 +75,171 @@
             color: #111827;
             line-height: 1.1;
         }
-        @media (max-width: 400px) {
-            .card .value { font-size: 40px; }
+        .card .sublabel {
+            font-size: 14px;
+            color: #6B7280;
+            margin-top: 6px;
         }
         .card .trend {
             font-size: 14px;
-            margin-top: 6px;
+            margin-top: 4px;
         }
         .card .trend.up { color: #059669; }
         .card .trend.down { color: #dc2626; }
-        .card a {
+        .card a.faq-link {
             color: #2563EB;
             font-size: 14px;
-            margin-top: 8px;
+            margin-top: auto;
+            padding-top: 12px;
             display: inline-block;
         }
-        .chart-wrap {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 32px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-        }
-        .chart-wrap h2 {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: #374151;
-        }
-        .chart-container { position: relative; height: 260px; min-height: 200px; }
-        .chart-empty {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 200px;
-            color: #6b7280;
-            font-size: 16px;
-            text-align: center;
-            padding: 20px;
-        }
-        .embed-section {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-        }
-        .embed-section h2 { font-size: 18px; margin-bottom: 12px; color: #374151; }
-        .embed-section p { color: #6b7280; font-size: 14px; margin-bottom: 12px; }
-        .embed-code {
-            background: #f3f4f6;
-            padding: 16px;
+        .card a.faq-link:hover { text-decoration: underline; }
+
+        /* Empty state – onboarding checklist */
+        .empty-state {
+            background: #FFFFFF;
             border-radius: 8px;
-            font-family: monospace;
-            font-size: 13px;
-            overflow-x: auto;
-            position: relative;
+            padding: 32px 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        .copy-btn {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            padding: 6px 12px;
+        .empty-state h2 {
+            font-size: 22px;
+            color: #111827;
+            margin-bottom: 12px;
+        }
+        .empty-state p.lead {
+            font-size: 16px;
+            color: #6B7280;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .empty-state .checklist {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 24px;
+        }
+        .empty-state .check-item {
+            margin-bottom: 20px;
+        }
+        .empty-state .check-item:last-child { margin-bottom: 0; }
+        .empty-state .check-item h4 { font-size: 15px; color: #111827; margin-bottom: 8px; }
+        .empty-state .check-item p { font-size: 14px; color: #6B7280; margin-bottom: 10px; }
+        .empty-state .embed-inline {
+            background: #f3f4f6;
+            padding: 12px 12px 12px 12px;
+            border-radius: 6px;
             font-size: 12px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .empty-state .embed-inline pre { margin: 0; padding-right: 80px; }
+        .empty-state .copy-inline {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 14px;
             background: #2563EB;
             color: white;
             border: none;
             border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .empty-state .copy-inline.copied { background: #059669; }
+
+        /* Chart */
+        .chart-wrap {
+            background: #FFFFFF;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .chart-wrap h2 { font-size: 18px; color: #111827; margin-bottom: 16px; }
+        .period-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .period-tabs button {
+            padding: 10px 18px;
+            min-height: 44px;
+            border: 1px solid #e5e7eb;
+            background: #FFFFFF;
+            border-radius: 999px;
+            font-size: 14px;
+            color: #374151;
+            cursor: pointer;
+        }
+        .period-tabs button.active {
+            background: #2563EB;
+            color: white;
+            border-color: #2563EB;
+        }
+        .period-tabs button:not(.active):hover { background: #f9fafb; }
+        .chart-container { position: relative; height: 260px; min-height: 200px; }
+        .chart-insight { font-size: 14px; color: #6B7280; margin-top: 16px; }
+
+        /* Widget install section */
+        .embed-section {
+            background: #FFFFFF;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .embed-section h2 { font-size: 18px; color: #111827; margin-bottom: 12px; }
+        .embed-code {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            position: relative;
+            margin-bottom: 16px;
+        }
+        .embed-code pre { margin: 0; white-space: pre-wrap; word-break: break-all; }
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 8px 14px;
+            min-height: 36px;
+            background: #2563EB;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
             cursor: pointer;
         }
         .copy-btn:hover { background: #1d4ed8; }
+        .copy-btn.copied { background: #059669; }
+        .install-details { margin-top: 16px; }
+        .install-details summary {
+            cursor: pointer;
+            font-size: 14px;
+            color: #2563EB;
+            font-weight: 500;
+        }
+        .install-details ul { margin: 12px 0 0 20px; padding: 0; font-size: 14px; color: #6B7280; line-height: 1.7; }
+
+        /* Footer */
         footer {
             text-align: center;
-            color: #9ca3af;
-            font-size: 14px;
             padding: 24px 0;
+            border-top: 1px solid #e5e7eb;
         }
-        .help-text { color: #6b7280; font-size: 14px; margin-top: 16px; }
+        footer .contact { font-size: 14px; color: #374151; margin-bottom: 8px; }
+        footer .contact a { color: #2563EB; }
+        footer .powered { font-size: 13px; color: #9ca3af; }
+
         #dashboardError {
             background: #fef2f2;
             color: #dc2626;
@@ -170,7 +255,6 @@
             transform: translate(-50%, -50%);
             z-index: 100;
             display: none;
-            pointer-events: none;
         }
         .spinner-wrap.visible { display: block; }
         .spinner {
@@ -190,54 +274,99 @@
     </div>
     <div class="container">
         <div id="dashboardError" style="display: none;"></div>
-        <header>
-            <div class="header-text">
-                <h1 id="greeting">G'day 👋</h1>
-                <div class="tenant" id="tenantName">–</div>
+
+        <header class="dash-header">
+            <div class="dash-header-top">
+                <span class="dash-logo">MotionMade AI</span>
+                <button type="button" class="logout-btn" id="logoutBtn">Logout</button>
             </div>
-            <button type="button" class="logout" id="logoutBtn">Log out</button>
+            <h1 class="dash-greeting" id="greeting">G'day 👋</h1>
+            <p class="dash-tenant" id="tenantName">–</p>
         </header>
-        <div class="period-tabs">
-            <button type="button" data-period="7d" class="active">Last 7 days</button>
-            <button type="button" data-period="30d">Last 30 days</button>
-            <button type="button" data-period="90d">Last 90 days</button>
-        </div>
-        <div id="emptyStateWrap" class="chart-empty" style="display: none; margin-bottom: 24px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 24px;">
-            <p style="margin: 0; font-size: 16px; color: #0c4a6e;">Your widget hasn't received any questions yet. Once it's installed on your website, you'll see stats here.</p>
-        </div>
-        <div class="cards">
-            <div class="card">
-                <div class="label">Questions answered this week</div>
-                <div class="value" id="statWeek">–</div>
-                <div class="trend" id="statTrend"></div>
-            </div>
-            <div class="card">
-                <div class="label">Answered today</div>
-                <div class="value" id="statToday">–</div>
-            </div>
-            <div class="card">
-                <div class="label">Couldn't answer</div>
-                <div class="value" id="statFallback">–</div>
-                <a href="#" id="addFaqLink">Add more FAQs?</a>
-            </div>
-        </div>
-        <div class="chart-wrap">
-            <h2>Questions per day</h2>
-            <div class="chart-container">
-                <div class="chart-empty" id="chartEmpty" style="display: none;">No data yet — queries will appear here once your widget is live.</div>
-                <canvas id="dailyChart"></canvas>
+
+        <!-- Empty state: onboarding checklist (when no data in last 30 days) -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <h2>🚀 You're all set up!</h2>
+            <p class="lead">Your instant answers widget is ready to go. Once it's installed on your website, you'll start seeing stats here.</p>
+            <div class="checklist">
+                <div class="check-item">
+                    <h4>Step 1: Install the widget</h4>
+                    <p>Copy the code below and paste it on your website before <code>&lt;/body&gt;</code></p>
+                    <div class="embed-inline">
+                        <pre id="emptyStateSnippet"></pre>
+                        <button type="button" class="copy-inline" id="emptyStateCopy">Copy</button>
+                    </div>
+                </div>
+                <div class="check-item">
+                    <h4>Step 2: Try it out</h4>
+                    <p>Visit your website and click "Got a question?" to test it.</p>
+                </div>
+                <div class="check-item">
+                    <h4>Step 3: Watch the stats</h4>
+                    <p>Once customers start using it, your stats will appear right here.</p>
+                </div>
             </div>
         </div>
+
+        <!-- Stats cards (when there IS data) -->
+        <div id="statsSection" style="display: none;">
+            <div class="cards">
+                <div class="card">
+                    <div class="label">This Week</div>
+                    <div class="value" id="statWeek">0</div>
+                    <div class="trend" id="statTrend"></div>
+                    <div class="sublabel">questions answered</div>
+                </div>
+                <div class="card">
+                    <div class="label">Today</div>
+                    <div class="value" id="statToday">0</div>
+                    <div class="sublabel">questions answered</div>
+                </div>
+                <div class="card">
+                    <div class="label">Couldn't Answer</div>
+                    <div class="value" id="statFallback">0</div>
+                    <a href="#" id="addFaqLink" class="faq-link">Add more FAQs →</a>
+                </div>
+            </div>
+
+            <!-- Chart (only when data) -->
+            <div class="chart-wrap">
+                <h2>Questions answered</h2>
+                <div class="period-tabs">
+                    <button type="button" data-period="7d" class="active">Last 7 days</button>
+                    <button type="button" data-period="30d">Last 30 days</button>
+                    <button type="button" data-period="90d">Last 90 days</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+                <p class="chart-insight" id="busiestDayInsight"></p>
+            </div>
+        </div>
+
+        <!-- Widget install (always visible) -->
         <div class="embed-section">
-            <h2>Your chat widget</h2>
-            <p>Add this snippet to your website to show the chat bubble.</p>
+            <h2>Your widget</h2>
             <div class="embed-code">
+                <pre id="embedSnippet"></pre>
                 <button type="button" class="copy-btn" id="copyEmbedBtn">Copy</button>
-                <pre id="embedSnippet">&lt;script src="https://YOUR_WIDGET_URL/widget.js" data-tenant="YOUR_TENANT_ID"&gt;&lt;/script&gt;</pre>
             </div>
+            <p style="font-size: 14px; color: #6B7280; margin-bottom: 12px;">Paste this before the <code>&lt;/body&gt;</code> tag on your website.</p>
+            <details class="install-details">
+                <summary>How to install</summary>
+                <ul>
+                    <li><strong>WordPress:</strong> Appearance → Theme Editor → footer.php → paste before &lt;/body&gt;</li>
+                    <li><strong>Squarespace:</strong> Settings → Advanced → Code Injection → Footer → paste</li>
+                    <li><strong>Wix:</strong> Settings → Custom Code → Add Code → Body End → paste</li>
+                    <li><strong>Other:</strong> Paste the code before &lt;/body&gt; in your site's HTML</li>
+                </ul>
+            </details>
         </div>
-        <p class="help-text">Need changes? Contact Abbed</p>
-        <footer>Powered by MotionMade AI</footer>
+
+        <footer>
+            <p class="contact">Need help? Contact Abbed — <a href="tel:0400000000">0400 000 000</a></p>
+            <p class="powered">Powered by MotionMade AI</p>
+        </footer>
     </div>
     <script>
         (function () {
@@ -249,10 +378,10 @@
             var currentPeriod = '7d';
             var chart = null;
             var tenantId = '';
+            var tenantName = '';
+            var hasAnyData = false;
 
-            function authHeaders() {
-                return { 'Authorization': 'Bearer ' + token };
-            }
+            function authHeaders() { return { 'Authorization': 'Bearer ' + token }; }
 
             function showError(msg) {
                 var el = document.getElementById('dashboardError');
@@ -290,60 +419,68 @@
 
             function loadDaily(period) {
                 return fetch('/owner/dashboard/daily?period=' + (period || currentPeriod), { headers: authHeaders() })
-                    .then(function (res) {
-                        if (!res.ok) return [];
-                        return res.json();
-                    });
+                    .then(function (res) { return res.ok ? res.json() : []; });
+            }
+
+            function setEmbedSnippet() {
+                var base = window.location.origin;
+                var snippet = '<!-- MotionMade AI - Instant Answers for ' + (tenantName || 'Your Business') + ' -->\n<script src="' + base + '/widget.js"\n  data-tenant="' + (tenantId || '') + '"\n  data-color="#2563EB"\n  data-name="' + (tenantName || '') + '"\n  data-api="' + base + '"><\/script>';
+                var el = document.getElementById('embedSnippet');
+                if (el) el.textContent = snippet;
+                var emptyEl = document.getElementById('emptyStateSnippet');
+                if (emptyEl) emptyEl.textContent = snippet;
             }
 
             function renderStats(data) {
                 var week = data.queries_this_week ?? data.total_queries ?? 0;
                 var today = data.queries_today ?? 0;
                 var fallback = data.fallback_count ?? 0;
-                document.getElementById('statWeek').textContent = week;
-                document.getElementById('statToday').textContent = today;
-                document.getElementById('statFallback').textContent = fallback;
+                var statWeek = document.getElementById('statWeek');
+                var statToday = document.getElementById('statToday');
+                var statFallback = document.getElementById('statFallback');
+                if (statWeek) statWeek.textContent = week;
+                if (statToday) statToday.textContent = today;
+                if (statFallback) statFallback.textContent = fallback;
                 var trendEl = document.getElementById('statTrend');
                 var trend = data.trend;
                 var pct = data.trend_pct;
-                if (trend && pct !== undefined) {
-                    trendEl.textContent = (trend === 'up' ? '↑' : trend === 'down' ? '↓' : '') + (pct ? Math.abs(pct) + '%' : '');
-                    trendEl.className = 'trend ' + (trend === 'up' ? 'up' : trend === 'down' ? 'down' : '');
-                } else {
-                    trendEl.textContent = '';
-                }
-                var emptyWrap = document.getElementById('emptyStateWrap');
-                if (emptyWrap) {
-                    emptyWrap.style.display = (week === 0 && today === 0) ? 'block' : 'none';
+                if (trendEl) {
+                    if (trend && trend !== 'flat' && pct !== undefined) {
+                        trendEl.textContent = (trend === 'up' ? '↑ ' : '↓ ') + Math.abs(pct) + '%';
+                        trendEl.className = 'trend ' + (trend === 'up' ? 'up' : 'down');
+                    } else {
+                        trendEl.textContent = '';
+                        trendEl.className = 'trend';
+                    }
                 }
             }
 
-            function renderChart(dailyData) {
-                var emptyEl = document.getElementById('chartEmpty');
-                var canvas = document.getElementById('dailyChart');
-                var hasData = (dailyData && dailyData.length > 0 && dailyData.some(function (d) { return d.count > 0; }));
+            function renderChart(dailyData, busiestDay) {
+                var wrap = document.getElementById('statsSection');
+                if (!wrap) return;
+                var chartWrap = wrap.querySelector('.chart-wrap');
+                var insightEl = document.getElementById('busiestDayInsight');
+                var hasData = dailyData && dailyData.length > 0 && dailyData.some(function (d) { return d.count > 0; });
                 if (chart) { chart.destroy(); chart = null; }
                 if (!hasData) {
-                    emptyEl.style.display = 'flex';
-                    canvas.style.display = 'none';
+                    if (insightEl) insightEl.textContent = '';
                     return;
                 }
-                emptyEl.style.display = 'none';
-                canvas.style.display = 'block';
-                var ctx = canvas.getContext('2d');
+                var ctx = document.getElementById('dailyChart');
+                if (!ctx) return;
                 var labels = dailyData.map(function (d) {
                     var dte = new Date(d.date);
-                    return dte.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+                    return dte.toLocaleDateString('en-AU', { weekday: 'short' });
                 });
                 var counts = dailyData.map(function (d) { return d.count; });
-                chart = new Chart(ctx, {
+                chart = new Chart(ctx.getContext('2d'), {
                     type: 'bar',
                     data: {
                         labels: labels,
                         datasets: [{
                             label: 'Questions',
                             data: counts,
-                            backgroundColor: 'rgba(37, 99, 235, 0.6)',
+                            backgroundColor: '#2563EB',
                             borderColor: '#2563EB',
                             borderWidth: 1
                         }]
@@ -354,58 +491,76 @@
                         plugins: { legend: { display: false } },
                         scales: {
                             y: { beginAtZero: true, ticks: { precision: 0 } },
-                            x: { ticks: { maxRotation: 45, minRotation: 45 } }
+                            x: { ticks: { maxRotation: 45 } }
                         }
                     }
                 });
-            }
-
-            function setEmbedSnippet() {
-                var base = window.location.origin;
-                var snippet = '<script src="' + base + '/static/widget.js" data-tenant="' + (tenantId || 'YOUR_TENANT_ID') + '"><\/script>';
-                document.getElementById('embedSnippet').textContent = snippet;
+                if (insightEl && busiestDay && busiestDay !== 'N/A')
+                    insightEl.textContent = 'Your busiest day is ' + busiestDay;
+                else if (insightEl) insightEl.textContent = '';
             }
 
             function refresh() {
                 hideError();
                 document.body.classList.add('loading');
                 var wrap = document.getElementById('spinnerWrap');
-                if (wrap) { wrap.classList.add('visible'); wrap.setAttribute('aria-hidden', 'false'); }
+                if (wrap) { wrap.classList.add('visible'); }
                 loadDashboard(currentPeriod)
                     .then(function (data) {
                         renderStats(data);
-                        return loadDaily(currentPeriod);
-                    })
-                    .then(function (daily) {
-                        renderChart(daily);
+                        return loadDaily(currentPeriod).then(function (daily) {
+                            renderChart(daily, data.busiest_day);
+                        });
                     })
                     .catch(function (err) {
                         showError(err.message || 'Could not load dashboard');
                     })
                     .finally(function () {
                         document.body.classList.remove('loading');
-                        var w = document.getElementById('spinnerWrap');
-                        if (w) { w.classList.remove('visible'); w.setAttribute('aria-hidden', 'true'); }
+                        if (wrap) wrap.classList.remove('visible');
                     });
+            }
+
+            function showEmptyState() {
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('statsSection').style.display = 'none';
+            }
+            function showStatsState() {
+                document.getElementById('emptyState').style.display = 'none';
+                document.getElementById('statsSection').style.display = 'block';
             }
 
             loadMe()
                 .then(function (me) {
                     var name = (me.display_name || me.email || 'there').trim() || 'there';
+                    tenantName = (me.tenant_name || me.tenant_id || '').trim();
+                    tenantId = (me.tenant_id || '').trim();
                     document.getElementById('greeting').textContent = "G'day, " + name + ' 👋';
-                    document.getElementById('tenantName').textContent = me.tenant_name || me.tenant_id || '';
-                    tenantId = me.tenant_id || '';
+                    document.getElementById('tenantName').textContent = tenantName || '–';
                     setEmbedSnippet();
-                    refresh();
+                    return loadDashboard('30d');
                 })
-                .catch(function () {});
+                .then(function (data30) {
+                    hasAnyData = (data30 && (data30.total_queries || 0) > 0);
+                    if (hasAnyData) {
+                        showStatsState();
+                        refresh();
+                    } else {
+                        showEmptyState();
+                        setEmbedSnippet();
+                    }
+                })
+                .catch(function (err) {
+                    showError(err.message || 'Could not load');
+                    showEmptyState();
+                });
 
             document.querySelectorAll('.period-tabs button').forEach(function (btn) {
                 btn.addEventListener('click', function () {
                     currentPeriod = this.getAttribute('data-period');
                     document.querySelectorAll('.period-tabs button').forEach(function (b) { b.classList.remove('active'); });
                     this.classList.add('active');
-                    refresh();
+                    if (hasAnyData) refresh();
                 });
             });
 
@@ -414,34 +569,47 @@
                 window.location.href = '/dashboard/login';
             });
 
+            function copyText(text, btn, doneLabel) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(function () {
+                        btn.textContent = doneLabel || 'Copied! ✓';
+                        setTimeout(function () { btn.textContent = 'Copy'; }, 2000);
+                    }).catch(fallback);
+                } else fallback();
+                function fallback() {
+                    var ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try {
+                        if (document.execCommand('copy')) {
+                            btn.textContent = doneLabel || 'Copied! ✓';
+                            setTimeout(function () { btn.textContent = 'Copy'; }, 2000);
+                        }
+                    } catch (e) {}
+                    document.body.removeChild(ta);
+                }
+            }
+
             document.getElementById('copyEmbedBtn').addEventListener('click', function () {
                 var pre = document.getElementById('embedSnippet');
-                var text = pre.textContent;
-                var btn = document.getElementById('copyEmbedBtn');
-                function showCopied() {
-                    btn.textContent = 'Copied! ✓';
-                    setTimeout(function () { btn.textContent = 'Copy'; }, 2000);
-                }
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text).then(showCopied).catch(function () {
-                        fallbackCopy(text, showCopied);
-                    });
-                } else {
-                    fallbackCopy(text, showCopied);
+                if (pre) {
+                    copyText(pre.textContent, this, 'Copied! ✓');
+                    this.classList.add('copied');
+                    setTimeout(function (btn) { btn.classList.remove('copied'); }, 2000, this);
                 }
             });
-            function fallbackCopy(text, done) {
-                var ta = document.createElement('textarea');
-                ta.value = text;
-                ta.style.position = 'fixed';
-                ta.style.opacity = '0';
-                document.body.appendChild(ta);
-                ta.select();
-                try {
-                    if (document.execCommand('copy')) done();
-                } catch (e) {}
-                document.body.removeChild(ta);
-            }
+
+            document.getElementById('emptyStateCopy').addEventListener('click', function () {
+                var pre = document.getElementById('emptyStateSnippet');
+                if (pre) {
+                    copyText(pre.textContent, this, 'Copied! ✓');
+                    this.classList.add('copied');
+                    setTimeout(function (btn) { btn.classList.remove('copied'); }, 2000, this);
+                }
+            });
 
             document.getElementById('addFaqLink').addEventListener('click', function (e) {
                 e.preventDefault();
