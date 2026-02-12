@@ -2406,6 +2406,225 @@ def owner_dashboard_fallbacks(
     return {"fallback_count": row[0] or 0, "period": f"last_{days}_days"}
 
 
+# ---------- Owner FAQ self-service (JWT, tenant-scoped) ----------
+class OwnerFaqCreate(BaseModel):
+    question: str
+    answer: str
+
+
+class OwnerFaqUpdate(BaseModel):
+    question: str
+    answer: str
+
+
+def _owner_faq_similarity_warning(tenant_id: str, question_embedding: list, exclude_faq_id: Optional[int] = None) -> Optional[str]:
+    """If any live FAQ has cosine similarity > 0.85 with the given embedding, return that FAQ's question text."""
+    try:
+        with get_conn() as conn:
+            exclude = " AND id != %s" if exclude_faq_id is not None else ""
+            params = [tenant_id]
+            if exclude_faq_id is not None:
+                params.append(exclude_faq_id)
+            params.extend([question_embedding, question_embedding])
+            # pgvector: <=> is cosine distance. 1 - distance = similarity. We want similarity > 0.85 so distance < 0.15
+            rows = conn.execute(
+                """
+                SELECT question FROM faq_items
+                WHERE tenant_id = %s AND is_staged = false AND embedding IS NOT NULL
+                """ + exclude + """
+                AND (embedding <=> %s::vector) < 0.15
+                ORDER BY embedding <=> %s::vector
+                LIMIT 1
+                """,
+                params,
+            ).fetchall()
+            if rows:
+                return "This is very similar to your existing question: '" + (rows[0][0] or "") + "' — consider updating that one instead."
+    except Exception:
+        pass
+    return None
+
+
+def _owner_add_faq_to_live(tenant_id: str, question: str, answer: str) -> tuple:
+    """Insert one FAQ as live with variant expansion and embeddings. Returns (faq_id, warning or None)."""
+    q = (question or "").strip()
+    a = (answer or "").strip()
+    if not q or not a:
+        raise HTTPException(status_code=400, detail="Question and answer required")
+    emb_q = embed_text(q)
+    warning = _owner_faq_similarity_warning(tenant_id, emb_q)
+    with get_conn() as conn:
+        conn.execute("SELECT ensure_faq_variants_partition(%s)", (tenant_id,))
+        conn.commit()
+    with get_conn() as conn:
+        row = conn.execute(
+            "INSERT INTO faq_items (tenant_id, question, answer, embedding, enabled, is_staged) VALUES (%s,%s,%s,%s,true,false) RETURNING id",
+            (tenant_id, q, a, Vector(emb_q)),
+        ).fetchone()
+        faq_id = row[0]
+        expanded = expand_faq_list([{"question": q, "answer": a, "variants": []}], max_variants_per_faq=50)
+        variants = expanded[0].get("variants", []) if expanded else []
+        all_variants = [q] + [v for v in variants if v and v.strip().lower() != q.lower()][:49]
+        conn.execute("DELETE FROM faq_variants WHERE faq_id=%s", (faq_id,))
+        conn.execute("DELETE FROM faq_variants_p WHERE faq_id=%s AND tenant_id=%s", (faq_id, tenant_id))
+        for variant in all_variants[:50]:
+            v = (variant or "").strip()
+            if not v:
+                continue
+            try:
+                v_emb = embed_text(v)
+                conn.execute(
+                    "INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled) VALUES (%s,%s,%s,true)",
+                    (faq_id, v, Vector(v_emb)),
+                )
+                conn.execute(
+                    "INSERT INTO faq_variants_p (tenant_id, faq_id, variant_question, variant_embedding, enabled) VALUES (%s,%s,%s,%s,true)",
+                    (tenant_id, faq_id, v, Vector(v_emb)),
+                )
+            except Exception:
+                continue
+        question_variants_text = q + " " + " ".join(all_variants[1:])
+        try:
+            conn.execute(
+                "UPDATE faq_items SET search_vector = setweight(to_tsvector('english', %s), 'A') || setweight(to_tsvector('english', %s), 'C') WHERE id = %s",
+                (question_variants_text, a, faq_id),
+            )
+        except Exception:
+            pass
+        conn.commit()
+    try:
+        get_conn().execute("DELETE FROM retrieval_cache WHERE tenant_id = %s", (tenant_id,))
+        get_conn().commit()
+    except Exception:
+        pass
+    _invalidate_tenant_count_cache(tenant_id)
+    return (faq_id, warning)
+
+
+def _owner_update_faq_live(tenant_id: str, faq_id: int, question: str, answer: str) -> Optional[str]:
+    """Update an existing live FAQ: re-expand variants, re-embed. Returns warning or None."""
+    q = (question or "").strip()
+    a = (answer or "").strip()
+    if not q or not a:
+        raise HTTPException(status_code=400, detail="Question and answer required")
+    emb_q = embed_text(q)
+    warning = _owner_faq_similarity_warning(tenant_id, emb_q, exclude_faq_id=faq_id)
+    with get_conn() as conn:
+        conn.execute("UPDATE faq_items SET question=%s, answer=%s, embedding=%s, updated_at=now() WHERE id=%s AND tenant_id=%s", (q, a, Vector(emb_q), faq_id, tenant_id))
+        if conn.execute("SELECT 1 FROM faq_items WHERE id=%s AND tenant_id=%s", (faq_id, tenant_id)).fetchone() is None:
+            raise HTTPException(status_code=404, detail="FAQ not found")
+        expanded = expand_faq_list([{"question": q, "answer": a, "variants": []}], max_variants_per_faq=50)
+        variants = expanded[0].get("variants", []) if expanded else []
+        all_variants = [q] + [v for v in variants if v and v.strip().lower() != q.lower()][:49]
+        conn.execute("DELETE FROM faq_variants WHERE faq_id=%s", (faq_id,))
+        conn.execute("DELETE FROM faq_variants_p WHERE faq_id=%s AND tenant_id=%s", (faq_id, tenant_id))
+        for variant in all_variants[:50]:
+            v = (variant or "").strip()
+            if not v:
+                continue
+            try:
+                v_emb = embed_text(v)
+                conn.execute(
+                    "INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled) VALUES (%s,%s,%s,true)",
+                    (faq_id, v, Vector(v_emb)),
+                )
+                conn.execute(
+                    "INSERT INTO faq_variants_p (tenant_id, faq_id, variant_question, variant_embedding, enabled) VALUES (%s,%s,%s,%s,true)",
+                    (tenant_id, faq_id, v, Vector(v_emb)),
+                )
+            except Exception:
+                continue
+        question_variants_text = q + " " + " ".join(all_variants[1:])
+        try:
+            conn.execute(
+                "UPDATE faq_items SET search_vector = setweight(to_tsvector('english', %s), 'A') || setweight(to_tsvector('english', %s), 'C') WHERE id = %s",
+                (question_variants_text, a, faq_id),
+            )
+        except Exception:
+            pass
+        conn.commit()
+    try:
+        get_conn().execute("DELETE FROM retrieval_cache WHERE tenant_id = %s", (tenant_id,))
+        get_conn().commit()
+    except Exception:
+        pass
+    _invalidate_tenant_count_cache(tenant_id)
+    return warning
+
+
+@app.get("/owner/faqs")
+def owner_list_faqs(owner: dict = Depends(get_current_owner)):
+    """List all live FAQs for the owner's tenant."""
+    tenant_id = owner["tenant_id"]
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT id, question, answer FROM faq_items WHERE tenant_id = %s AND is_staged = false ORDER BY id",
+            (tenant_id,),
+        ).fetchall()
+    faqs = [{"id": r[0], "question": r[1], "answer": r[2]} for r in rows]
+    return {"faqs": faqs, "count": len(faqs)}
+
+
+@app.post("/owner/faqs")
+def owner_add_faq(body: OwnerFaqCreate, owner: dict = Depends(get_current_owner)):
+    """Add a new FAQ (auto-promoted to live with variants and embeddings)."""
+    tenant_id = owner["tenant_id"]
+    try:
+        faq_id, warning = _owner_add_faq_to_live(tenant_id, body.question, body.answer)
+    except HTTPException:
+        raise
+    with get_conn() as conn:
+        row = conn.execute("SELECT id, question, answer FROM faq_items WHERE id = %s", (faq_id,)).fetchone()
+    faq = {"id": row[0], "question": row[1], "answer": row[2]}
+    result = {"faq": faq}
+    if warning:
+        result["warning"] = warning
+    return result
+
+
+@app.put("/owner/faqs/{faq_id}")
+def owner_update_faq(faq_id: int, body: OwnerFaqUpdate, owner: dict = Depends(get_current_owner)):
+    """Update an existing FAQ (re-expand variants, re-embed, re-promote)."""
+    tenant_id = owner["tenant_id"]
+    with get_conn() as conn:
+        row = conn.execute("SELECT id FROM faq_items WHERE id = %s AND tenant_id = %s", (faq_id, tenant_id)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="FAQ not found")
+    try:
+        warning = _owner_update_faq_live(tenant_id, faq_id, body.question, body.answer)
+    except HTTPException:
+        raise
+    with get_conn() as conn:
+        row = conn.execute("SELECT id, question, answer FROM faq_items WHERE id = %s", (faq_id,)).fetchone()
+    faq = {"id": row[0], "question": row[1], "answer": row[2]}
+    result = {"faq": faq}
+    if warning:
+        result["warning"] = warning
+    return result
+
+
+@app.delete("/owner/faqs/{faq_id}")
+def owner_delete_faq(faq_id: int, owner: dict = Depends(get_current_owner)):
+    """Delete a FAQ. Must belong to owner's tenant."""
+    tenant_id = owner["tenant_id"]
+    with get_conn() as conn:
+        row = conn.execute("SELECT id FROM faq_items WHERE id = %s AND tenant_id = %s", (faq_id, tenant_id)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="FAQ not found")
+    with get_conn() as conn:
+        conn.execute("DELETE FROM faq_variants WHERE faq_id = %s", (faq_id,))
+        conn.execute("DELETE FROM faq_variants_p WHERE faq_id = %s AND tenant_id = %s", (faq_id, tenant_id))
+        conn.execute("DELETE FROM faq_items WHERE id = %s", (faq_id,))
+        conn.commit()
+    try:
+        get_conn().execute("DELETE FROM retrieval_cache WHERE tenant_id = %s", (tenant_id,))
+        get_conn().commit()
+    except Exception:
+        pass
+    _invalidate_tenant_count_cache(tenant_id)
+    return {"deleted": True}
+
+
 @app.get("/admin/api/health")
 def admin_api_health():
     """Health check for admin API routes."""

@@ -185,6 +185,99 @@
         .chart-container { position: relative; height: 260px; min-height: 200px; }
         .chart-insight { font-size: 14px; color: #6B7280; margin-top: 16px; }
 
+        /* Your Questions & Answers */
+        .faq-section {
+            background: #FFFFFF;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .faq-section-title { font-size: 18px; color: #111827; margin-bottom: 8px; }
+        .faq-section-desc { font-size: 14px; color: #6B7280; margin-bottom: 20px; line-height: 1.5; }
+        .faq-warning-banner {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .faq-list { margin-bottom: 16px; }
+        .faq-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .faq-card.editing { border-left: 4px solid #2563EB; }
+        .faq-card .faq-q { font-weight: 600; color: #111827; margin-bottom: 8px; }
+        .faq-card .faq-a { font-size: 14px; color: #6B7280; line-height: 1.5; white-space: pre-wrap; }
+        .faq-card-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .faq-edit-btn, .faq-delete-btn {
+            padding: 8px 14px;
+            min-height: 40px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+        }
+        .faq-edit-btn { background: #2563EB; color: white; }
+        .faq-edit-btn:hover { background: #1d4ed8; }
+        .faq-delete-btn { background: #f3f4f6; color: #374151; }
+        .faq-delete-btn:hover { background: #e5e7eb; }
+        .faq-empty-state { margin-bottom: 16px; }
+        .faq-empty-state p { font-size: 14px; color: #6B7280; margin-bottom: 12px; }
+        .faq-add-btn {
+            padding: 10px 18px;
+            min-height: 44px;
+            background: #f3f4f6;
+            border: 1px dashed #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #374151;
+            cursor: pointer;
+            width: 100%;
+            max-width: 320px;
+        }
+        .faq-add-btn:hover { background: #e5e7eb; border-color: #9ca3af; }
+        .faq-form-wrap { margin-top: 16px; }
+        .faq-form {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid #2563EB;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .faq-form label { display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px; }
+        .faq-form input, .faq-form textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            font-family: inherit;
+        }
+        .faq-form textarea { min-height: 80px; resize: vertical; }
+        .faq-form-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .faq-save-btn, .faq-cancel-btn {
+            padding: 10px 18px;
+            min-height: 44px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+        }
+        .faq-save-btn { background: #2563EB; color: white; }
+        .faq-save-btn:hover { background: #1d4ed8; }
+        .faq-save-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        .faq-cancel-btn { background: #f3f4f6; color: #374151; }
+        .faq-cancel-btn:hover { background: #e5e7eb; }
+        .faq-success-msg { color: #059669; font-size: 14px; margin-top: 8px; }
+        @media (max-width: 480px) { .faq-form-actions { flex-direction: column; } .faq-add-btn { max-width: none; } }
+
         /* Widget install section */
         .embed-section {
             background: #FFFFFF;
@@ -341,6 +434,31 @@
                     <canvas id="dailyChart"></canvas>
                 </div>
                 <p class="chart-insight" id="busiestDayInsight"></p>
+            </div>
+        </div>
+
+        <!-- Your Questions & Answers (owner FAQ self-service) -->
+        <div class="faq-section" id="faqSection">
+            <h2 class="faq-section-title">Your Questions & Answers</h2>
+            <p class="faq-section-desc">These are the questions your widget can answer. Add, edit, or remove them anytime.</p>
+            <div id="faqWarningBanner" class="faq-warning-banner" style="display: none;" role="alert"></div>
+            <div id="faqList" class="faq-list"></div>
+            <div id="faqEmptyState" class="faq-empty-state" style="display: none;">
+                <p>You don't have any questions set up yet. Add your first one below.</p>
+                <button type="button" class="faq-add-btn" id="faqAddBtnEmpty">+ Add a question</button>
+            </div>
+            <button type="button" class="faq-add-btn" id="faqAddBtn">+ Add a question</button>
+            <div id="faqAddForm" class="faq-form-wrap" style="display: none;">
+                <div class="faq-form">
+                    <label for="faqNewQuestion">Question:</label>
+                    <input type="text" id="faqNewQuestion" placeholder="e.g. What payment methods do you accept?" />
+                    <label for="faqNewAnswer">Answer:</label>
+                    <textarea id="faqNewAnswer" rows="4" minlength="1" placeholder="e.g. Cash, card, bank transfer, and Afterpay. Invoice emailed after the job."></textarea>
+                    <div class="faq-form-actions">
+                        <button type="button" class="faq-save-btn" id="faqSaveNewBtn">Save</button>
+                        <button type="button" class="faq-cancel-btn" id="faqCancelNewBtn">Cancel</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -549,6 +667,7 @@
                         showEmptyState();
                         setEmbedSnippet();
                     }
+                    return loadFaqs();
                 })
                 .catch(function (err) {
                     showError(err.message || 'Could not load');
@@ -613,8 +732,197 @@
 
             document.getElementById('addFaqLink').addEventListener('click', function (e) {
                 e.preventDefault();
-                alert('Contact your account manager to add more FAQs to your chat widget.');
+                document.getElementById('faqSection').scrollIntoView({ behavior: 'smooth' });
+                var addBtn = document.getElementById('faqAddBtn');
+                if (addBtn && document.getElementById('faqAddForm').style.display === 'none') addBtn.click();
             });
+
+            // ---------- Owner FAQ self-service ----------
+            var faqs = [];
+            var editingFaqId = null;
+
+            function loadFaqs() {
+                return fetch('/owner/faqs', { headers: authHeaders() }).then(function (res) {
+                    if (res.status === 401) return Promise.reject(new Error('Unauthorized'));
+                    if (!res.ok) return Promise.reject(new Error('Failed to load FAQs'));
+                    return res.json();
+                }).then(function (data) {
+                    faqs = (data && data.faqs) ? data.faqs : [];
+                    renderFaqList();
+                });
+            }
+
+            function renderFaqList() {
+                var list = document.getElementById('faqList');
+                var emptyState = document.getElementById('faqEmptyState');
+                var addBtn = document.getElementById('faqAddBtn');
+                if (!list) return;
+                list.innerHTML = '';
+                if (faqs.length === 0) {
+                    if (emptyState) emptyState.style.display = 'block';
+                    if (addBtn) addBtn.style.display = 'none';
+                    return;
+                }
+                if (emptyState) emptyState.style.display = 'none';
+                if (addBtn) addBtn.style.display = 'block';
+                faqs.forEach(function (faq) {
+                    var card = document.createElement('div');
+                    card.className = 'faq-card' + (editingFaqId === faq.id ? ' editing' : '');
+                    card.dataset.faqId = faq.id;
+                    if (editingFaqId === faq.id) {
+                        card.innerHTML =
+                            '<label>Question:</label>' +
+                            '<input type="text" class="faq-edit-question" value="' + escapeHtml(faq.question) + '" />' +
+                            '<label>Answer:</label>' +
+                            '<textarea class="faq-edit-answer" rows="4">' + escapeHtml(faq.answer) + '</textarea>' +
+                            '<div class="faq-form-actions">' +
+                            '<button type="button" class="faq-save-btn faq-save-edit-btn">Save</button>' +
+                            '<button type="button" class="faq-cancel-edit-btn">Cancel</button>' +
+                            '</div>';
+                        card.querySelector('.faq-save-edit-btn').addEventListener('click', function () { saveEditFaq(faq.id, card); });
+                        card.querySelector('.faq-cancel-edit-btn').addEventListener('click', function () { cancelEdit(); });
+                    } else {
+                        card.innerHTML =
+                            '<div class="faq-q">Q: ' + escapeHtml(faq.question) + '</div>' +
+                            '<div class="faq-a">A: ' + escapeHtml(faq.answer) + '</div>' +
+                            '<div class="faq-card-actions">' +
+                            '<button type="button" class="faq-edit-btn">Edit</button>' +
+                            '<button type="button" class="faq-delete-btn">Delete</button>' +
+                            '</div>';
+                        card.querySelector('.faq-edit-btn').addEventListener('click', function () { startEdit(faq.id); });
+                        card.querySelector('.faq-delete-btn').addEventListener('click', function () { confirmDelete(faq.id, faq.question); });
+                    }
+                    list.appendChild(card);
+                });
+            }
+
+            function escapeHtml(s) {
+                if (s == null) return '';
+                var d = document.createElement('div');
+                d.textContent = s;
+                return d.innerHTML;
+            }
+
+            function showFaqWarning(msg) {
+                var el = document.getElementById('faqWarningBanner');
+                if (!el) return;
+                el.textContent = msg ? '⚠️ ' + msg : '';
+                el.style.display = msg ? 'block' : 'none';
+            }
+
+            function showFaqSuccess(msg) {
+                var el = document.getElementById('faqWarningBanner');
+                if (!el) return;
+                el.style.background = '#d1fae5';
+                el.style.color = '#065f46';
+                el.textContent = msg || '✓ Saved';
+                el.style.display = 'block';
+                setTimeout(function () {
+                    el.style.background = '';
+                    el.style.color = '';
+                    showFaqWarning(null);
+                }, 2000);
+            }
+
+            function startEdit(id) {
+                editingFaqId = id;
+                renderFaqList();
+            }
+
+            function cancelEdit() {
+                editingFaqId = null;
+                renderFaqList();
+            }
+
+            function saveEditFaq(id, cardEl) {
+                var q = (cardEl.querySelector('.faq-edit-question') || {}).value || '';
+                var a = (cardEl.querySelector('.faq-edit-answer') || {}).value || '';
+                if (!q.trim() || !a.trim()) { showFaqWarning('Question and answer are required.'); return; }
+                var btn = cardEl.querySelector('.faq-save-edit-btn');
+                if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
+                fetch('/owner/faqs/' + id, {
+                    method: 'PUT',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+                    body: JSON.stringify({ question: q.trim(), answer: a.trim() })
+                }).then(function (res) {
+                    return res.json().then(function (data) {
+                        if (!res.ok) throw new Error(data.detail || data.message || 'Update failed');
+                        return data;
+                    });
+                }).then(function (data) {
+                    editingFaqId = null;
+                    if (data.warning) showFaqWarning(data.warning);
+                    else showFaqWarning(null);
+                    showFaqSuccess('✓ Done');
+                    loadFaqs();
+                }).catch(function (err) {
+                    showFaqWarning(err.message || 'Update failed');
+                    if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+                });
+            }
+
+            function confirmDelete(id, question) {
+                if (!confirm('Remove this question? Your widget won\'t be able to answer it anymore.')) return;
+                fetch('/owner/faqs/' + id, { method: 'DELETE', headers: authHeaders() })
+                    .then(function (res) {
+                        if (!res.ok) return res.json().then(function (d) { throw new Error(d.detail || 'Delete failed'); });
+                        return res.json();
+                    })
+                    .then(function () {
+                        showFaqWarning(null);
+                        loadFaqs();
+                    })
+                    .catch(function (err) {
+                        showFaqWarning(err.message || 'Delete failed');
+                    });
+            }
+
+            function toggleAddForm(show) {
+                var form = document.getElementById('faqAddForm');
+                if (!form) return;
+                form.style.display = show ? 'block' : 'none';
+                if (show) {
+                    document.getElementById('faqNewQuestion').value = '';
+                    document.getElementById('faqNewAnswer').value = '';
+                    showFaqWarning(null);
+                }
+            }
+
+            function saveNewFaq() {
+                var q = (document.getElementById('faqNewQuestion') || {}).value || '';
+                var a = (document.getElementById('faqNewAnswer') || {}).value || '';
+                if (!q.trim() || !a.trim()) { showFaqWarning('Question and answer are required.'); return; }
+                var btn = document.getElementById('faqSaveNewBtn');
+                if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+                fetch('/owner/faqs', {
+                    method: 'POST',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+                    body: JSON.stringify({ question: q.trim(), answer: a.trim() })
+                }).then(function (res) {
+                    return res.json().then(function (data) {
+                        if (!res.ok) throw new Error(data.detail || data.message || 'Save failed');
+                        return data;
+                    });
+                }).then(function (data) {
+                    if (data.warning) showFaqWarning(data.warning);
+                    else showFaqWarning(null);
+                    showFaqSuccess('✓ Saved');
+                    toggleAddForm(false);
+                    loadFaqs();
+                }).catch(function (err) {
+                    showFaqWarning(err.message || 'Save failed');
+                }).finally(function () {
+                    if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+                });
+            }
+
+            document.getElementById('faqAddBtn').addEventListener('click', function () { toggleAddForm(document.getElementById('faqAddForm').style.display !== 'block'); });
+            document.getElementById('faqAddBtnEmpty').addEventListener('click', function () {
+                document.getElementById('faqEmptyState').style.display = 'none';
+                toggleAddForm(true);
+            });
+            document.getElementById('faqSaveNewBtn').addEventListener('click', saveNewFaq);
+            document.getElementById('faqCancelNewBtn').addEventListener('click', function () { toggleAddForm(false); });
         })();
     </script>
 </body>

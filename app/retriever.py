@@ -81,7 +81,7 @@ WRONG_SERVICE_KEYWORDS = [
     # Appliance repair (explicit)
     "washing machine repair", "fridge repair", "dishwasher repair", "oven repair",
     # Personal care / other
-    "haircut", "hair cut", "barber", "house cleaning", "house clean", "cleaning service",
+    "haircut", "haircuts", "hair cut", "barber", "house cleaning", "house clean", "cleaning service",
 ]
 
 
@@ -1508,17 +1508,20 @@ def retrieve(
         # Allow if tenant FAQs actually cover one of these keywords
         if _tenant_has_keyword_in_faqs(tenant_id, wrong_service_keywords_in_query):
             trace["wrong_service_allowed_by_faq"] = True
+        # Emergency override: query about "emergency" and tenant has emergency FAQ → allow retrieval
+        elif "emergency" in query_lower and _tenant_has_keyword_in_faqs(tenant_id, ["emergency"]):
+            trace["wrong_service_emergency_override"] = True
         else:
             trace["wrong_service_allowed_by_faq"] = False
-        trace["stage"] = "wrong_service_rejected"
-        trace["retrieval_path"] = "fallback"
-        trace["wrong_service_keywords"] = wrong_service_keywords_in_query
-        trace["total_ms"] = int((time.time() - start_time) * 1000)
-        trace["used_fts_only"] = False
-        trace["ran_vector"] = False
-        trace["vector_k"] = 0
-        trace["selector_called"] = False
-        return None, trace
+            trace["stage"] = "wrong_service_rejected"
+            trace["retrieval_path"] = "fallback"
+            trace["wrong_service_keywords"] = wrong_service_keywords_in_query
+            trace["total_ms"] = int((time.time() - start_time) * 1000)
+            trace["used_fts_only"] = False
+            trace["ran_vector"] = False
+            trace["vector_k"] = 0
+            trace["selector_called"] = False
+            return None, trace
     
     # ============================================================================
     # NOW SAFE TO PROCEED WITH NORMAL RETRIEVAL
