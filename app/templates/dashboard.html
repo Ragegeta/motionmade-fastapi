@@ -497,6 +497,8 @@
             var chart = null;
             var tenantId = '';
             var tenantName = '';
+            var tenantPhone = '';
+            var embedColor = '#2563EB';
             var hasAnyData = false;
 
             function authHeaders() { return { 'Authorization': 'Bearer ' + token }; }
@@ -542,7 +544,7 @@
 
             function setEmbedSnippet() {
                 var base = window.location.origin;
-                var snippet = '<!-- MotionMade AI - Instant Answers for ' + (tenantName || 'Your Business') + ' -->\n<script src="' + base + '/widget.js"\n  data-tenant="' + (tenantId || '') + '"\n  data-color="#2563EB"\n  data-name="' + (tenantName || '') + '"\n  data-api="' + base + '"><\/script>';
+                var snippet = '<!-- MotionMade AI - Instant Answers for ' + (tenantName || 'Your Business') + ' -->\n<script src="' + base + '/widget.js"\n  data-tenant="' + (tenantId || '') + '"\n  data-name="' + (tenantName || '') + '"\n  data-phone="' + (tenantPhone || '') + '"\n  data-color="' + (embedColor || '#2563EB') + '"\n  data-api="' + base + '"><\/script>';
                 var el = document.getElementById('embedSnippet');
                 if (el) el.textContent = snippet;
                 var emptyEl = document.getElementById('emptyStateSnippet');
@@ -653,6 +655,7 @@
                     var name = (me.display_name || me.email || 'there').trim() || 'there';
                     tenantName = (me.tenant_name || me.tenant_id || '').trim();
                     tenantId = (me.tenant_id || '').trim();
+                    tenantPhone = (me.contact_phone || '').trim();
                     document.getElementById('greeting').textContent = "G'day, " + name + ' 👋';
                     document.getElementById('tenantName').textContent = tenantName || '–';
                     setEmbedSnippet();
@@ -732,9 +735,15 @@
 
             document.getElementById('addFaqLink').addEventListener('click', function (e) {
                 e.preventDefault();
-                document.getElementById('faqSection').scrollIntoView({ behavior: 'smooth' });
-                var addBtn = document.getElementById('faqAddBtn');
-                if (addBtn && document.getElementById('faqAddForm').style.display === 'none') addBtn.click();
+                var faqSection = document.getElementById('faqSection');
+                if (faqSection) faqSection.scrollIntoView({ behavior: 'smooth' });
+                var form = document.getElementById('faqAddForm');
+                if (form && form.style.display !== 'block') {
+                    var addBtn = document.getElementById('faqAddBtn');
+                    var addBtnEmpty = document.getElementById('faqAddBtnEmpty');
+                    if (addBtn && addBtn.offsetParent !== null) addBtn.click();
+                    else if (addBtnEmpty) addBtnEmpty.click();
+                }
             });
 
             // ---------- Owner FAQ self-service ----------

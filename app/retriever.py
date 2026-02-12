@@ -77,7 +77,8 @@ WRONG_SERVICE_KEYWORDS = [
     "security camera", "security cameras", "cctv", "surveillance system", "alarm system install",
     "intercom system", "smoke alarm", "smoke detector", "fire alarm",
     # Automotive (expanded)
-    "car", "car repair", "vehicle", "vehicle repair", "automotive", "mechanic", "engine", "brakes", "tyres", "tires",
+    "car", "car repair", "vehicle", "vehicle repair", "automotive", "automobile", "mechanic", "engine", "brakes", "tyres", "tires",
+    "fix my car", "fix my vehicle",
     # Appliance repair (explicit)
     "washing machine repair", "fridge repair", "dishwasher repair", "oven repair",
     # Personal care / other
@@ -1436,6 +1437,7 @@ def retrieve(
     # ============================================================================
     
     query_lower = normalized_query.lower().strip()
+    query_raw_lower = (query or "").lower().strip()
     
     # Stage 0.1: Vague query check - reject immediately if too short or generic
     vague_patterns = ["hi", "hello", "help", "hey", "yo", "sup", "?", "??", "???"]
@@ -1452,6 +1454,19 @@ def retrieve(
     # Stage 0.2: Wrong-service check - reject ONLY explicit wrong-trade intent
     # Allow mentions when electrical intent signals exist (voltage drop, power issues, alarms beeping, etc.)
     # This MUST run before cache, before retrieval, before everything
+    
+    # Explicit automotive/wrong-service phrases (reject immediately; no emergency override)
+    automotive_phrases = ["fix my car", "fix my vehicle", "fix car", "fix vehicle", "car repair", "vehicle repair"]
+    if any(p in query_raw_lower for p in automotive_phrases):
+        trace["stage"] = "wrong_service_rejected"
+        trace["retrieval_path"] = "fallback"
+        trace["wrong_service_keywords"] = ["automotive"]
+        trace["total_ms"] = int((time.time() - start_time) * 1000)
+        trace["used_fts_only"] = False
+        trace["ran_vector"] = False
+        trace["vector_k"] = 0
+        trace["selector_called"] = False
+        return None, trace
     
     # Electrical intent signals - if query contains these, allow even if wrong-service keyword present
     # NOTE: Single-word electrical terms (powerpoint, outlet, socket) should NOT be here - they're in WRONG_SERVICE_KEYWORDS
@@ -1477,10 +1492,10 @@ def retrieve(
     
     # Use module-level WRONG_SERVICE_KEYWORDS (defined at top of file)
     
-    # Check if query contains wrong-service keywords
+    # Check if query contains wrong-service keywords (check both normalized and raw so we never miss)
     wrong_service_keywords_in_query = [
         kw for kw in WRONG_SERVICE_KEYWORDS 
-        if _keyword_in_query(kw, query_lower)
+        if _keyword_in_query(kw, query_lower) or _keyword_in_query(kw, query_raw_lower)
     ]
     
     # Reject ONLY if:

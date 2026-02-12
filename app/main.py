@@ -2183,10 +2183,10 @@ def owner_login(body: OwnerLogin):
 
 @app.get("/owner/me")
 def owner_me(owner: dict = Depends(get_current_owner)):
-    """Return current owner profile and tenant info."""
+    """Return current owner profile and tenant info (for dashboard and embed snippet)."""
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT o.id, o.tenant_id, o.email, o.display_name, t.name FROM tenant_owners o JOIN tenants t ON t.id = o.tenant_id WHERE o.id = %s",
+            "SELECT o.id, o.tenant_id, o.email, o.display_name, t.name, t.contact_phone FROM tenant_owners o JOIN tenants t ON t.id = o.tenant_id WHERE o.id = %s",
             (owner["owner_id"],),
         ).fetchone()
     if not row:
@@ -2197,6 +2197,7 @@ def owner_me(owner: dict = Depends(get_current_owner)):
         "email": row[2],
         "display_name": row[3] or "",
         "tenant_name": row[4] or row[1],
+        "contact_phone": (row[5] or "").strip() if len(row) > 5 else "",
     }
 
 

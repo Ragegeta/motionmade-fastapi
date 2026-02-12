@@ -33,7 +33,7 @@ GENERIC_INTENT_VARIANTS = {
     "areas": ["what areas do you cover", "what areas u cover", "do you come to", "what suburbs", "do you service"],
     "service": ["what areas", "do you service", "where do you go"],
     "cover": ["what areas do you cover", "do you cover", "do you come to"],
-    "book": ["how do i book", "how to book", "how do i book a clean", "booking"],
+    "book": ["how do i book", "how to book", "how do i book a clean", "booking", "book a job", "how do i book a job", "how do I book a job"],
     "quote": ["free quote", "do you give quotes", "how much for a quote"],
     "licensed": ["are you licensed", "r u licensed", "do you have a licence"],
     "emergency": ["do you do emergency", "emergency stuff", "urgent", "asap"],
