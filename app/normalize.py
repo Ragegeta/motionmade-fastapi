@@ -75,6 +75,32 @@ SLANG_MAP = [
     (r'\b2nite\b', 'tonight'),
     (r'\bb4\b', 'before'),
     
+    # What is / what's
+    (r'\bwats\b', 'what is'),
+    (r'\bwhats\b', 'what is'),
+    (r'\bidk\b', 'i don\'t know'),
+    (r'\bimo\b', 'in my opinion'),
+    (r'\basap\b', 'as soon as possible'),
+    (r'\bappt\b', 'appointment'),
+    (r'\bgovt\b', 'government'),
+    (r'\byr\b', 'year'),
+    (r'\byrs\b', 'years'),
+    (r'\bhr\b', 'hour'),
+    (r'\bhrs\b', 'hours'),
+    (r'\bmin\b', 'minutes'),
+    (r'\bmins\b', 'minutes'),
+    (r'\bbd\b', 'bedroom'),
+    (r'\bbr\b', 'bedroom'),
+    (r'\bbdr\b', 'bedroom'),
+    (r'\bbthrm\b', 'bathroom'),
+    (r'\bbathrm\b', 'bathroom'),
+    (r'\bw\b', 'with'),            # "w" with -> after "w/" handled above
+    (r'\bmsg\b', 'message'),
+    (r'\btel\b', 'telephone'),
+    (r'\bmob\b', 'mobile'),
+    (r'\bapprox\b', 'approximately'),
+    (r'\bincl\b', 'including'),
+    (r'\bexcl\b', 'excluding'),
     # Common misspellings
     (r'\bprice?s\b', 'prices'),
     (r'\bpriec\b', 'price'),
@@ -212,6 +238,32 @@ def normalize_whitespace(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip()
 
 
+def number_letter_split(text: str) -> str:
+    """
+    Insert space between digit and following letter run (e.g. 3bed -> 3 bed, 2br -> 2 br).
+    Pure string/regex, no network. Handles 2br, 3bed, 4bd etc.
+    """
+    # Digit(s) immediately followed by letters: insert space between
+    return re.sub(r'(\d)([a-zA-Z])', r'\1 \2', text)
+
+
+def collapse_repeated_chars(text: str) -> str:
+    """
+    Collapse repeated characters (2+) to single (e.g. pleeeease -> please, heeelp -> help).
+    Pure string/regex, no network.
+    """
+    # Replace any run of 2+ same letters with single letter (case-insensitive by doing lower)
+    return re.sub(r'(.)\1+', r'\1', text, flags=re.IGNORECASE)
+
+
+def space_after_punctuation(text: str) -> str:
+    """
+    Ensure space after punctuation (e.g. cost?also -> cost? also).
+    Pure string/regex, no network.
+    """
+    return re.sub(r'([?!.,;:])([a-zA-Z])', r'\1 \2', text)
+
+
 def extract_core_question(text: str) -> str:
     """
     Extract the core question from verbose/polite phrasing.
@@ -271,6 +323,9 @@ def normalize_message(text: str) -> str:
     t = text
     t = normalize_unicode(t)
     t = t.lower()
+    t = number_letter_split(t)       # 3bed -> 3 bed, 2br -> 2 br
+    t = collapse_repeated_chars(t)   # pleeeease -> please
+    t = space_after_punctuation(t)   # cost?also -> cost? also
     t = expand_contractions(t)
     t = expand_slang(t)
     t = remove_fluff(t)

@@ -48,6 +48,11 @@ QUERY_RESULT_CACHE_TTL = 300  # 5 minutes (same as tenant count)
 # Selector confidence threshold
 SELECTOR_CONFIDENCE_THRESHOLD = 0.6  # Minimum confidence for selector to accept
 
+# LLM query rewriter (fallback path only): cache by (tenant_id, query_hash) -> (rewritten, timestamp)
+_rewrite_cache: Dict[str, Tuple[str, float]] = {}
+REWRITE_CACHE_TTL = 3600  # 1 hour
+REWRITE_TIMEOUT = 2.0     # seconds; skip rewriter if slower
+
 # Wrong-service keywords - only reject if EXPLICIT wrong-trade intent (no electrical context)
 # This is used in both retrieve() and can be imported by main.py for cache checks
 WRONG_SERVICE_KEYWORDS = [
@@ -68,13 +73,15 @@ WRONG_SERVICE_KEYWORDS = [
     "electrical", "electrical work", "electrical repair", "lighting installation", "circuit breaker",
     # Gardening
     "gardening", "landscaping", "lawn", "mowing", "tree", "hedge",
-    # Security systems (NOT smoke/fire alarms - those are electrical)
+    # Security systems and smoke/fire alarms (electrical - reject for plumber etc.)
     "security camera", "security cameras", "cctv", "surveillance system", "alarm system install",
-    "intercom system",
+    "intercom system", "smoke alarm", "smoke detector", "fire alarm",
     # Automotive (expanded)
     "car", "car repair", "vehicle", "vehicle repair", "automotive", "mechanic", "engine", "brakes", "tyres", "tires",
     # Appliance repair (explicit)
     "washing machine repair", "fridge repair", "dishwasher repair", "oven repair",
+    # Personal care / other
+    "haircut", "hair cut", "barber", "house cleaning", "house clean", "cleaning service",
 ]
 
 
@@ -199,6 +206,49 @@ def get_cache_key(tenant_id: str, normalized_query: str) -> str:
 def _get_query_hash(tenant_id: str, normalized_query: str) -> str:
     """Generate hash for in-memory cache key."""
     return hashlib.sha256(f"{tenant_id}:{normalized_query}".encode()).hexdigest()[:16]
+
+
+def rewrite_query_with_llm(query: str, tenant_id: str) -> Optional[str]:
+    """
+    Rewrite a messy/unclear customer query into clean, standard phrasing.
+    ONLY called when normal retrieval fails (no candidates). Uses gpt-4o-mini.
+    Timeout 2s; result cached by query hash. Returns None on timeout/error or empty.
+    """
+    if not (query or query.strip()):
+        return None
+    q = query.strip()
+    cache_key = f"{tenant_id}:{_get_query_hash(tenant_id, q)}"
+    now = time.time()
+    if cache_key in _rewrite_cache:
+        rewritten, ts = _rewrite_cache[cache_key]
+        if now - ts < REWRITE_CACHE_TTL:
+            return rewritten
+        del _rewrite_cache[cache_key]
+    try:
+        system = (
+            "You rewrite customer questions into clear, standard English. "
+            "Output ONLY the rewritten question, nothing else. Keep it short. "
+            "Examples:\n"
+            "'hw much 4 a plumber to come out' → 'How much does a plumber callout cost?'\n"
+            "'can i pay later' → 'Do you offer payment plans?'\n"
+            "'u guys do weekends??' → 'Do you work on weekends?'\n"
+            "'wats included in bond clean' → 'What is included in a bond clean?'"
+        )
+        rewritten = chat_once(
+            system, q,
+            temperature=0,
+            model="gpt-4o-mini",
+            max_tokens=50,
+            timeout=REWRITE_TIMEOUT,
+        )
+        rewritten = (rewritten or "").strip()
+        if rewritten:
+            _rewrite_cache[cache_key] = (rewritten, now)
+            print(f"[retriever] llm_rewrite called tenant={tenant_id} query_len={len(q)} -> len={len(rewritten)}")
+        return rewritten if rewritten else None
+    except Exception as e:
+        print(f"[retriever] llm_rewrite failed: {e}")
+        return None
 
 
 def get_cached_result(tenant_id: str, normalized_query: str) -> Optional[Dict]:
@@ -1391,6 +1441,7 @@ def retrieve(
     vague_patterns = ["hi", "hello", "help", "hey", "yo", "sup", "?", "??", "???"]
     if query_lower in vague_patterns or len(query_lower) < 4:
         trace["stage"] = "clarify_vague"
+        trace["retrieval_path"] = "fallback"
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         trace["used_fts_only"] = False
         trace["ran_vector"] = False
@@ -1444,16 +1495,23 @@ def retrieve(
     # Only reject non-electrical wrong-service keywords (plumbing, painting, etc.)
     if is_electrical_tenant:
         # Filter out electrical keywords from wrong-service check for electrical tenants
-        electrical_keywords = ["sparky", "electrician", "powerpoint", "power point", "socket", "outlet", "switchboard", "wiring", "electrical"]
+        electrical_keywords = ["sparky", "electrician", "powerpoint", "power point", "socket", "outlet", "switchboard", "wiring", "electrical", "smoke alarm", "smoke detector", "fire alarm"]
         wrong_service_keywords_in_query = [kw for kw in wrong_service_keywords_in_query if kw.lower() not in electrical_keywords]
+    # For plumber/plumbing tenants, don't reject plumber keywords
+    is_plumber_tenant = "plumber" in tenant_id.lower() or "plumbing" in tenant_id.lower()
+    if is_plumber_tenant:
+        plumbing_keywords = ["plumber", "plumbing", "toilet", "tap", "drain", "pipe", "leak", "water heater", "hot water system"]
+        wrong_service_keywords_in_query = [kw for kw in wrong_service_keywords_in_query if kw.lower() not in plumbing_keywords]
     
-    if wrong_service_keywords_in_query and not has_electrical_intent and "switchboard" not in query_lower:
+    # Only allow electrical-intent override when tenant is actually electrical (plumber + "powerpoint" = reject)
+    if wrong_service_keywords_in_query and not (has_electrical_intent and is_electrical_tenant) and "switchboard" not in query_lower:
         # Allow if tenant FAQs actually cover one of these keywords
         if _tenant_has_keyword_in_faqs(tenant_id, wrong_service_keywords_in_query):
             trace["wrong_service_allowed_by_faq"] = True
         else:
             trace["wrong_service_allowed_by_faq"] = False
         trace["stage"] = "wrong_service_rejected"
+        trace["retrieval_path"] = "fallback"
         trace["wrong_service_keywords"] = wrong_service_keywords_in_query
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         trace["used_fts_only"] = False
@@ -1485,6 +1543,7 @@ def retrieve(
                 trace["cache_hit"] = True
                 trace["cache_hit_type"] = "in_memory"
                 trace["stage"] = "cache_in_memory"
+                trace["retrieval_path"] = "cache"
                 trace["retrieval_db_cache_read_ms"] = 0  # Skipped DB read
                 trace["retrieval_db_cache_write_ms"] = 0  # Will skip DB write
                 trace["retrieval_cache_ms"] = int((time.time() - cache_start_time) * 1000)
@@ -1518,6 +1577,7 @@ def retrieve(
                 # But ideally cache should include candidate_count - for now, assume it's valid if cached
                 trace["cache_hit"] = True
                 trace["stage"] = "cache"
+                trace["retrieval_path"] = "cache"
                 # Set candidate_count from cache if available, otherwise set to 1 (assume valid cached result)
                 trace["candidates_count"] = cached.get("candidates_count", 1)
                 # Set trace fields for cached results (may not be available in cache, so use defaults)
@@ -1560,6 +1620,7 @@ def retrieve(
     if fts_candidate_count >= 1 and (fts_top_score >= 0.12 or (fts_candidate_count >= 2 and fts_gap >= 0.03)):
         use_fts_only_fast_path = True
         trace["stage"] = "fts_high_confidence"
+        trace["retrieval_path"] = "fts-fast"
         trace["used_fts_only"] = True
         trace["ran_vector"] = False
         trace["vector_k"] = 0
@@ -1608,6 +1669,7 @@ def retrieve(
     
     if fts_candidate_count >= 1 and tenant_faq_count <= SMALL_TENANT_FAQ_THRESHOLD:
         trace["stage"] = "fts_small_tenant_fast_path"
+        trace["retrieval_path"] = "fts-fast"
         trace["used_fts_only"] = True
         trace["ran_vector"] = False
         trace["vector_k"] = 0
@@ -1707,6 +1769,7 @@ def retrieve(
     # CRITICAL: If we have ANY candidates, proceed (don't require high scores)
     if not candidates:
         trace["stage"] = "no_candidates"
+        trace["retrieval_path"] = "fallback"
         trace["candidates_count"] = 0  # Explicitly set to 0
         # Ensure trace fields are set
         if "used_fts_only" not in trace:
@@ -1717,12 +1780,54 @@ def retrieve(
             trace["vector_k"] = 0
         if "selector_called" not in trace:
             trace["selector_called"] = False
-        
+
+        # Fallback: try LLM query rewriter (only when both FTS and vector gave no candidates)
+        rewritten = rewrite_query_with_llm(normalized_query, tenant_id)
+        if rewritten:
+            from app.openai_client import embed_text
+            try:
+                rw_embedding = embed_text(rewritten)
+                fts_rw = search_fts(tenant_id, rewritten, limit=20)
+                vec_rw = get_top_candidates(tenant_id, rw_embedding, limit=20)
+                candidates_rw = merge_candidates_fts_primary(fts_rw, vec_rw)
+                if candidates_rw:
+                    top_rw = candidates_rw[0].get("score", 0)
+                    if top_rw >= 0.5:
+                        # Don't return a hit if the ORIGINAL query was wrong-service (rewriter might have obscured it)
+                        orig_wrong = [kw for kw in WRONG_SERVICE_KEYWORDS if _keyword_in_query(kw, normalized_query.lower())]
+                        if is_electrical_tenant:
+                            orig_wrong = [kw for kw in orig_wrong if kw.lower() not in ["sparky", "electrician", "powerpoint", "power point", "socket", "outlet", "switchboard", "wiring", "electrical"]]
+                        if orig_wrong and not _tenant_has_keyword_in_faqs(tenant_id, orig_wrong):
+                            pass  # fall through to return None below
+                        else:
+                            result = {
+                                "faq_id": candidates_rw[0]["faq_id"],
+                                "question": candidates_rw[0]["question"],
+                                "answer": candidates_rw[0]["answer"],
+                                "score": top_rw,
+                                "stage": "llm_rewrite",
+                            }
+                            trace["stage"] = "llm_rewrite"
+                            trace["retrieval_path"] = "llm-rewrite"
+                            trace["candidates_count"] = len(candidates_rw)
+                            trace["final_score"] = top_rw
+                            trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
+                            trace["total_ms"] = int((time.time() - start_time) * 1000)
+                            if use_cache:
+                                query_hash = _get_query_hash(tenant_id, normalized_query)
+                                cache_key = (tenant_id, query_hash)
+                                _query_result_cache[cache_key] = (result, time.time())
+                                set_cached_result(tenant_id, normalized_query, result)
+                            return result, trace
+            except Exception as e:
+                print(f"[retriever] llm_rewrite re-search failed: {e}")
+
         # If query is very short/generic (<=2-3 tokens), return clarify
         query_tokens = normalized_query.split()
         if len(query_tokens) <= 3:
             trace["stage"] = "clarify"  # Very short query with no candidates -> clarify
-        
+        trace["retrieval_path"] = "fallback"
+
         trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
@@ -1733,13 +1838,15 @@ def retrieve(
     # HARD RULE: Never allow faq_hit=true when candidate_count==0
     if len(candidates) == 0:
         trace["stage"] = "no_candidates"
+        trace["retrieval_path"] = "fallback"
         trace["candidates_count"] = 0
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
-    
+
     # Fast path: High confidence from hybrid search (lowered to 0.5 for better recall)
     if top_combined_score >= 0.5:
         trace["stage"] = "hybrid_high_confidence"
+        trace["retrieval_path"] = "vector"
         trace["candidates_count"] = len(candidates)  # Ensure candidate_count is set
         trace["selector_called"] = False  # High confidence hybrid doesn't use selector
         result = {
@@ -1830,6 +1937,7 @@ def retrieve(
     
     if not reranked:
         trace["stage"] = "rerank_no_result"
+        trace["retrieval_path"] = "fallback"
         trace["candidates_count"] = len(candidates)  # Ensure candidate_count is set even on miss
         # Ensure trace fields are set
         if "used_fts_only" not in trace:
@@ -1870,6 +1978,7 @@ def retrieve(
     
     if not accept:
         trace["stage"] = f"rejected_{accept_reason}"
+        trace["retrieval_path"] = "fallback"
         trace["candidates_count"] = len(candidates)  # Ensure candidate_count is set even on rejection
         # Ensure trace fields are set
         if "used_fts_only" not in trace:
@@ -1887,13 +1996,15 @@ def retrieve(
     # HARD RULE: Never allow faq_hit=true when candidate_count==0 (defensive check)
     if len(candidates) == 0:
         trace["stage"] = "no_candidates"
+        trace["retrieval_path"] = "fallback"
         trace["candidates_count"] = 0
         trace["retrieval_total_ms"] = int((time.time() - retrieval_start_time) * 1000)
         trace["total_ms"] = int((time.time() - start_time) * 1000)
         return None, trace
-    
+
     # Success
     trace["stage"] = f"{rerank_method}_accepted"
+    trace["retrieval_path"] = "llm-selector" if rerank_method == "llm_selector" else "vector"
     trace["candidates_count"] = len(candidates)  # Ensure candidate_count is set on success
     # selector_called should already be set: True if LLM selector was called, False if cross-encoder was used
     if "selector_called" not in trace:

@@ -965,7 +965,7 @@ def _should_fallback_after_miss(msg: str, domain: str) -> bool:
 
 @app.post("/api/v2/generate-quote-reply")
 def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
-    _start_time = time.time()
+    _start_time = time.monotonic()
     tenant_id = (req.tenantId or "").strip()
     msg = (req.customerMessage or "").strip()
     
@@ -991,6 +991,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
     resp.headers["X-Triage-Result"] = triage_result or "pass"
     
     if not should_continue:
+        resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
+        resp.headers["X-Retrieval-Path"] = "fallback"
         resp.headers["X-Debug-Branch"] = "clarify"
         resp.headers["X-Faq-Hit"] = "false"
         payload = _base_payload()
@@ -1119,6 +1121,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
     # Fast path: obvious general questions skip retrieval
     # -----------------------------
     if _is_obvious_general_question(primary_query):
+        resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
+        resp.headers["X-Retrieval-Path"] = "fallback"
         resp.headers["X-Retrieval-Stage"] = "skipped_general"
         resp.headers["X-Retrieval-Skip-Reason"] = "obvious_general"
         resp.headers["X-Cache-Hit"] = "false"
@@ -1173,6 +1177,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             payload["replyText"] = cached_result["replyText"]
             resp.headers["X-Candidate-Count"] = str(cached_candidate_count)
             timings["total_ms"] = int((time.time() - _start_time) * 1000)
+            resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
+            resp.headers["X-Retrieval-Path"] = "cache"
             _set_timing_headers(request, resp, timings, _cache_hit)
             _log_telemetry(
                 tenant_id=tenant_id,
@@ -1207,7 +1213,10 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         # Store trace for debug endpoint access
         resp._retrieval_trace = retrieval_trace
         
-        # Set debug headers from trace
+        # Set debug headers from trace (including response time and path for every request)
+        elapsed = time.monotonic() - _start_time
+        resp.headers["X-Response-Time"] = f"{elapsed:.3f}s"
+        resp.headers["X-Retrieval-Path"] = retrieval_trace.get("retrieval_path", "fallback")
         resp.headers["X-Retrieval-Stage"] = retrieval_trace.get("stage") or "unknown"
         if retrieval_trace.get("top_score") is not None:
             resp.headers["X-Retrieval-Score"] = str(retrieval_trace.get("top_score", 0))
@@ -1273,6 +1282,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         resp.headers["X-Faq-Hit"] = str(hit).lower()
 
         if hit and ans:
+            resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
             stage = retrieval_result.get("stage", "embedding")
             if stage == "selector":
                 resp.headers["X-Debug-Branch"] = "selector_hit"
@@ -1316,7 +1326,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             )
             return payload
 
-        # 2) Miss -> rewrite for retrieval only
+        # 2) Miss -> rewrite for retrieval only (skip for wrong-service and gibberish to keep speed)
         resp.headers["X-Debug-Branch"] = "fact_rewrite_try"
         resp.headers["X-Rewrite-Triggered"] = "true"
 
@@ -1328,19 +1338,28 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             resp.headers["X-Top-Faq-Id-Raw"] = resp.headers["X-Top-Faq-Id"]
 
         rewrite = ""
-        _t0 = time.time()
-        try:
-            system = (
-                "Rewrite the user message into a short FAQ-style query (max 12 words). "
-                "Preserve the meaning. Do not add or change any facts. "
-                "Do NOT invent numbers, prices, times, policies, or inclusions. "
-                "Output only the rewritten query text with no quotes or explanation."
-            )
-            rewrite = chat_once(system, f"Original customer message: {msg}", temperature=0.0).strip()
-            timings["llm_ms"] += int((time.time() - _t0) * 1000)
-        except Exception:
-            timings["llm_ms"] += int((time.time() - _t0) * 1000)
-            rewrite = ""
+        # Skip rewrite when retriever already rejected (wrong-service) — stay under 2s
+        if retrieval_trace.get("stage") == "wrong_service_rejected":
+            pass  # keep rewrite = ""
+        else:
+            # Skip expensive rewrite for gibberish (no spaces + long, or very low alpha ratio)
+            _pq = primary_query.strip()
+            _alpha = sum(1 for c in _pq if c.isalpha())
+            _gibberish = (len(_pq) > 5 and " " not in _pq) or (len(_pq) > 4 and _pq and _alpha / len(_pq) < 0.5)
+            if not _gibberish:
+                _t0 = time.time()
+                try:
+                    system = (
+                        "Rewrite the user message into a short FAQ-style query (max 12 words). "
+                        "Preserve the meaning. Do not add or change any facts. "
+                        "Do NOT invent numbers, prices, times, policies, or inclusions. "
+                        "Output only the rewritten query text with no quotes or explanation."
+                    )
+                    rewrite = chat_once(system, f"Original customer message: {msg}", temperature=0.0, timeout=2.0).strip()
+                    timings["llm_ms"] += int((time.time() - _t0) * 1000)
+                except Exception:
+                    timings["llm_ms"] += int((time.time() - _t0) * 1000)
+                    rewrite = ""
 
         if rewrite:
             resp.headers["X-Fact-Rewrite"] = rewrite[:80]
@@ -1365,6 +1384,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
                 resp.headers["X-Top-Faq-Id"] = str(rw_faq_id)
 
             if rw_hit and rw_ans:
+                resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
+                resp.headers["X-Retrieval-Path"] = "llm-rewrite"
                 resp.headers["X-Debug-Branch"] = "fact_rewrite_hit"
                 resp.headers["X-Faq-Hit"] = "true"
                 payload["replyText"] = str(rw_ans).strip()
@@ -1395,6 +1416,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
 
     except Exception:
         # If retrieval pipeline errors, fail safe
+        resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
+        resp.headers["X-Retrieval-Path"] = "fallback"
         resp.headers["X-Debug-Branch"] = "error"
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
@@ -1417,7 +1440,33 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
     # -----------------------------
     # Retrieval miss -> decide fallback vs general
     # -----------------------------
+    # Wrong-service rejections must get FALLBACK only (no general LLM hallucination)
+    _trace = getattr(resp, "_retrieval_trace", None) or {}
+    if _trace.get("stage") == "wrong_service_rejected":
+        resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
+        resp.headers["X-Retrieval-Path"] = "fallback"
+        resp.headers["X-Debug-Branch"] = "wrong_service"
+        resp.headers["X-Faq-Hit"] = "false"
+        payload["replyText"] = FALLBACK
+        timings["total_ms"] = int((time.time() - _start_time) * 1000)
+        _set_timing_headers(request, resp, timings, _cache_hit)
+        _log_telemetry(
+            tenant_id=tenant_id,
+            query_text=msg,
+            normalized_text=normalized_msg,
+            intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+            debug_branch="wrong_service",
+            faq_hit=False,
+            top_faq_id=None,
+            retrieval_score=None,
+            rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+            latency_ms=timings["total_ms"]
+        )
+        return payload
+
     if _should_fallback_after_miss(msg, domain):
+        resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
+        resp.headers["X-Retrieval-Path"] = "fallback"
         resp.headers["X-Debug-Branch"] = "fact_miss"
         resp.headers["X-Faq-Hit"] = "false"
         payload["replyText"] = FALLBACK
@@ -1440,6 +1489,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
     # -----------------------------
     # General chat (professional tone, brief)
     # -----------------------------
+    resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
+    resp.headers["X-Retrieval-Path"] = "fallback"
     return _respond_general("general_ok", "general_fallback")
 
 @app.get("/ping")
@@ -2915,11 +2966,60 @@ def promote_staged(
             conn.commit()
         
         if should_promote:
+            # Near-duplicate FAQ check (cosine similarity on question embeddings)
+            warnings = []
+            try:
+                with get_conn() as conn:
+                    rows = conn.execute("""
+                        SELECT id, question, embedding FROM faq_items
+                        WHERE tenant_id = %s AND is_staged = false AND embedding IS NOT NULL
+                    """, (tenantId,)).fetchall()
+                if len(rows) >= 2:
+                    # Cosine similarity between each pair
+                    def _cosine(a, b):
+                        if not a or not b or len(a) != len(b):
+                            return 0.0
+                        dot = sum(x * y for x, y in zip(a, b))
+                        na = sum(x * x for x in a) ** 0.5
+                        nb = sum(y * y for y in b) ** 0.5
+                        if na * nb == 0:
+                            return 0.0
+                        return dot / (na * nb)
+                    # Embedding can be list or pgvector Vector
+                    def _to_list(emb):
+                        if emb is None:
+                            return None
+                        if hasattr(emb, "tolist"):
+                            return emb.tolist()
+                        if isinstance(emb, (list, tuple)):
+                            return list(emb)
+                        try:
+                            return list(emb)
+                        except Exception:
+                            return None
+                    for i in range(len(rows)):
+                        for j in range(i + 1, len(rows)):
+                            idi, qi, emi = rows[i]
+                            idj, qj, emj = rows[j]
+                            li, lj = _to_list(emi), _to_list(emj)
+                            if li and lj:
+                                sim = _cosine(li, lj)
+                                if sim >= 0.85:
+                                    warnings.append({
+                                        "type": "similar_faqs",
+                                        "faq_1": qi,
+                                        "faq_2": qj,
+                                        "similarity": round(sim, 2),
+                                        "suggestion": "Consider merging these into one FAQ"
+                                    })
+            except Exception:
+                pass
             return {
                 "tenant_id": tenantId,
                 "status": "success",
                 "message": f"Promoted {staged_count} FAQs to live",
-                "suite_result": suite_result
+                "suite_result": suite_result,
+                "warnings": warnings
             }
         else:
             return {
