@@ -301,6 +301,30 @@ async function showTenantDetail(tenantId) {
             </div>
             
             <div class="section">
+                <h2>Create Owner Account</h2>
+                <p style="color: #666; margin-bottom: 15px;">Create a dashboard login for this tenant. Owner can log in at /dashboard/login.</p>
+                <div class="form-group">
+                    <label>Tenant</label>
+                    <input type="text" id="createOwnerTenantId" value="${escapeHtml(tenant.id)}" readonly style="background: #f8f9fa;" />
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="createOwnerEmail" placeholder="owner@example.com" />
+                </div>
+                <div class="form-group">
+                    <label>Temp password</label>
+                    <input type="password" id="createOwnerPassword" placeholder="temp123" autocomplete="new-password" />
+                </div>
+                <div class="form-group">
+                    <label>Display name (optional)</label>
+                    <input type="text" id="createOwnerDisplayName" placeholder="Mike" />
+                </div>
+                <button class="primary" id="createOwnerButton" data-tenant-id="${escapeHtml(tenant.id)}">Create Owner Account</button>
+                <div id="createOwnerError" class="error" style="margin-top: 10px;"></div>
+                <div id="createOwnerSuccess" class="success" style="margin-top: 10px;"></div>
+            </div>
+            
+            <div class="section">
                 <h2>Install Snippet</h2>
                 <p style="color: #666; margin-bottom: 15px;">Copy and paste this script tag into your website, just before the closing <code>&lt;/body&gt;</code> tag:</p>
                 
@@ -397,6 +421,47 @@ async function removeDomain(tenantId, domain) {
         showTenantDetail(tenantId);
     } catch (e) {
         alert(`Error: ${e.message}`);
+    }
+}
+
+async function createOwner(tenantId) {
+    const errEl = document.getElementById('createOwnerError');
+    const okEl = document.getElementById('createOwnerSuccess');
+    if (errEl) errEl.textContent = '';
+    if (okEl) okEl.textContent = '';
+    const email = document.getElementById('createOwnerEmail') && document.getElementById('createOwnerEmail').value.trim();
+    const password = document.getElementById('createOwnerPassword') && document.getElementById('createOwnerPassword').value;
+    const displayName = document.getElementById('createOwnerDisplayName') && document.getElementById('createOwnerDisplayName').value.trim();
+    if (!email) {
+        if (errEl) errEl.textContent = 'Email required';
+        return;
+    }
+    if (!password) {
+        if (errEl) errEl.textContent = 'Temp password required';
+        return;
+    }
+    try {
+        const res = await fetch(`${API_BASE}/admin/api/create-owner`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({
+                tenant_id: tenantId,
+                email: email,
+                password: password,
+                display_name: displayName || null
+            })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            if (errEl) errEl.textContent = data.detail || `HTTP ${res.status}`;
+            return;
+        }
+        if (okEl) okEl.textContent = 'Owner account created. They can log in at /dashboard/login.';
+        if (document.getElementById('createOwnerEmail')) document.getElementById('createOwnerEmail').value = '';
+        if (document.getElementById('createOwnerPassword')) document.getElementById('createOwnerPassword').value = '';
+        if (document.getElementById('createOwnerDisplayName')) document.getElementById('createOwnerDisplayName').value = '';
+    } catch (e) {
+        if (errEl) errEl.textContent = e.message || 'Request failed';
     }
 }
 
@@ -935,6 +1000,13 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const tenantId = e.target.getAttribute('data-tenant-id');
             if (tenantId) rollbackTenant(tenantId);
+        }
+        
+        // Create owner button
+        if (e.target.id === 'createOwnerButton') {
+            e.preventDefault();
+            const tenantId = e.target.getAttribute('data-tenant-id');
+            if (tenantId) createOwner(tenantId);
         }
         
         // Onboard remove domain button

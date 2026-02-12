@@ -6,8 +6,9 @@ import time
 import hashlib
 from pathlib import Path
 from typing import List, Optional, Set
+from datetime import datetime, timedelta
 
-from fastapi import FastAPI, Header, HTTPException, Response, Request
+from fastapi import FastAPI, Header, HTTPException, Response, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -25,6 +26,15 @@ from .normalize import normalize_message
 from .splitter import split_intents
 from .cache import get_cached_result, cache_result, get_cache_stats
 from .variant_expander import expand_faq_list
+
+# Owner dashboard auth
+try:
+    import bcrypt
+    from jose import jwt, JWTError
+except ImportError:
+    bcrypt = None
+    jwt = None
+    JWTError = Exception
 
 # Import suite_runner defensively to avoid startup failures
 try:
@@ -348,6 +358,33 @@ CREATE TABLE IF NOT EXISTS telemetry (
 );
 
 CREATE INDEX IF NOT EXISTS telemetry_tenant_idx ON telemetry(tenant_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS tenant_owners (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  display_name TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  last_login TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS tenant_owners_tenant_id_idx ON tenant_owners(tenant_id);
+CREATE UNIQUE INDEX IF NOT EXISTS tenant_owners_email_key ON tenant_owners(email);
+
+CREATE TABLE IF NOT EXISTS query_stats (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  query_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  hour_of_day INT,
+  total_queries INT DEFAULT 0,
+  successful_matches INT DEFAULT 0,
+  fallback_count INT DEFAULT 0,
+  avg_confidence REAL,
+  UNIQUE(tenant_id, query_date, hour_of_day)
+);
+
+CREATE INDEX IF NOT EXISTS query_stats_tenant_date_idx ON query_stats(tenant_id, query_date);
 """
 
 
@@ -513,6 +550,20 @@ def _log_telemetry(
                  candidate_count, retrieval_mode, selector_called, selector_confidence, chosen_faq_id,
                  retrieval_latency_ms, selector_latency_ms)
             )
+            # Upsert query_stats for owner dashboard (per tenant/date/hour)
+            succ = 1 if faq_hit else 0
+            fall = 0 if faq_hit else 1
+            conf = float(retrieval_score) if retrieval_score is not None else None
+            conn.execute(
+                """INSERT INTO query_stats (tenant_id, query_date, hour_of_day, total_queries, successful_matches, fallback_count, avg_confidence)
+                   VALUES (%s, CURRENT_DATE, EXTRACT(HOUR FROM now())::integer, 1, %s, %s, %s)
+                   ON CONFLICT (tenant_id, query_date, hour_of_day) DO UPDATE SET
+                     total_queries = query_stats.total_queries + 1,
+                     successful_matches = query_stats.successful_matches + EXCLUDED.successful_matches,
+                     fallback_count = query_stats.fallback_count + EXCLUDED.fallback_count,
+                     avg_confidence = (COALESCE(query_stats.avg_confidence, 0) * query_stats.total_queries + COALESCE(EXCLUDED.avg_confidence, 0)) / (query_stats.total_queries + 1)""",
+                (tenant_id, succ, fall, conf)
+            )
             conn.commit()
     except Exception:
         pass  # Don't fail request if telemetry fails
@@ -615,6 +666,62 @@ def _init_debug_headers(resp: Response, tenant_id: str, msg: str) -> str:
     return domain
 
 
+def _split_schema_statements(sql: str) -> List[str]:
+    """Split SCHEMA_SQL into statements, respecting dollar-quoted blocks ($$ ... $$ or $tag$ ... $tag$).
+    Semicolons inside dollar-quoted content do not end the statement.
+    """
+    statements = []
+    pos = 0
+    n = len(sql)
+    while pos < n:
+        # Skip whitespace and single-line comments
+        while pos < n and (sql[pos] in ' \t\n\r' or (sql[pos:pos+2] == '--' and (pos == 0 or sql[pos-1] in '\n\r'))):
+            if pos < n and sql[pos:pos+2] == '--':
+                while pos < n and sql[pos] != '\n':
+                    pos += 1
+            else:
+                pos += 1
+        if pos >= n:
+            break
+        start = pos
+        i = pos
+        while i < n:
+            if sql[i] == '$':
+                # Dollar-quoted string: $ or $tag$
+                delim_start = i
+                i += 1
+                if i >= n:
+                    break
+                # Optional tag (word chars)
+                while i < n and (sql[i].isalnum() or sql[i] == '_'):
+                    i += 1
+                if i < n and sql[i] == '$':
+                    i += 1
+                    delim = sql[delim_start:i]
+                    # Find closing same delimiter
+                    close = sql.find(delim, i)
+                    if close == -1:
+                        i = n
+                        break
+                    i = close + len(delim)
+                    continue
+            if sql[i] == ';':
+                # Statement terminator (we're outside dollar-quoted)
+                stmt = sql[start:i].strip()
+                if stmt and not stmt.startswith('--'):
+                    statements.append(stmt)
+                pos = i + 1
+                break
+            i += 1
+        else:
+            # No semicolon found - rest is one statement (or trailing comment)
+            stmt = sql[start:].strip()
+            if stmt and not stmt.startswith('--'):
+                statements.append(stmt)
+            break
+    return statements
+
+
 @app.on_event("startup")
 def _startup():
     """Initialize database schema on startup. Non-blocking - failures don't prevent startup."""
@@ -624,36 +731,35 @@ def _startup():
     
     def init_db():
         try:
-            with get_conn() as conn:
-                # Execute SCHEMA_SQL with error logging per statement
-                statements = SCHEMA_SQL.split(';')
-                for i, stmt in enumerate(statements):
-                    stmt = stmt.strip()
-                    if not stmt or stmt.startswith('--'):
-                        continue
-                    try:
+            statements = _split_schema_statements(SCHEMA_SQL)
+            for i, stmt in enumerate(statements):
+                stmt = stmt.strip()
+                if not stmt or stmt.startswith('--'):
+                    continue
+                try:
+                    with get_conn() as conn:
                         conn.execute(stmt)
-                    except Exception as e:
-                        # Extract table/object name from statement for better error reporting
-                        obj_name = "unknown"
-                        if "CREATE TABLE" in stmt.upper():
-                            # Try to extract table name
-                            import re
-                            match = re.search(r'CREATE TABLE.*?(\w+)', stmt, re.IGNORECASE)
-                            if match:
-                                obj_name = match.group(1)
-                        elif "CREATE FUNCTION" in stmt.upper() or "CREATE OR REPLACE FUNCTION" in stmt.upper():
-                            match = re.search(r'FUNCTION.*?(\w+)', stmt, re.IGNORECASE)
-                            if match:
-                                obj_name = match.group(1)
-                        elif "CREATE SEQUENCE" in stmt.upper():
-                            match = re.search(r'SEQUENCE.*?(\w+)', stmt, re.IGNORECASE)
-                            if match:
-                                obj_name = match.group(1)
-                        print(f"[schema_init] Failed to create {obj_name}: {str(e)}")
-                        print(f"[schema_init] Statement: {stmt[:200]}...")
-                        # Continue with other statements - don't fail entire init
-                conn.commit()
+                        conn.commit()
+                except Exception as e:
+                    # Extract table/object name from statement for better error reporting
+                    obj_name = "unknown"
+                    if "CREATE TABLE" in stmt.upper():
+                        match = re.search(r'CREATE TABLE.*?(\w+)', stmt, re.IGNORECASE)
+                        if match:
+                            obj_name = match.group(1)
+                    elif "CREATE FUNCTION" in stmt.upper() or "CREATE OR REPLACE FUNCTION" in stmt.upper():
+                        match = re.search(r'FUNCTION.*?(\w+)', stmt, re.IGNORECASE)
+                        if match:
+                            obj_name = match.group(1)
+                    elif "CREATE SEQUENCE" in stmt.upper():
+                        match = re.search(r'SEQUENCE.*?(\w+)', stmt, re.IGNORECASE)
+                        if match:
+                            obj_name = match.group(1)
+                    elif "DO $$" in stmt or "DO $" in stmt:
+                        obj_name = "do_block"
+                    print(f"[schema_init] Failed to create {obj_name}: {str(e)}")
+                    print(f"[schema_init] Statement: {stmt[:200]}...")
+                    # Continue with other statements - each runs in its own transaction
             
             # Migrate telemetry table if old columns exist
             try:
@@ -1404,6 +1510,26 @@ def _get_git_branch_from_file() -> str:
     return ""
 
 
+@app.get("/dashboard/login", response_class=HTMLResponse)
+def dashboard_login_ui():
+    """Serve owner dashboard login page."""
+    html_path = Path(__file__).parent / "templates" / "dashboard_login.html"
+    if html_path.exists():
+        html = html_path.read_text(encoding="utf-8")
+        return HTMLResponse(content=html)
+    return HTMLResponse(content="<h1>Dashboard login not found</h1>", status_code=404)
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard_ui():
+    """Serve owner dashboard (auth is client-side via JWT)."""
+    html_path = Path(__file__).parent / "templates" / "dashboard.html"
+    if html_path.exists():
+        html = html_path.read_text(encoding="utf-8")
+        return HTMLResponse(content=html)
+    return HTMLResponse(content="<h1>Dashboard not found</h1>", status_code=404)
+
+
 @app.get("/admin", response_class=HTMLResponse)
 def admin_ui():
     """Serve admin UI."""
@@ -1798,6 +1924,54 @@ def _check_admin_auth(authorization: str):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
+# ---------- Owner dashboard auth ----------
+OWNER_TOKEN_ALG = "HS256"
+OWNER_TOKEN_EXP_HOURS = 24 * 7  # 7 days
+
+
+def _hash_password(password: str) -> str:
+    if not bcrypt:
+        raise HTTPException(status_code=503, detail="Auth not configured (bcrypt missing)")
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def _verify_password(password: str, password_hash: str) -> bool:
+    if not bcrypt:
+        return False
+    try:
+        return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
+    except Exception:
+        return False
+
+
+def _create_owner_token(owner_id: int, tenant_id: str, exp_hours: int = OWNER_TOKEN_EXP_HOURS) -> str:
+    if not jwt or not settings.JWT_SECRET:
+        raise HTTPException(status_code=503, detail="Auth not configured (JWT_SECRET missing)")
+    exp = datetime.utcnow() + timedelta(hours=exp_hours)
+    payload = {"sub": str(owner_id), "tenant_id": tenant_id, "exp": exp}
+    return jwt.encode(payload, settings.JWT_SECRET, algorithm=OWNER_TOKEN_ALG)
+
+
+def _decode_owner_token(token: str) -> Optional[dict]:
+    if not jwt or not settings.JWT_SECRET:
+        return None
+    try:
+        return jwt.decode(token, settings.JWT_SECRET, algorithms=[OWNER_TOKEN_ALG])
+    except JWTError:
+        return None
+
+
+def get_current_owner(authorization: str = Header(default="")):
+    """Dependency: require valid owner JWT. Returns dict with owner_id, tenant_id."""
+    if not authorization or not authorization.strip().startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization")
+    token = authorization.strip().split(None, 1)[-1]
+    payload = _decode_owner_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return {"owner_id": int(payload["sub"]), "tenant_id": payload["tenant_id"]}
+
+
 class TenantCreate(BaseModel):
     id: str
     name: str
@@ -1805,6 +1979,267 @@ class TenantCreate(BaseModel):
 
 class DomainAdd(BaseModel):
     domain: str
+
+
+class OwnerLogin(BaseModel):
+    email: str
+    password: str
+
+
+class OwnerCreateBody(BaseModel):
+    tenant_id: str
+    email: str
+    password: str
+    display_name: Optional[str] = None
+
+
+@app.post("/owner/login")
+def owner_login(body: OwnerLogin):
+    """Owner login: email + password -> JWT."""
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id, tenant_id, password_hash, display_name FROM tenant_owners WHERE email = %s",
+            (body.email.strip().lower(),),
+        ).fetchone()
+    if not row:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    owner_id, tenant_id, password_hash, display_name = row
+    if not _verify_password(body.password, password_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    # Update last_login
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE tenant_owners SET last_login = now() WHERE id = %s",
+            (owner_id,),
+        )
+        conn.commit()
+    token = _create_owner_token(owner_id, tenant_id)
+    return {"access_token": token, "token_type": "bearer", "tenant_id": tenant_id, "display_name": display_name or ""}
+
+
+@app.get("/owner/me")
+def owner_me(owner: dict = Depends(get_current_owner)):
+    """Return current owner profile and tenant info."""
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT o.id, o.tenant_id, o.email, o.display_name, t.name FROM tenant_owners o JOIN tenants t ON t.id = o.tenant_id WHERE o.id = %s",
+            (owner["owner_id"],),
+        ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Owner not found")
+    return {
+        "owner_id": row[0],
+        "tenant_id": row[1],
+        "email": row[2],
+        "display_name": row[3] or "",
+        "tenant_name": row[4] or row[1],
+    }
+
+
+@app.post("/admin/api/create-owner")
+def admin_create_owner(body: OwnerCreateBody, authorization: str = Header(default="")):
+    """Super admin: create an owner account for a tenant. Protected by ADMIN_TOKEN."""
+    _check_admin_auth(authorization)
+    email = body.email.strip().lower()
+    with get_conn() as conn:
+        existing = conn.execute("SELECT 1 FROM tenant_owners WHERE email = %s", (email,)).fetchone()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        tenant = conn.execute("SELECT 1 FROM tenants WHERE id = %s", (body.tenant_id,)).fetchone()
+        if not tenant:
+            raise HTTPException(status_code=400, detail="Tenant not found")
+        password_hash = _hash_password(body.password)
+        conn.execute(
+            "INSERT INTO tenant_owners (tenant_id, email, password_hash, display_name) VALUES (%s, %s, %s, %s)",
+            (body.tenant_id, email, password_hash, (body.display_name or "").strip() or None),
+        )
+        conn.commit()
+    return {"ok": True, "message": "Owner account created", "tenant_id": body.tenant_id, "email": email}
+
+
+@app.post("/admin/create-owner")
+def admin_create_owner_alias(body: OwnerCreateBody, authorization: str = Header(default="")):
+    """Alias for POST /admin/api/create-owner (checklist compatibility)."""
+    return admin_create_owner(body, authorization)
+
+
+def _owner_dashboard_period(period: str = "7d"):
+    """Parse period to days and interval for SQL. Returns (days, interval_sql_suffix)."""
+    period = (period or "7d").strip().lower()
+    if period == "90d":
+        return 90, "90 days"
+    if period == "30d":
+        return 30, "30 days"
+    return 7, "7 days"
+
+
+@app.get("/owner/dashboard")
+def owner_dashboard(
+    period: str = "7d",
+    owner: dict = Depends(get_current_owner),
+):
+    """Main dashboard stats for the owner's tenant. period=7d|30d|90d."""
+    tenant_id = owner["tenant_id"]
+    days, interval = _owner_dashboard_period(period)
+    with get_conn() as conn:
+        # Tenant display name
+        row_name = conn.execute(
+            "SELECT name FROM tenants WHERE id = %s", (tenant_id,)
+        ).fetchone()
+        display_name = (row_name[0] if row_name else None) or tenant_id
+
+        # Current period stats from telemetry
+        row = conn.execute(
+            """
+            SELECT
+                COUNT(*),
+                COUNT(*) FILTER (WHERE date_trunc('day', created_at) = date_trunc('day', now())),
+                COUNT(*) FILTER (WHERE debug_branch IN ('fact_miss', 'general_fallback'))
+            FROM telemetry
+            WHERE tenant_id = %s AND created_at > now() - (%s::text || ' days')::interval
+            """,
+            (tenant_id, str(days)),
+        ).fetchone()
+        # For busiest day/hour we need separate aggregates
+        busiest = conn.execute(
+            """
+            SELECT
+                EXTRACT(DOW FROM created_at)::integer as dow,
+                COUNT(*) as c
+            FROM telemetry
+            WHERE tenant_id = %s AND created_at > now() - (%s::text || ' days')::interval
+            GROUP BY EXTRACT(DOW FROM created_at)
+            ORDER BY c DESC LIMIT 1
+            """,
+            (tenant_id, str(days)),
+        ).fetchone()
+        busiest_hour_row = conn.execute(
+            """
+            SELECT EXTRACT(HOUR FROM created_at)::integer as h, COUNT(*) as c
+            FROM telemetry
+            WHERE tenant_id = %s AND created_at > now() - (%s::text || ' days')::interval
+            GROUP BY EXTRACT(HOUR FROM created_at)
+            ORDER BY c DESC LIMIT 1
+            """,
+            (tenant_id, str(days)),
+        ).fetchone()
+        # Previous period for trend
+        prev_row = conn.execute(
+            """
+            SELECT COUNT(*) FROM telemetry
+            WHERE tenant_id = %s
+              AND created_at > now() - (%s::text || ' days')::interval * 2
+              AND created_at <= now() - (%s::text || ' days')::interval
+            """,
+            (tenant_id, str(days), str(days)),
+        ).fetchone()
+    total_queries = row[0] or 0
+    queries_today = row[1] or 0
+    fallback_count = row[2] or 0
+    prev_count = prev_row[0] or 0
+    if prev_count and total_queries is not None:
+        trend_pct = round((total_queries - prev_count) / prev_count * 100, 1)
+        trend = "up" if trend_pct > 0 else "down" if trend_pct < 0 else "flat"
+    else:
+        trend_pct = 0.0
+        trend = "flat"
+    day_names = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    busiest_day = day_names[busiest[0]] if busiest else "N/A"
+    busiest_hour = int(busiest_hour_row[0]) if busiest_hour_row else 0
+    # This week / this month (simple)
+    with get_conn() as conn:
+        week_row = conn.execute(
+            "SELECT COUNT(*) FROM telemetry WHERE tenant_id = %s AND created_at > date_trunc('week', now())",
+            (tenant_id,),
+        ).fetchone()
+        month_row = conn.execute(
+            "SELECT COUNT(*) FROM telemetry WHERE tenant_id = %s AND created_at > date_trunc('month', now())",
+            (tenant_id,),
+        ).fetchone()
+    queries_this_week = week_row[0] or 0
+    queries_this_month = month_row[0] or 0
+    avg_per_day = round(total_queries / days, 1) if days else 0
+    return {
+        "tenant_id": tenant_id,
+        "display_name": display_name,
+        "period": f"last_{days}_days",
+        "total_queries": total_queries,
+        "queries_today": queries_today,
+        "queries_this_week": queries_this_week,
+        "queries_this_month": queries_this_month,
+        "avg_per_day": avg_per_day,
+        "busiest_day": busiest_day,
+        "busiest_hour": busiest_hour,
+        "trend": trend,
+        "trend_pct": trend_pct,
+        "fallback_count": fallback_count,
+    }
+
+
+@app.get("/owner/dashboard/daily")
+def owner_dashboard_daily(
+    period: str = "7d",
+    owner: dict = Depends(get_current_owner),
+):
+    """Daily breakdown for charts. Returns [{ date, count }]."""
+    tenant_id = owner["tenant_id"]
+    days, _ = _owner_dashboard_period(period)
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT date_trunc('day', created_at)::date AS d, COUNT(*) AS c
+            FROM telemetry
+            WHERE tenant_id = %s AND created_at > now() - (%s::text || ' days')::interval
+            GROUP BY date_trunc('day', created_at)
+            ORDER BY d
+            """,
+            (tenant_id, str(days)),
+        ).fetchall()
+    return [{"date": str(r[0]), "count": r[1]} for r in rows]
+
+
+@app.get("/owner/dashboard/top-questions")
+def owner_dashboard_top_questions(
+    period: str = "7d",
+    owner: dict = Depends(get_current_owner),
+):
+    """Top query volume patterns (hashes only - no raw text). Returns volume by normalized_hash."""
+    tenant_id = owner["tenant_id"]
+    days, _ = _owner_dashboard_period(period)
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT normalized_hash, COUNT(*) AS c
+            FROM telemetry
+            WHERE tenant_id = %s AND created_at > now() - (%s::text || ' days')::interval AND normalized_hash IS NOT NULL AND normalized_hash != ''
+            GROUP BY normalized_hash
+            ORDER BY c DESC
+            LIMIT 20
+            """,
+            (tenant_id, str(days)),
+        ).fetchall()
+    return [{"query_hash": r[0], "count": r[1]} for r in rows]
+
+
+@app.get("/owner/dashboard/fallbacks")
+def owner_dashboard_fallbacks(
+    period: str = "7d",
+    owner: dict = Depends(get_current_owner),
+):
+    """Count of unanswered (fallback) queries in the period."""
+    tenant_id = owner["tenant_id"]
+    days, _ = _owner_dashboard_period(period)
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM telemetry
+            WHERE tenant_id = %s AND created_at > now() - (%s::text || ' days')::interval
+              AND debug_branch IN ('fact_miss', 'general_fallback')
+            """,
+            (tenant_id, str(days)),
+        ).fetchone()
+    return {"fallback_count": row[0] or 0, "period": f"last_{days}_days"}
 
 
 @app.get("/admin/api/health")

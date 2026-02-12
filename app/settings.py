@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     OPENAI_API_KEY: str
     ADMIN_TOKEN: str
+    JWT_SECRET: str = ""
     EMBED_MODEL: str = "text-embedding-3-small"
     CHAT_MODEL: str = "gpt-4o-mini"
     BUILD_ID: str = "local-dev"
