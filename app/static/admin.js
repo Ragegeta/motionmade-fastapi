@@ -142,6 +142,7 @@ async function showTenantDetail(tenantId) {
         const detailDiv = document.getElementById('tenantDetail');
         detailDiv.setAttribute('data-tenant-id', tenant.id);
         detailDiv.setAttribute('data-tenant-name', tenant.name || tenant.id);
+        detailDiv.setAttribute('data-tenant-phone', tenant.contact_phone || '');
         detailDiv.innerHTML = `
             <h1>${escapeHtml(tenant.name || tenant.id)}</h1>
             <p style="color:#6b7280;margin-bottom:20px;">ID: ${escapeHtml(tenant.id)}</p>
@@ -186,20 +187,20 @@ async function showTenantDetail(tenantId) {
             </div>
             <div class="section">
                 <h2>Widget install code</h2>
+                <p style="color:#6b7280;margin-bottom:12px;">Paste this before the <code>&lt;/body&gt;</code> tag on your website.</p>
                 <div class="form-group">
-                    <label>API base</label>
-                    <input type="text" id="installApiBase" value="${escapeHtml(API_BASE)}" />
+                    <label>Contact phone (for fallback message)</label>
+                    <input type="text" id="installContactPhone" placeholder="0412 345 678" value="${escapeHtml(tenant.contact_phone || '')}" />
                 </div>
                 <div style="margin-top:12px;">
                     <code id="installSnippet" style="display:block;background:#f9fafb;padding:12px;border-radius:8px;font-size:13px;white-space:pre-wrap;word-break:break-all;"></code>
                     <button type="button" class="btn-primary" id="copyButton" style="margin-top:8px;">Copy</button>
-                    <span id="copySuccess" style="display:none;color:#059669;margin-left:8px;">Copied!</span>
+                    <span id="copySuccess" style="display:none;color:#059669;margin-left:8px;">Copied! ✓</span>
                 </div>
             </div>
         `;
         updateInstallSnippet();
-        const installInputs = ['installApiBase'];
-        installInputs.forEach(id => {
+        ['installContactPhone'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', updateInstallSnippet);
         });
@@ -210,10 +211,13 @@ async function showTenantDetail(tenantId) {
 }
 
 function updateInstallSnippet() {
-    const apiBase = document.getElementById('installApiBase')?.value || API_BASE;
+    const apiBase = API_BASE;
     const detail = document.getElementById('tenantDetail');
-    const header = (detail && detail.getAttribute('data-tenant-name')) || 'Chat with us';
-    const snippet = '<script src="https://mm-client1-creator-ui.pages.dev/widget.js" data-api="' + escapeHtml(apiBase) + '" data-header="' + escapeHtml(header) + '" data-color="#2563eb"></script>';
+    const name = (detail && detail.getAttribute('data-tenant-name')) || '';
+    const tenantId = (detail && detail.getAttribute('data-tenant-id')) || '';
+    const phoneEl = document.getElementById('installContactPhone');
+    const phone = (phoneEl && phoneEl.value.trim()) || (detail && detail.getAttribute('data-tenant-phone')) || '';
+    const snippet = '<!-- MotionMade AI - Instant Answers for ' + escapeHtml(name) + ' -->\n<script src="' + escapeHtml(apiBase) + '/widget.js"\n  data-tenant="' + escapeHtml(tenantId) + '"\n  data-color="#2563EB"\n  data-name="' + escapeHtml(name) + '"\n  data-phone="' + escapeHtml(phone) + '"\n  data-api="' + escapeHtml(apiBase) + '"></script>';
     const el = document.getElementById('installSnippet');
     if (el) el.textContent = snippet;
 }
@@ -337,8 +341,10 @@ async function copyInstallSnippet() {
 // ---------- Onboarding wizard ----------
 let wizardTenantId = '';
 let wizardBusinessName = '';
+let wizardContactPhone = '';
 let wizardFaqs = [];
 let wizardTempPassword = '';
+let wizardSuggestedQuestions = [];
 
 function slugFromName(name) {
     return (name || '')
@@ -372,8 +378,8 @@ function showWizard() {
     document.getElementById('wizMinFaqMsg').textContent = '';
     document.getElementById('wizGoLiveProgress').style.display = 'none';
     document.getElementById('wizStep2Error').textContent = '';
-    document.getElementById('wizChatMessages').innerHTML = '';
-    document.getElementById('wizChatInput').value = '';
+    document.getElementById('wizPreviewBody').innerHTML = '';
+    wizardSuggestedQuestions = [];
     document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
     document.getElementById('wizardStep1').classList.add('active');
     showPage('wizardPage');
@@ -397,7 +403,7 @@ function wizardStep1Next() {
         try {
             const createRes = await fetch(API_BASE + '/admin/api/tenants', {
                 method: 'POST', headers: getHeaders(),
-                body: JSON.stringify({ id: tenantId, name: name, business_type: type })
+                body: JSON.stringify({ id: tenantId, name: name, business_type: type, contact_phone: ownerPhone || null })
             });
             if (!createRes.ok) {
                 const d = await createRes.json().catch(() => ({}));
@@ -418,6 +424,7 @@ function wizardStep1Next() {
             }
             wizardTenantId = tenantId;
             wizardBusinessName = name;
+            wizardContactPhone = ownerPhone || '';
             wizardTempPassword = tempPass;
             boxEl.innerHTML = '<strong>Owner login (save this)</strong><br>Email: ' + escapeHtml(ownerEmail) + '<br>Password: ' + escapeHtml(tempPass);
             boxEl.style.display = 'block';
@@ -490,8 +497,8 @@ async function wizardSaveAndGoLive() {
         document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
         document.getElementById('wizardStep3').classList.add('active');
         document.getElementById('wizLiveTitle').textContent = '✓ ' + escapeHtml(wizardBusinessName) + ' is live!';
-        document.getElementById('wizChatMessages').innerHTML = '<div class="chat-msg bot"><div class="bubble">🤖 Hi! Ask me anything about ' + escapeHtml(wizardBusinessName) + '.</div></div>';
-        const embedSnippet = '<script src="https://mm-client1-creator-ui.pages.dev/widget.js" data-api="' + escapeHtml(API_BASE) + '" data-header="' + escapeHtml(wizardBusinessName) + '" data-color="#2563eb"></script>';
+        loadWizardSuggested();
+        var embedSnippet = '<!-- MotionMade AI - Instant Answers for ' + escapeHtml(wizardBusinessName) + ' -->\n<script src="' + escapeHtml(API_BASE) + '/widget.js"\n  data-tenant="' + escapeHtml(wizardTenantId) + '"\n  data-color="#2563EB"\n  data-name="' + escapeHtml(wizardBusinessName) + '"\n  data-phone="' + escapeHtml(wizardContactPhone) + '"\n  data-api="' + escapeHtml(API_BASE) + '"></script>';
         document.getElementById('wizEmbedCode').textContent = embedSnippet;
     } catch (e) {
         errEl.textContent = e.message;
@@ -499,27 +506,70 @@ async function wizardSaveAndGoLive() {
     }
 }
 
-function wizardSendChat() {
-    const input = document.getElementById('wizChatInput');
-    const msg = input.value.trim();
-    if (!msg || !wizardTenantId) return;
-    const messagesEl = document.getElementById('wizChatMessages');
-    messagesEl.innerHTML += '<div class="chat-msg user"><div class="bubble">You: ' + escapeHtml(msg) + '</div></div>';
-    input.value = '';
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+async function loadWizardSuggested() {
+    if (!wizardTenantId) return;
+    try {
+        const r = await fetch(API_BASE + '/api/v2/tenant/' + encodeURIComponent(wizardTenantId) + '/suggested-questions');
+        const data = await r.json();
+        wizardSuggestedQuestions = data.questions || [];
+    } catch (e) {
+        wizardSuggestedQuestions = [];
+    }
+    wizardRenderPreviewMain();
+}
+
+function wizardRenderPreviewMain() {
+    const body = document.getElementById('wizPreviewBody');
+    if (!body) return;
+    body.innerHTML = '';
+    body.innerHTML += '<div class="mm-suggest" style="font-size:13px;color:#6b7280;margin-bottom:10px">Common questions:</div>';
+    var ul = document.createElement('ul');
+    ul.className = 'mm-qlist';
+    ul.style.cssText = 'list-style:none;margin:0 0 16px;padding:0';
+    wizardSuggestedQuestions.forEach(function (q) {
+        var li = document.createElement('li');
+        li.style.cssText = 'margin:0 0 6px;padding:10px 12px;background:#f3f4f6;border-radius:8px;cursor:pointer;font-size:14px';
+        li.textContent = q;
+        li.onclick = function () { wizardAskQuestion(q); };
+        ul.appendChild(li);
+    });
+    body.appendChild(ul);
+    body.innerHTML += '<div class="mm-or" style="font-size:13px;color:#6b7280;margin:12px 0 8px">Or ask your own:</div>';
+    var row = document.createElement('div');
+    row.className = 'mm-inrow';
+    row.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Type your question...';
+    input.style.cssText = 'flex:1;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px';
+    var askBtn = document.createElement('button');
+    askBtn.type = 'button';
+    askBtn.textContent = 'Ask';
+    askBtn.style.cssText = 'padding:10px 16px;background:#2563EB;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px';
+    askBtn.onclick = function () { var t = input.value.trim(); if (t) wizardAskQuestion(t); };
+    input.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); askBtn.click(); } };
+    row.appendChild(input);
+    row.appendChild(askBtn);
+    body.appendChild(row);
+}
+
+function wizardAskQuestion(questionText) {
+    const body = document.getElementById('wizPreviewBody');
+    if (!body || !wizardTenantId) return;
+    body.innerHTML = '<div class="mm-your-q" style="font-size:13px;color:#6b7280;margin-bottom:6px">Your question:</div><q style="font-style:normal;color:#374151">' + escapeHtml(questionText) + '</q><div class="mm-answer-block" style="margin-top:12px"><div class="mm-spinner" style="height:24px;width:24px;border:3px solid #e5e7eb;border-top-color:#2563EB;border-radius:50%;animation:mm-spin .6s linear infinite"></div></div><div class="mm-again" style="margin-top:14px"><button type="button" class="btn-secondary">Ask another question</button></div>';
+    body.querySelector('.mm-again button').onclick = function () { wizardRenderPreviewMain(); loadWizardSuggested(); };
     fetch(API_BASE + '/api/v2/generate-quote-reply', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenantId: wizardTenantId, customerMessage: msg })
+        body: JSON.stringify({ tenantId: wizardTenantId, customerMessage: questionText })
     })
-        .then(r => r.json())
-        .then(data => {
-            const reply = (data.replyText || '').trim() || 'No reply.';
-            messagesEl.innerHTML += '<div class="chat-msg bot"><div class="bubble">Bot: ' + escapeHtml(reply) + '</div></div>';
-            messagesEl.scrollTop = messagesEl.scrollHeight;
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            var block = body.querySelector('.mm-answer-block');
+            if (block) block.innerHTML = '<div class="mm-ans-box" style="padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:14px;color:#0c4a6e;white-space:pre-wrap">' + escapeHtml((data.replyText || '').trim() || 'No reply.') + '</div>';
         })
-        .catch(() => {
-            messagesEl.innerHTML += '<div class="chat-msg bot"><div class="bubble">Bot: Sorry, something went wrong.</div></div>';
-            messagesEl.scrollTop = messagesEl.scrollHeight;
+        .catch(function () {
+            var block = body.querySelector('.mm-answer-block');
+            if (block) block.innerHTML = '<div class="mm-err" style="color:#dc2626;font-size:14px">Something went wrong. Try again.</div>';
         });
 }
 
@@ -563,8 +613,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('wizAddFaq').addEventListener('click', wizardAddFaq);
     document.getElementById('wizFaqAnswer').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); wizardAddFaq(); } });
     document.getElementById('wizSaveAndGoLive').addEventListener('click', wizardSaveAndGoLive);
-    document.getElementById('wizChatSend').addEventListener('click', wizardSendChat);
-    document.getElementById('wizChatInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); wizardSendChat(); } });
     document.getElementById('wizCopyEmbed').addEventListener('click', wizardCopyEmbed);
     document.getElementById('wizBackToBusinesses').addEventListener('click', loadTenants);
 

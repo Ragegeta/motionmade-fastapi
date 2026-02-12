@@ -21,7 +21,7 @@ from .openai_client import embed_text, chat_once
 from .retrieval import retrieve_faq_answer
 from .retriever import _invalidate_tenant_count_cache
 from .db import get_conn
-from .triage import triage_input, CLARIFY_RESPONSE
+from .triage import triage_input
 from .normalize import normalize_message
 from .splitter import split_intents
 from .cache import get_cached_result, cache_result, get_cache_stats
@@ -135,6 +135,22 @@ def is_rewrite_safe(rewritten: str, original: str) -> bool:
 # -----------------------------
 app = FastAPI()
 
+# Serve widget.js at root for easy embedding (same file as /static/widget.js)
+_widget_js_path = Path(__file__).resolve().parent / "static" / "widget.js"
+
+
+@app.get("/widget.js", include_in_schema=False)
+def serve_widget_js():
+    """Serve the embeddable widget script."""
+    if not _widget_js_path.exists():
+        raise HTTPException(status_code=404, detail="Widget not found")
+    return Response(
+        content=_widget_js_path.read_text(encoding="utf-8"),
+        media_type="application/javascript",
+        headers={"Cache-Control": "public, max-age=300"},
+    )
+
+
 # Mount static files with no-store cache control
 static_app = StaticFiles(directory="app/static")
 app.mount("/static", static_app, name="static")
@@ -183,6 +199,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   id TEXT PRIMARY KEY,
   name TEXT,
   business_type TEXT,
+  contact_phone TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -408,6 +425,25 @@ def _base_payload():
         "jobSummaryShort": "",
         "disclaimer": "Prices are estimates and may vary based on condition and access.",
     }
+
+
+def _get_tenant_contact(tenant_id: str) -> tuple:
+    """Return (display_name, contact_phone) for a tenant. Used for fallback/greeting messages."""
+    if not tenant_id:
+        return ("this business", "")
+    try:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT name, contact_phone FROM tenants WHERE id = %s",
+                (tenant_id.strip(),),
+            ).fetchone()
+        if row:
+            name = (row[0] or tenant_id).strip()
+            phone = (row[1] or "").strip() if len(row) > 1 else ""
+            return (name, phone)
+    except Exception:
+        pass
+    return (tenant_id, "")
 
 
 def _hash_text(text: str) -> str:
@@ -850,6 +886,19 @@ def _startup():
                         conn.commit()
                 except Exception:
                     pass  # Column may already exist
+
+            # Add contact_phone to tenants if missing
+            try:
+                with get_conn() as conn:
+                    conn.execute("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS contact_phone TEXT")
+                    conn.commit()
+            except Exception:
+                try:
+                    with get_conn() as conn:
+                        conn.execute("ALTER TABLE tenants ADD COLUMN contact_phone TEXT")
+                        conn.commit()
+                except Exception:
+                    pass
                 
         except Exception as e:
             # Log but don't fail startup - app can still serve /ping and other endpoints
@@ -977,12 +1026,60 @@ def _should_fallback_after_miss(msg: str, domain: str) -> bool:
     return False
 
 
+@app.get("/api/v2/tenant/{tenant_id}/suggested-questions")
+def get_suggested_questions(tenant_id: str):
+    """Return top 3 FAQ questions for the widget (first 3 by ID, live only)."""
+    tid = (tenant_id or "").strip()
+    if not tid:
+        return {"questions": []}
+    try:
+        with get_conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT question FROM faq_items
+                WHERE tenant_id = %s AND is_staged = false AND enabled = true
+                ORDER BY id ASC
+                LIMIT 3
+                """,
+                (tid,),
+            ).fetchall()
+        questions = [row[0] for row in rows if row and row[0]]
+        return {"questions": questions}
+    except Exception:
+        return {"questions": []}
+
+
 @app.post("/api/v2/generate-quote-reply")
 def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
     _start_time = time.monotonic()
     tenant_id = (req.tenantId or "").strip()
     msg = (req.customerMessage or "").strip()
-    
+    tenant_name, tenant_phone = _get_tenant_contact(tenant_id)
+
+    def _fallback_text() -> str:
+        if tenant_phone:
+            return f"We don't have an answer for that one. Contact {tenant_name} on {tenant_phone} for help."
+        return f"We don't have an answer for that one. Contact {tenant_name} directly for help."
+
+    def _wrong_service_text() -> str:
+        return f"That's not something {tenant_name} handles. Contact them directly for help."
+
+    def _clarify_text() -> str:
+        return "I didn't catch that. Try asking about our pricing, services, or how to book."
+
+    # Greeting: direct prompt, no chatbot tone
+    if msg.lower().strip() in ("hi", "hello", "hey"):
+        resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
+        resp.headers["X-Retrieval-Path"] = "fallback"
+        resp.headers["X-Debug-Branch"] = "greeting"
+        resp.headers["X-Faq-Hit"] = "false"
+        payload = _base_payload()
+        payload["replyText"] = f"Ask me a question about {tenant_name} — like pricing, services, or how to book."
+        timings = {"triage_ms": 0, "normalize_split_ms": 0, "embedding_ms": 0, "retrieval_ms": 0, "rewrite_ms": 0, "llm_ms": 0, "general_llm_ms": 0, "general_safety_ms": 0, "general_total_ms": 0, "total_ms": int((time.time() - _start_time) * 1000)}
+        _set_timing_headers(request, resp, timings, False)
+        _log_telemetry(tenant_id=tenant_id, query_text=msg, normalized_text=msg, intent_count=0, debug_branch="greeting", faq_hit=False, top_faq_id=None, retrieval_score=None, rewrite_triggered=False, latency_ms=timings["total_ms"])
+        return payload
+
     # Timing breakdown
     timings = {
         "triage_ms": 0,
@@ -1010,7 +1107,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         resp.headers["X-Debug-Branch"] = "clarify"
         resp.headers["X-Faq-Hit"] = "false"
         payload = _base_payload()
-        payload["replyText"] = CLARIFY_RESPONSE
+        payload["replyText"] = _clarify_text()
         timings["total_ms"] = int((time.time() - _start_time) * 1000)
         _set_timing_headers(request, resp, timings, _cache_hit)
         _log_telemetry(
@@ -1069,7 +1166,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             timings["general_llm_ms"] = timings["llm_ms"]
             resp.headers["X-Debug-Branch"] = "error"
             resp.headers["X-Faq-Hit"] = "false"
-            payload["replyText"] = FALLBACK
+            payload["replyText"] = _fallback_text()
             timings["general_total_ms"] = int((time.time() - _general_start) * 1000)
             timings["total_ms"] = int((time.time() - _start_time) * 1000)
             _set_timing_headers(request, resp, timings, _cache_hit)
@@ -1092,7 +1189,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             timings["general_safety_ms"] = int((time.time() - _t0) * 1000)
             resp.headers["X-Debug-Branch"] = fallback_branch
             resp.headers["X-Faq-Hit"] = "false"
-            payload["replyText"] = FALLBACK
+            payload["replyText"] = _fallback_text()
             timings["general_total_ms"] = int((time.time() - _general_start) * 1000)
             timings["total_ms"] = int((time.time() - _start_time) * 1000)
             _set_timing_headers(request, resp, timings, _cache_hit)
@@ -1434,7 +1531,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         resp.headers["X-Retrieval-Path"] = "fallback"
         resp.headers["X-Debug-Branch"] = "error"
         resp.headers["X-Faq-Hit"] = "false"
-        payload["replyText"] = FALLBACK
+        payload["replyText"] = _fallback_text()
         timings["total_ms"] = int((time.time() - _start_time) * 1000)
         _set_timing_headers(request, resp, timings, _cache_hit)
         _log_telemetry(
@@ -1461,7 +1558,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         resp.headers["X-Retrieval-Path"] = "fallback"
         resp.headers["X-Debug-Branch"] = "wrong_service"
         resp.headers["X-Faq-Hit"] = "false"
-        payload["replyText"] = FALLBACK
+        payload["replyText"] = _wrong_service_text()
         timings["total_ms"] = int((time.time() - _start_time) * 1000)
         _set_timing_headers(request, resp, timings, _cache_hit)
         _log_telemetry(
@@ -1483,7 +1580,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         resp.headers["X-Retrieval-Path"] = "fallback"
         resp.headers["X-Debug-Branch"] = "fact_miss"
         resp.headers["X-Faq-Hit"] = "false"
-        payload["replyText"] = FALLBACK
+        payload["replyText"] = _fallback_text()
         timings["total_ms"] = int((time.time() - _start_time) * 1000)
         _set_timing_headers(request, resp, timings, _cache_hit)
         _log_telemetry(
@@ -2041,6 +2138,7 @@ class TenantCreate(BaseModel):
     id: str
     name: str
     business_type: Optional[str] = None
+    contact_phone: Optional[str] = None
 
 
 class DomainAdd(BaseModel):
@@ -2390,6 +2488,7 @@ def create_tenant(
     tenant_id = (tenant.id or "").strip()
     tenant_name = (tenant.name or "").strip()
     business_type = (tenant.business_type or "").strip() or None
+    contact_phone = (tenant.contact_phone or "").strip() or None
     
     if not tenant_id:
         raise HTTPException(status_code=400, detail="Tenant ID required")
@@ -2397,12 +2496,17 @@ def create_tenant(
     try:
         with get_conn() as conn:
             conn.execute(
-                "INSERT INTO tenants (id, name, business_type) VALUES (%s, %s, %s) ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, business_type=COALESCE(EXCLUDED.business_type, tenants.business_type)",
-                (tenant_id, tenant_name or tenant_id, business_type)
+                """INSERT INTO tenants (id, name, business_type, contact_phone)
+                   VALUES (%s, %s, %s, %s)
+                   ON CONFLICT (id) DO UPDATE SET
+                     name = EXCLUDED.name,
+                     business_type = COALESCE(EXCLUDED.business_type, tenants.business_type),
+                     contact_phone = COALESCE(EXCLUDED.contact_phone, tenants.contact_phone)""",
+                (tenant_id, tenant_name or tenant_id, business_type, contact_phone),
             )
             conn.commit()
         
-        return {"id": tenant_id, "name": tenant_name or tenant_id, "business_type": business_type, "created": True}
+        return {"id": tenant_id, "name": tenant_name or tenant_id, "business_type": business_type, "contact_phone": contact_phone, "created": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create tenant: {str(e)}")
 
@@ -2416,7 +2520,7 @@ def get_tenant_detail(tenantId: str, resp: Response, authorization: str = Header
     
     with get_conn() as conn:
         tenant_row = conn.execute(
-            "SELECT id, name, business_type, created_at FROM tenants WHERE id = %s",
+            "SELECT id, name, business_type, contact_phone, created_at FROM tenants WHERE id = %s",
             (tenantId,)
         ).fetchone()
         
@@ -2468,7 +2572,8 @@ def get_tenant_detail(tenantId: str, resp: Response, authorization: str = Header
         "id": tenant_row[0],
         "name": tenant_row[1] or tenant_row[0],
         "business_type": tenant_row[2] if len(tenant_row) > 2 else None,
-        "created_at": tenant_row[3].isoformat() if len(tenant_row) > 3 and tenant_row[3] else None,
+        "contact_phone": tenant_row[3] if len(tenant_row) > 3 else None,
+        "created_at": tenant_row[4].isoformat() if len(tenant_row) > 4 and tenant_row[4] else None,
         "domains": domains,
         "staged_faq_count": staged_count,
         "live_faq_count": live_count,

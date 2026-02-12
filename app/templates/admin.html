@@ -325,6 +325,7 @@
         }
         .embed-code-box .copy-btn.copied { background: #059669; }
         .min-faq-msg { color: #b45309; font-size: 14px; margin-top: 8px; }
+        @keyframes mm-spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -433,20 +434,29 @@
                     <h3>3. Live preview & install</h3>
                     <p id="wizLiveTitle" style="font-weight: 500; margin-bottom: 16px;"></p>
                     <div class="live-preview-box">
-                        <div class="preview-header">Try it — type a question like a customer:</div>
-                        <div class="chat-messages" id="wizChatMessages"></div>
-                        <div class="chat-input-row">
-                            <input type="text" id="wizChatInput" placeholder="Type a question..." />
-                            <button type="button" id="wizChatSend">Send</button>
-                        </div>
+                        <div class="preview-header" id="wizPreviewHeader">Get instant answers</div>
+                        <div class="mm-preview-body" id="wizPreviewBody"></div>
                     </div>
-                    <p style="font-size: 14px; color: #6b7280; margin: 16px 0 8px;">Test: try a question from your FAQs, messy text like "hw much u charge", or something you don't cover.</p>
+                    <p style="font-size: 14px; color: #6b7280; margin: 16px 0 8px;">Test: click a suggested question, or type your own. One question → one answer. Use "Ask another question" to start over.</p>
                     <div style="margin-top: 24px;">
-                        <strong style="display: block; margin-bottom: 8px;">Widget install code</strong>
+                        <strong style="display: block; margin-bottom: 8px;">Option A: Simple script tag (any website)</strong>
                         <div class="embed-code-box">
                             <pre id="wizEmbedCode"></pre>
-                            <button type="button" class="copy-btn" id="wizCopyEmbed">Copy Code</button>
+                            <button type="button" class="copy-btn" id="wizCopyEmbed">Copy</button>
                         </div>
+                        <p style="font-size: 14px; color: #374151; margin-top: 10px;">Paste this before the <code>&lt;/body&gt;</code> tag on your website.</p>
+                        <details style="margin-top: 16px;">
+                            <summary style="cursor: pointer; font-weight: 500; color: #2563EB;">How to install</summary>
+                            <ul style="margin: 12px 0 0 20px; padding: 0; font-size: 14px; color: #6b7280; line-height: 1.6;">
+                                <li><strong>WordPress:</strong> Appearance → Theme Editor → footer.php → paste before &lt;/body&gt;</li>
+                                <li><strong>Squarespace:</strong> Settings → Advanced → Code Injection → Footer → paste</li>
+                                <li><strong>Wix:</strong> Settings → Custom Code → Add Code → Body End → paste</li>
+                                <li><strong>Shopify:</strong> Online Store → Themes → Edit Code → theme.liquid → paste before &lt;/body&gt;</li>
+                                <li><strong>Other:</strong> Paste the code before &lt;/body&gt; in your site's HTML</li>
+                            </ul>
+                        </details>
+                        <p style="margin-top: 16px; font-size: 14px; color: #9ca3af;">WordPress plugin — coming soon</p>
+                        <p style="font-size: 14px; color: #9ca3af;">Squarespace / Wix: Copy the code above and paste it in your site's custom code section.</p>
                     </div>
                     <div class="wizard-actions" style="margin-top: 24px;">
                         <button class="btn-secondary" id="wizBackToBusinesses">← Back to All Businesses</button>
