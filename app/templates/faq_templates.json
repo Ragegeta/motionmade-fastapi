@@ -1,0 +1,160 @@
+{
+  "cleaner": {
+    "display_name": "Cleaning Business",
+    "faqs": [
+      {
+        "question": "How much for a bond clean?",
+        "answer": "Bond cleans start at ${bond_2bed} for a 2-bedroom and ${bond_3bed} for a 3-bedroom. Price depends on the condition of the property. Contact us for an exact quote."
+      },
+      {
+        "question": "Do you guarantee the bond back?",
+        "answer": "Yes, we offer a 100% bond-back guarantee. If the real estate agent isn't happy, we'll come back and fix it for free within 72 hours."
+      },
+      {
+        "question": "What's included in a bond clean?",
+        "answer": "Full kitchen deep clean, all bathrooms, floors, windows inside, walls spot-clean, oven, rangehood, and all fixtures. Carpet steam cleaning is ${carpet_extra}."
+      },
+      {
+        "question": "How much for a regular house clean?",
+        "answer": "Regular cleans start at ${regular_price} for a standard 3-bedroom home. We offer weekly, fortnightly, and one-off cleans."
+      },
+      {
+        "question": "Do you do Airbnb cleaning?",
+        "answer": "Yes! Airbnb turnovers from ${airbnb_price}. We can do linen changes, restocking, and a full clean between guests. Same-day turnovers available."
+      },
+      {
+        "question": "How do I book?",
+        "answer": "Call us on ${phone}, book online at our website, or message us here. We need at least ${notice_period} notice for bond cleans."
+      },
+      {
+        "question": "What areas do you cover?",
+        "answer": "We cover ${areas}. Travel surcharge of ${travel_surcharge} applies outside ${main_area}."
+      },
+      {
+        "question": "Do you bring your own supplies?",
+        "answer": "Yes, we bring all cleaning products and equipment. Just make sure power and water are connected at the property."
+      },
+      {
+        "question": "What payment methods do you accept?",
+        "answer": "Cash, card, bank transfer${afterpay}. We send invoices via email after the job."
+      },
+      {
+        "question": "Are you insured?",
+        "answer": "Fully insured with ${insurance_amount} public liability insurance. ABN and insurance details available on request."
+      }
+    ],
+    "variables": {
+      "bond_2bed": "350",
+      "bond_3bed": "450",
+      "carpet_extra": "$50 per room extra",
+      "regular_price": "$150",
+      "airbnb_price": "$120",
+      "phone": "0400 000 000",
+      "notice_period": "48 hours",
+      "areas": "Brisbane, Logan, Ipswich, and Gold Coast",
+      "main_area": "Brisbane metro",
+      "travel_surcharge": "$30",
+      "afterpay": ", and Afterpay",
+      "insurance_amount": "$20M"
+    }
+  },
+  "plumber": {
+    "display_name": "Plumbing Business",
+    "faqs": [
+      {
+        "question": "How much for a callout?",
+        "answer": "Our standard callout fee is ${callout_fee} within ${service_radius} of ${main_area}. After hours and weekends are ${after_hours_fee}."
+      },
+      {
+        "question": "Do you do emergency plumbing?",
+        "answer": "Yes, we offer 24/7 emergency plumbing. Call us on ${phone} for urgent jobs like burst pipes, gas leaks, or flooding."
+      },
+      {
+        "question": "What areas do you service?",
+        "answer": "We cover ${areas}. For jobs outside ${main_area}, there's a ${travel_surcharge} travel surcharge."
+      },
+      {
+        "question": "How do I book a job?",
+        "answer": "Call us on ${phone}, book online at our website, or message us here."
+      },
+      {
+        "question": "Do you give free quotes?",
+        "answer": "Yes, all quotes are free. For simple jobs we can quote over the phone. For bigger jobs we'll come out and assess for free."
+      },
+      {
+        "question": "Are you licensed?",
+        "answer": "Fully licensed and insured. QBCC licence number ${licence_number}. We carry ${insurance_amount} public liability insurance."
+      },
+      {
+        "question": "What payment methods do you accept?",
+        "answer": "Cash, card, bank transfer${afterpay}. We send invoices via email after the job."
+      },
+      {
+        "question": "How long does a typical job take?",
+        "answer": "Simple fixes like a leaking tap take 30-60 minutes. Bigger jobs like hot water replacements take 2-4 hours. We always give you a time estimate before starting."
+      }
+    ],
+    "variables": {
+      "callout_fee": "$99",
+      "service_radius": "20km",
+      "main_area": "Brisbane CBD",
+      "after_hours_fee": "$149",
+      "phone": "0400 000 000",
+      "areas": "all of Brisbane, Logan, Ipswich, and Moreton Bay",
+      "travel_surcharge": "$50",
+      "licence_number": "XXXXXXXX",
+      "insurance_amount": "$20M",
+      "afterpay": ", and Afterpay"
+    }
+  },
+  "electrician": {
+    "display_name": "Electrical Business",
+    "faqs": [
+      {
+        "question": "How much for a callout?",
+        "answer": "Our standard callout fee is ${callout_fee} within ${service_radius} of ${main_area}. After hours and weekends are ${after_hours_fee}."
+      },
+      {
+        "question": "Do you do emergency electrical work?",
+        "answer": "Yes, 24/7 emergency electrician. Call ${phone} for power outages, sparking outlets, or safety switch issues."
+      },
+      {
+        "question": "What areas do you service?",
+        "answer": "We cover ${areas}. For jobs outside ${main_area}, there's a ${travel_surcharge} travel surcharge."
+      },
+      {
+        "question": "How do I book?",
+        "answer": "Call us on ${phone}, book online, or message us here."
+      },
+      {
+        "question": "Are you licensed?",
+        "answer": "Fully licensed and insured. Electrical licence ${licence_number}. We carry ${insurance_amount} public liability insurance."
+      },
+      {
+        "question": "Do you do smoke alarm compliance?",
+        "answer": "Yes, we install and certify smoke alarms to meet Queensland legislation requirements. From ${smoke_alarm_price} for a standard home."
+      },
+      {
+        "question": "What payment methods do you accept?",
+        "answer": "Cash, card, bank transfer${afterpay}. Invoice emailed after the job."
+      },
+      {
+        "question": "Do you give free quotes?",
+        "answer": "Yes, all quotes are free. Simple jobs we quote over the phone."
+      }
+    ],
+    "variables": {
+      "callout_fee": "$99",
+      "service_radius": "20km",
+      "main_area": "Brisbane CBD",
+      "after_hours_fee": "$149",
+      "phone": "0400 000 000",
+      "areas": "all of Brisbane, Logan, and Ipswich",
+      "travel_surcharge": "$50",
+      "licence_number": "XXXXXXXX",
+      "insurance_amount": "$20M",
+      "afterpay": ", and Afterpay",
+      "smoke_alarm_price": "$180"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import os
 import time
@@ -389,6 +390,20 @@ CREATE TABLE IF NOT EXISTS tenant_owners (
 
 CREATE INDEX IF NOT EXISTS tenant_owners_tenant_id_idx ON tenant_owners(tenant_id);
 CREATE UNIQUE INDEX IF NOT EXISTS tenant_owners_email_key ON tenant_owners(email);
+
+CREATE TABLE IF NOT EXISTS faq_suggestions (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  suggested_question TEXT NOT NULL,
+  suggested_answer TEXT,
+  status TEXT DEFAULT 'pending',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  reviewed_at TIMESTAMPTZ,
+  reviewer_note TEXT
+);
+
+CREATE INDEX IF NOT EXISTS faq_suggestions_tenant_idx ON faq_suggestions(tenant_id);
+CREATE INDEX IF NOT EXISTS faq_suggestions_status_idx ON faq_suggestions(status);
 
 CREATE TABLE IF NOT EXISTS query_stats (
   id SERIAL PRIMARY KEY,
@@ -2566,6 +2581,60 @@ def owner_list_faqs(owner: dict = Depends(get_current_owner)):
     return {"faqs": faqs, "count": len(faqs)}
 
 
+# ---------- Owner FAQ suggestions (suggest only; approve/reject in admin) ----------
+class FaqSuggestionCreate(BaseModel):
+    question: str
+    answer: Optional[str] = None
+
+
+@app.post("/owner/faqs/suggest")
+def owner_suggest_faq(body: FaqSuggestionCreate, owner: dict = Depends(get_current_owner)):
+    """Owner suggests a new FAQ. Admin reviews and approves/rejects."""
+    tenant_id = owner["tenant_id"]
+    question = (body.question or "").strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Question required")
+    answer = (body.answer or "").strip() or None
+    with get_conn() as conn:
+        row = conn.execute(
+            """INSERT INTO faq_suggestions (tenant_id, suggested_question, suggested_answer, status)
+               VALUES (%s, %s, %s, 'pending') RETURNING id, status""",
+            (tenant_id, question, answer),
+        ).fetchone()
+        conn.commit()
+    # Notify Abbed
+    with get_conn() as conn:
+        email_row = conn.execute(
+            "SELECT email FROM tenant_owners WHERE id = %s", (owner["owner_id"],)
+        ).fetchone()
+    owner_email = (email_row[0] or "").strip() if email_row else ""
+    print(f"[FAQ_SUGGESTION] New suggestion from {owner_email} ({tenant_id}): \"{question}\"")
+    return {"id": row[0], "status": row[1]}
+
+
+@app.get("/owner/faqs/suggestions")
+def owner_list_suggestions(owner: dict = Depends(get_current_owner)):
+    """List all FAQ suggestions for this tenant with their status."""
+    tenant_id = owner["tenant_id"]
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT id, suggested_question, suggested_answer, status, created_at
+               FROM faq_suggestions WHERE tenant_id = %s ORDER BY created_at DESC""",
+            (tenant_id,),
+        ).fetchall()
+    suggestions = [
+        {
+            "id": r[0],
+            "question": r[1],
+            "answer": r[2],
+            "status": r[3],
+            "created_at": r[4].isoformat() if r[4] else None,
+        }
+        for r in rows
+    ]
+    return {"suggestions": suggestions}
+
+
 # Owner FAQ write endpoints removed — quality controlled by admin only
 # POST /owner/faqs, PUT /owner/faqs/{id}, DELETE /owner/faqs/{id} are disabled.
 # Owners can only view FAQs via GET /owner/faqs.
@@ -2832,6 +2901,189 @@ def delete_tenant_owner(
     return {"deleted": True, "tenant_id": tid}
 
 
+# ---------- Admin: FAQ suggestions (review / approve / reject) ----------
+class SuggestionApproveBody(BaseModel):
+    question: Optional[str] = None
+    answer: Optional[str] = None
+
+
+class SuggestionRejectBody(BaseModel):
+    note: Optional[str] = None
+
+
+@app.get("/admin/api/tenant/{tenantId}/suggestions")
+def admin_list_suggestions(
+    tenantId: str,
+    authorization: str = Header(default=""),
+):
+    """List all FAQ suggestions for a tenant (admin)."""
+    _check_admin_auth(authorization)
+    tid = (tenantId or "").strip()
+    if not tid:
+        raise HTTPException(status_code=400, detail="Tenant ID required")
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT id, suggested_question, suggested_answer, status, created_at, reviewed_at, reviewer_note
+               FROM faq_suggestions WHERE tenant_id = %s ORDER BY created_at DESC""",
+            (tid,),
+        ).fetchall()
+    suggestions = [
+        {
+            "id": r[0],
+            "question": r[1],
+            "answer": r[2],
+            "status": r[3],
+            "created_at": r[4].isoformat() if r[4] else None,
+            "reviewed_at": r[5].isoformat() if r[5] else None,
+            "reviewer_note": r[6],
+        }
+        for r in rows
+    ]
+    return {"suggestions": suggestions}
+
+
+@app.post("/admin/api/tenant/{tenantId}/suggestions/{suggestion_id}/approve")
+def admin_approve_suggestion(
+    tenantId: str,
+    suggestion_id: int,
+    body: Optional[SuggestionApproveBody] = None,
+    authorization: str = Header(default=""),
+):
+    """Approve a suggestion: add as FAQ (optionally with edited Q/A), stage and promote to live."""
+    _check_admin_auth(authorization)
+    tid = (tenantId or "").strip()
+    if not tid:
+        raise HTTPException(status_code=400, detail="Tenant ID required")
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id, suggested_question, suggested_answer FROM faq_suggestions WHERE id = %s AND tenant_id = %s",
+            (suggestion_id, tid),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Suggestion not found")
+        sug_q = (row[1] or "").strip()
+        sug_a = (row[2] or "").strip() or ""
+    question = ((body.question if body else None) or "").strip() or sug_q
+    answer = ((body.answer if body else None) or "").strip() or sug_a
+    if not question:
+        raise HTTPException(status_code=400, detail="Question required")
+    # Build list: current live FAQs + new one
+    with get_conn() as conn:
+        live = conn.execute(
+            "SELECT question, answer FROM faq_items WHERE tenant_id = %s AND is_staged = false ORDER BY id",
+            (tid,),
+        ).fetchall()
+    items = [{"question": r[0], "answer": r[1]} for r in live]
+    items.append({"question": question, "answer": answer})
+    _stage_faqs_internal(tid, items)
+    # Promote via HTTP to reuse full pipeline (suite, etc.)
+    base_url = os.getenv("PUBLIC_BASE_URL") or ("http://127.0.0.1:8000" if not os.getenv("RENDER") else "https://motionmade-fastapi.onrender.com")
+    import requests as req_lib
+    try:
+        promo = req_lib.post(
+            f"{base_url}/admin/api/tenant/{tid}/promote",
+            headers={"Authorization": f"Bearer {settings.ADMIN_TOKEN}"},
+            timeout=180,
+        )
+        promo.raise_for_status()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Staged OK but promote failed: {str(e)}")
+    # Mark suggestion approved
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE faq_suggestions SET status = 'approved', reviewed_at = now() WHERE id = %s AND tenant_id = %s",
+            (suggestion_id, tid),
+        )
+        conn.commit()
+    return {"approved": True, "suggestion_id": suggestion_id, "message": "FAQ added and promoted to live"}
+
+
+@app.post("/admin/api/tenant/{tenantId}/suggestions/{suggestion_id}/reject")
+def admin_reject_suggestion(
+    tenantId: str,
+    suggestion_id: int,
+    body: Optional[SuggestionRejectBody] = None,
+    authorization: str = Header(default=""),
+):
+    """Reject a suggestion. Optional note for the owner."""
+    _check_admin_auth(authorization)
+    tid = (tenantId or "").strip()
+    if not tid:
+        raise HTTPException(status_code=400, detail="Tenant ID required")
+    note = (body.note if body else None) or ""
+    note = (note.strip() or None) if isinstance(note, str) else None
+    with get_conn() as conn:
+        cur = conn.execute(
+            "UPDATE faq_suggestions SET status = 'rejected', reviewed_at = now(), reviewer_note = %s WHERE id = %s AND tenant_id = %s RETURNING id",
+            (note, suggestion_id, tid),
+        )
+        if cur.fetchone() is None:
+            raise HTTPException(status_code=404, detail="Suggestion not found")
+        conn.commit()
+    return {"rejected": True, "suggestion_id": suggestion_id}
+
+
+# ---------- FAQ templates (admin: fast onboarding) ----------
+_FAQ_TEMPLATES_PATH = Path(__file__).resolve().parent / "templates" / "faq_templates.json"
+
+
+def _load_faq_templates() -> dict:
+    """Load faq_templates.json. Returns {} if missing."""
+    if not _FAQ_TEMPLATES_PATH.exists():
+        return {}
+    try:
+        with open(_FAQ_TEMPLATES_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _substitute_variables(text: str, variables: dict) -> str:
+    """Replace ${key} in text with variables.get(key, '')."""
+    if not text or not isinstance(text, str):
+        return text or ""
+    result = text
+    for k, v in (variables or {}).items():
+        result = result.replace("${" + k + "}", str(v))
+    return result
+
+
+@app.get("/admin/api/faq-templates")
+def admin_get_faq_templates(authorization: str = Header(default="")):
+    """Return all FAQ templates (cleaner, plumber, electrician). ADMIN_TOKEN protected."""
+    _check_admin_auth(authorization)
+    return _load_faq_templates()
+
+
+@app.get("/admin/api/faq-templates/{template_type}")
+def admin_get_faq_template(
+    template_type: str,
+    authorization: str = Header(default=""),
+    request: Request = None,
+):
+    """Return one template with variables. Query params override template variables."""
+    _check_admin_auth(authorization)
+    templates = _load_faq_templates()
+    key = (template_type or "").strip().lower()
+    if key not in templates:
+        raise HTTPException(status_code=404, detail=f"Template '{template_type}' not found")
+    tpl = templates[key]
+    variables = dict(tpl.get("variables") or {})
+    if request and request.query_params:
+        for name, value in request.query_params.items():
+            variables[name] = value
+    faqs = []
+    for faq in tpl.get("faqs") or []:
+        q = _substitute_variables(faq.get("question") or "", variables)
+        a = _substitute_variables(faq.get("answer") or "", variables)
+        faqs.append({"question": q, "answer": a})
+    return {
+        "display_name": tpl.get("display_name") or key,
+        "faqs": faqs,
+        "variables": variables,
+    }
+
+
 @app.post("/admin/api/tenant/{tenantId}/domains")
 def add_domain(
     tenantId: str,
@@ -2909,6 +3161,7 @@ def delete_tenant(
             conn.execute("DELETE FROM tenant_promote_history WHERE tenant_id = %s", (tid,))
             conn.execute("DELETE FROM tenant_owners WHERE tenant_id = %s", (tid,))
             conn.execute("DELETE FROM tenant_domains WHERE tenant_id = %s", (tid,))
+            conn.execute("DELETE FROM faq_suggestions WHERE tenant_id = %s", (tid,))
             conn.execute(
                 "DELETE FROM faq_variants WHERE faq_id IN (SELECT id FROM faq_items WHERE tenant_id = %s)",
                 (tid,),
@@ -2926,6 +3179,43 @@ def delete_tenant(
         raise HTTPException(status_code=500, detail=f"Failed to delete tenant: {str(e)}")
 
 
+def _stage_faqs_internal(tenant_id: str, items: List[dict]) -> int:
+    """Stage FAQs: delete existing staged, insert items. Items are [{"question", "answer"}, ...]. Returns count."""
+    import json as json_lib
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO tenants (id, name) VALUES (%s, %s) ON CONFLICT (id) DO NOTHING",
+            (tenant_id, tenant_id),
+        )
+        conn.execute(
+            "DELETE FROM faq_variants WHERE faq_id IN (SELECT id FROM faq_items WHERE tenant_id=%s AND is_staged=true)",
+            (tenant_id,),
+        )
+        conn.execute("DELETE FROM faq_items WHERE tenant_id=%s AND is_staged=true", (tenant_id,))
+        count = 0
+        for it in items:
+            q = (it.get("question") or "").strip()
+            a = (it.get("answer") or "").strip()
+            if not q or not a:
+                continue
+            emb_q = embed_text(q)
+            raw_variants = it.get("variants") or []
+            if isinstance(raw_variants, str):
+                try:
+                    raw_variants = json_lib.loads(raw_variants)
+                except Exception:
+                    raw_variants = []
+            variants_json = json_lib.dumps(raw_variants) if raw_variants else "[]"
+            conn.execute(
+                "INSERT INTO faq_items (tenant_id, question, answer, embedding, enabled, is_staged, variants_json) "
+                "VALUES (%s,%s,%s,%s,true,true,%s)",
+                (tenant_id, q, a, Vector(emb_q), variants_json),
+            )
+            count += 1
+        conn.commit()
+    return count
+
+
 @app.put("/admin/api/tenant/{tenantId}/faqs/staged")
 def upload_staged_faqs(
     tenantId: str,
@@ -2937,58 +3227,8 @@ def upload_staged_faqs(
     _check_admin_auth(authorization)
     
     try:
-        count = 0
-        with get_conn() as conn:
-            # Ensure tenant exists
-            conn.execute(
-                "INSERT INTO tenants (id, name) VALUES (%s, %s) ON CONFLICT (id) DO NOTHING",
-                (tenantId, tenantId)
-            )
-            
-            # Delete existing staged FAQs (keep live unchanged)
-            conn.execute("DELETE FROM faq_items WHERE tenant_id=%s AND is_staged=true", (tenantId,))
-            
-            # Also delete staged variants (they'll be recreated)
-            conn.execute("""
-                DELETE FROM faq_variants 
-                WHERE faq_id IN (SELECT id FROM faq_items WHERE tenant_id=%s AND is_staged=true)
-            """, (tenantId,))
-            
-            # Variant expansion moved to promote-time (keeps staged FAQs clean)
-            # items_data = expand_variants_inline(items_data, max_per_faq=40)
-            
-            import json as json_lib
-            
-            for it in items:
-                q = (it.question or "").strip()
-                a = (it.answer or "").strip()
-                if not q or not a:
-                    continue
-
-                # Store variants in variants_json (embeddings created at promote time)
-                raw_variants = it.variants or []
-                # Ensure it's a list and convert to JSON string
-                if isinstance(raw_variants, str):
-                    try:
-                        raw_variants = json_lib.loads(raw_variants)
-                    except:
-                        raw_variants = []
-                variants_json = json_lib.dumps(raw_variants) if raw_variants else '[]'
-                
-                emb_q = embed_text(q)
-                row = conn.execute(
-                    "INSERT INTO faq_items (tenant_id, question, answer, embedding, enabled, is_staged, variants_json) "
-                    "VALUES (%s,%s,%s,%s,true,true,%s) RETURNING id",
-                    (tenantId, q, a, Vector(emb_q), variants_json),
-                ).fetchone()
-                faq_id = row[0]
-
-                # Don't create variant embeddings here - done at promote time
-                # This keeps staged upload fast
-
-                count += 1
-
-            conn.commit()
+        items_data = [{"question": it.question, "answer": it.answer, "variants": it.variants} for it in items]
+        count = _stage_faqs_internal(tenantId, items_data)
         
         return {"tenant_id": tenantId, "staged_count": count, "message": f"Staged {count} FAQs"}
     except Exception as e:

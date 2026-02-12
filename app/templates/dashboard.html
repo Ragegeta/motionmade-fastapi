@@ -231,6 +231,28 @@
         .faq-empty-state p { font-size: 14px; color: #6B7280; margin-bottom: 0; }
         .faq-contact-line { font-size: 14px; color: #6B7280; margin-top: 16px; }
         .faq-contact-line a { color: #2563EB; }
+        /* Suggest a question */
+        .suggest-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
+        .suggest-section h2 { font-size: 20px; color: #111827; margin-bottom: 8px; }
+        .suggest-section .intro { font-size: 14px; color: #6B7280; margin-bottom: 20px; line-height: 1.5; }
+        .suggest-section .form-group { margin-bottom: 16px; }
+        .suggest-section .form-group label { display: block; font-weight: 500; color: #374151; margin-bottom: 6px; font-size: 14px; }
+        .suggest-section .form-group input, .suggest-section .form-group textarea {
+            width: 100%; max-width: 480px; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px;
+        }
+        .suggest-section .form-group textarea { min-height: 80px; resize: vertical; }
+        .suggest-section .submit-btn { padding: 10px 20px; background: #2563EB; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .suggest-section .submit-btn:hover { background: #1d4ed8; }
+        .suggest-section .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .suggest-section .prev-title { font-size: 16px; font-weight: 600; color: #111827; margin-top: 24px; margin-bottom: 12px; }
+        .suggest-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+        .suggest-card .sq { font-weight: 500; color: #111827; margin-bottom: 4px; }
+        .suggest-card .status { font-size: 13px; color: #6B7280; }
+        .suggest-card .status.pending { color: #b45309; }
+        .suggest-card .status.approved { color: #059669; }
+        .suggest-card .status.rejected { color: #dc2626; }
+        .suggest-error { color: #dc2626; font-size: 14px; margin-top: 10px; }
+        .suggest-success { color: #059669; font-size: 14px; margin-top: 10px; }
         .faq-add-btn {
             padding: 10px 18px;
             min-height: 44px;
@@ -448,6 +470,24 @@
                 <p>You don't have any questions set up yet.</p>
             </div>
             <p class="faq-contact-line">Want to add or change a question? Contact Abbed — <a href="tel:0400000000">0400 000 000</a></p>
+
+            <div class="suggest-section" id="suggestSection">
+                <h2>Suggest a question</h2>
+                <p class="intro">Think customers are asking something your widget can't answer? Suggest it below and we'll add it for you.</p>
+                <div class="form-group">
+                    <label for="suggestQuestion">Question customers ask:</label>
+                    <input type="text" id="suggestQuestion" placeholder="e.g. Do you do carpet cleaning?" />
+                </div>
+                <div class="form-group">
+                    <label for="suggestAnswer">The answer (optional — we can write it for you):</label>
+                    <textarea id="suggestAnswer" rows="3" placeholder="e.g. Yes, carpet cleaning from $50 per room."></textarea>
+                </div>
+                <button type="button" class="submit-btn" id="submitSuggestionBtn">Submit Suggestion</button>
+                <div id="suggestError" class="suggest-error" style="display:none;"></div>
+                <div id="suggestSuccess" class="suggest-success" style="display:none;"></div>
+                <p class="prev-title">Previous suggestions:</p>
+                <div id="suggestList"></div>
+            </div>
         </div>
 
         <!-- Widget install (always visible) -->
@@ -767,6 +807,65 @@
                     list.appendChild(card);
                 });
             }
+            // ---------- FAQ suggestions ----------
+            var suggestions = [];
+            function loadSuggestions() {
+                return fetch('/owner/faqs/suggestions', { headers: authHeaders() }).then(function (res) {
+                    if (res.status === 401) return Promise.reject(new Error('Unauthorized'));
+                    if (!res.ok) return Promise.reject(new Error('Failed to load suggestions'));
+                    return res.json();
+                }).then(function (data) {
+                    suggestions = (data && data.suggestions) ? data.suggestions : [];
+                    renderSuggestList();
+                }).catch(function () { suggestions = []; renderSuggestList(); });
+            }
+            function renderSuggestList() {
+                var list = document.getElementById('suggestList');
+                if (!list) return;
+                list.innerHTML = '';
+                if (suggestions.length === 0) {
+                    list.innerHTML = '<p style="font-size:14px;color:#6B7280;">No suggestions yet.</p>';
+                    return;
+                }
+                suggestions.forEach(function (s) {
+                    var card = document.createElement('div');
+                    card.className = 'suggest-card';
+                    var statusText = s.status === 'pending' ? 'Pending ⏳' : (s.status === 'approved' ? 'Added ✅' : 'Rejected');
+                    var statusClass = 'status ' + (s.status || '').toLowerCase();
+                    card.innerHTML = '<div class="sq">' + escapeHtml(s.question) + '</div><div class="' + statusClass + '">Status: ' + escapeHtml(statusText) + '</div>';
+                    list.appendChild(card);
+                });
+            }
+            document.getElementById('submitSuggestionBtn').addEventListener('click', function () {
+                var q = document.getElementById('suggestQuestion').value.trim();
+                var a = document.getElementById('suggestAnswer').value.trim();
+                var errEl = document.getElementById('suggestError');
+                var okEl = document.getElementById('suggestSuccess');
+                errEl.style.display = 'none';
+                okEl.style.display = 'none';
+                if (!q) { errEl.textContent = 'Please enter a question.'; errEl.style.display = 'block'; return; }
+                var btn = this;
+                btn.disabled = true;
+                fetch('/owner/faqs/suggest', {
+                    method: 'POST',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+                    body: JSON.stringify({ question: q, answer: a || null })
+                }).then(function (res) {
+                    if (res.status === 401) { window.location.href = '/dashboard/login'; return; }
+                    return res.json().then(function (data) {
+                        if (!res.ok) throw new Error(data.detail || 'Failed to submit');
+                        document.getElementById('suggestQuestion').value = '';
+                        document.getElementById('suggestAnswer').value = '';
+                        okEl.textContent = 'Suggestion submitted. We\'ll review it soon.';
+                        okEl.style.display = 'block';
+                        loadSuggestions();
+                    });
+                }).catch(function (e) {
+                    errEl.textContent = e.message || 'Something went wrong.';
+                    errEl.style.display = 'block';
+                }).finally(function () { btn.disabled = false; });
+            });
+            loadSuggestions();
         })();
     </script>
 </body>

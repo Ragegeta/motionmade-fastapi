@@ -134,16 +134,20 @@ async function deleteTenant(tenantId) {
 // ---------- Tenant detail (View / Edit FAQs) ----------
 async function showTenantDetail(tenantId) {
     try {
-        const [tenantRes, statsRes, ownerRes] = await Promise.all([
+        const [tenantRes, statsRes, ownerRes, suggestionsRes] = await Promise.all([
             fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId), { headers: getHeaders() }),
             fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/stats', { headers: getHeaders() }).catch(() => null),
-            fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/owner', { headers: getHeaders() }).catch(() => null)
+            fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/owner', { headers: getHeaders() }).catch(() => null),
+            fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/suggestions', { headers: getHeaders() }).catch(() => null)
         ]);
         if (!tenantRes.ok) throw new Error('HTTP ' + tenantRes.status);
         const tenant = await tenantRes.json();
         const stats = statsRes && statsRes.ok ? await statsRes.json() : null;
         let owner = null;
         if (ownerRes && ownerRes.ok) try { owner = await ownerRes.json(); } catch (_) {}
+        let suggestions = [];
+        if (suggestionsRes && suggestionsRes.ok) try { const d = await suggestionsRes.json(); suggestions = d.suggestions || []; } catch (_) {}
+        const pendingSuggestions = suggestions.filter(s => (s.status || '').toLowerCase() === 'pending');
         const lastLoginStr = owner && owner.last_login ? new Date(owner.last_login).toLocaleString() : 'Never';
         const ownerSectionHtml = owner
             ? `<div class="section owner-section">
@@ -208,6 +212,19 @@ async function showTenantDetail(tenantId) {
                 ${stats ? '<div class="stats-grid"><div class="stat-card"><div class="label">Questions answered</div><div class="value">' + stats.total_queries + '</div></div><div class="stat-card"><div class="label">FAQ match rate</div><div class="value">' + ((stats.faq_hit_rate || 0) * 100).toFixed(1) + '%</div></div><div class="stat-card"><div class="label">Avg latency</div><div class="value">' + (stats.avg_latency_ms || 0) + 'ms</div></div></div>' : '<p style="color:#6b7280;">No stats yet</p>'}
             </div>
             ${ownerSectionHtml}
+            <div class="section" id="suggestionsSection">
+                <h2>FAQ Suggestions (${pendingSuggestions.length} pending)</h2>
+                ${pendingSuggestions.length === 0 ? '<p style="color:#6b7280;">No pending suggestions.</p>' : pendingSuggestions.map(s => `
+                <div class="suggestion-card" data-suggestion-id="${s.id}" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin-bottom:12px;">
+                    <div class="suggestion-q" style="font-weight:500;color:#111827;margin-bottom:6px;">"${escapeHtml(s.question)}"</div>
+                    ${s.answer ? '<div class="suggestion-a" style="font-size:14px;color:#6b7280;margin-bottom:10px;">Owner\'s answer: ' + escapeHtml(s.answer) + '</div>' : ''}
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <button type="button" class="btn-primary approveSuggestionButton" data-tenant-id="${escapeHtml(tenant.id)}" data-suggestion-id="${s.id}">Approve & Add as FAQ</button>
+                        <button type="button" class="btn-danger rejectSuggestionButton" data-tenant-id="${escapeHtml(tenant.id)}" data-suggestion-id="${s.id}">Reject</button>
+                    </div>
+                </div>
+                `).join('')}
+            </div>
             <div class="section">
                 <h2>Widget install code</h2>
                 <p style="color:#6b7280;margin-bottom:12px;">Paste this before the <code>&lt;/body&gt;</code> tag on your website.</p>
@@ -313,6 +330,29 @@ async function deleteOwner(tenantId) {
     } catch (e) { alert(e.message); }
 }
 
+async function approveSuggestion(tenantId, suggestionId) {
+    try {
+        const res = await fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/suggestions/' + encodeURIComponent(suggestionId) + '/approve', {
+            method: 'POST', headers: getHeaders(), body: JSON.stringify({})
+        });
+        if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.detail || 'HTTP ' + res.status); }
+        alert('Suggestion approved. FAQ added and promoted to live.');
+        showTenantDetail(tenantId);
+    } catch (e) { alert(e.message); }
+}
+
+async function rejectSuggestion(tenantId, suggestionId) {
+    const note = window.prompt('Rejection note (optional, owner will see this):', '');
+    if (note === null) return;
+    try {
+        const res = await fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/suggestions/' + encodeURIComponent(suggestionId) + '/reject', {
+            method: 'POST', headers: getHeaders(), body: JSON.stringify({ note: note })
+        });
+        if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.detail || 'HTTP ' + res.status); }
+        showTenantDetail(tenantId);
+    } catch (e) { alert(e.message); }
+}
+
 async function uploadStagedFaqs(tenantId) {
     const jsonText = document.getElementById('stagedFaqsJson').value.trim();
     if (!jsonText) { document.getElementById('faqsError').textContent = 'FAQ JSON required'; return; }
@@ -392,6 +432,8 @@ let wizardContactPhone = '';
 let wizardFaqs = [];
 let wizardTempPassword = '';
 let wizardSuggestedQuestions = [];
+let wizardTemplateType = ''; // 'cleaner' | 'plumber' | 'electrician' when showing template step
+let wizardTemplateVars = {};
 
 function slugFromName(name) {
     return (name || '')
@@ -418,6 +460,8 @@ function showWizard() {
     wizardBusinessName = '';
     wizardFaqs = [];
     wizardTempPassword = '';
+    wizardTemplateType = '';
+    wizardTemplateVars = {};
     document.getElementById('wizBusinessName').value = '';
     document.getElementById('wizBusinessType').value = 'Plumber';
     document.getElementById('wizOwnerName').value = '';
@@ -482,14 +526,74 @@ function wizardStep1Next() {
             wizardTempPassword = tempPass;
             boxEl.innerHTML = '<strong>Owner login (save this)</strong><br>Email: ' + escapeHtml(ownerEmail) + '<br>Password: ' + escapeHtml(tempPass);
             boxEl.style.display = 'block';
-            document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
-            document.getElementById('wizardStep2').classList.add('active');
-            document.getElementById('wizSaveAndGoLive').disabled = wizardFaqs.length < 5;
-            renderWizardFaqList();
+            const bizType = document.getElementById('wizBusinessType').value;
+            const typeKey = bizType.toLowerCase();
+            if (typeKey === 'cleaner' || typeKey === 'plumber' || typeKey === 'electrician') {
+                wizardTemplateType = typeKey;
+                document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+                document.getElementById('wizardStep1b').classList.add('active');
+                loadWizardTemplateStep();
+            } else {
+                wizardFaqs = [];
+                document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+                document.getElementById('wizardStep2').classList.add('active');
+                document.getElementById('wizSaveAndGoLive').disabled = wizardFaqs.length < 5;
+                renderWizardFaqList();
+            }
         } catch (e) {
             errEl.textContent = e.message;
         }
     })();
+}
+
+async function loadWizardTemplateStep() {
+    const intro = document.getElementById('wizTemplateIntro');
+    const form = document.getElementById('wizTemplateVarForm');
+    if (!form) return;
+    intro.textContent = 'Loading template...';
+    form.innerHTML = '';
+    try {
+        const r = await fetch(API_BASE + '/admin/api/faq-templates/' + encodeURIComponent(wizardTemplateType), { headers: getHeaders() });
+        if (!r.ok) throw new Error('Template not found');
+        const data = await r.json();
+        wizardTemplateVars = data.variables || {};
+        const displayName = data.display_name || wizardTemplateType;
+        intro.textContent = 'We have a template for ' + displayName.toLowerCase() + '! Pre-filled with common questions. Just fill in your details:';
+        form.innerHTML = Object.keys(wizardTemplateVars).map(k => {
+            const val = wizardTemplateVars[k] || '';
+            const label = k.replace(/_/g, ' ');
+            return '<div class="form-group" style="margin-bottom:12px;"><label style="display:block;margin-bottom:4px;font-size:14px;">' + escapeHtml(label) + '</label><input type="text" class="wiz-template-var" data-var="' + escapeHtml(k) + '" value="' + escapeHtml(val) + '" style="width:100%;max-width:320px;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;" /></div>';
+        }).join('');
+    } catch (e) {
+        intro.textContent = 'Could not load template. Click "Write my own FAQs" to continue.';
+    }
+}
+
+function wizardUseTemplate() {
+    const vars = {};
+    document.querySelectorAll('.wiz-template-var').forEach(input => {
+        const k = input.getAttribute('data-var');
+        if (k) vars[k] = input.value.trim() || wizardTemplateVars[k] || '';
+    });
+    const params = new URLSearchParams(vars).toString();
+    fetch(API_BASE + '/admin/api/faq-templates/' + encodeURIComponent(wizardTemplateType) + (params ? '?' + params : ''), { headers: getHeaders() })
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to load template')))
+        .then(data => {
+            wizardFaqs = (data.faqs || []).map(f => ({ question: f.question, answer: f.answer }));
+            document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+            document.getElementById('wizardStep2').classList.add('active');
+            document.getElementById('wizSaveAndGoLive').disabled = wizardFaqs.length < 5;
+            renderWizardFaqList();
+        })
+        .catch(e => alert(e.message));
+}
+
+function wizardWriteOwnFaqs() {
+    wizardFaqs = [];
+    document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+    document.getElementById('wizardStep2').classList.add('active');
+    document.getElementById('wizSaveAndGoLive').disabled = wizardFaqs.length < 5;
+    renderWizardFaqList();
 }
 
 function wizardAddFaq() {
@@ -665,6 +769,8 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('wizBusinessName').addEventListener('input', updateWizardWidgetIdPreview);
     document.getElementById('backFromWizardLink').addEventListener('click', function (e) { e.preventDefault(); loadTenants(); });
     document.getElementById('wizStep1Next').addEventListener('click', wizardStep1Next);
+    document.getElementById('wizUseTemplateBtn').addEventListener('click', wizardUseTemplate);
+    document.getElementById('wizWriteOwnFaqsBtn').addEventListener('click', wizardWriteOwnFaqs);
     document.getElementById('wizAddFaq').addEventListener('click', wizardAddFaq);
     document.getElementById('wizFaqAnswer').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); wizardAddFaq(); } });
     document.getElementById('wizSaveAndGoLive').addEventListener('click', wizardSaveAndGoLive);
@@ -727,6 +833,18 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             const id = e.target.getAttribute('data-tenant-id');
             if (id) deleteOwner(id);
+        }
+        if (e.target.classList.contains('approveSuggestionButton')) {
+            e.preventDefault();
+            const tid = e.target.getAttribute('data-tenant-id');
+            const sid = e.target.getAttribute('data-suggestion-id');
+            if (tid && sid) approveSuggestion(tid, sid);
+        }
+        if (e.target.classList.contains('rejectSuggestionButton')) {
+            e.preventDefault();
+            const tid = e.target.getAttribute('data-tenant-id');
+            const sid = e.target.getAttribute('data-suggestion-id');
+            if (tid && sid) rejectSuggestion(tid, sid);
         }
         if (e.target.id === 'copyButton') {
             e.preventDefault();
