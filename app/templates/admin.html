@@ -3,369 +3,459 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAQ Admin - Tenant Management</title>
+    <title>MotionMade AI – Business Management</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            background: #fff;
+            color: #1f2937;
+            padding: 0;
+            font-size: 16px;
+            line-height: 1.5;
         }
-        .container { max-width: 1200px; margin: 0 auto; }
-        h1 { margin-bottom: 20px; color: #333; }
-        .auth-section {
-            background: white;
-            padding: 20px;
+        .container { max-width: 1000px; margin: 0 auto; padding: 24px; }
+        @media (max-width: 480px) { .container { padding: 16px; } }
+
+        /* Header */
+        header {
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .logo-wrap { display: flex; flex-direction: column; cursor: pointer; user-select: none; }
+        .logo-wrap .logo { font-size: 20px; font-weight: 700; color: #2563EB; }
+        .logo-wrap .sub { font-size: 12px; color: #6b7280; margin-top: 2px; }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+
+        /* Debug panel – hidden by default */
+        #uiDebugBanner {
+            display: none;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
             border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 16px;
+            margin: 0 24px 20px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        #uiDebugBanner.visible { display: block; }
+
+        /* Auth */
+        .auth-section {
+            background: #f9fafb;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid #e5e7eb;
         }
         .auth-section input {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            width: 300px;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            width: 280px;
+            max-width: 100%;
             margin-right: 10px;
         }
         .auth-section button {
-            padding: 8px 16px;
-            background: #007bff;
+            padding: 10px 18px;
+            background: #2563EB;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: 500;
         }
-        .auth-section button:hover { background: #0056b3; }
-        .error { color: #dc3545; margin-top: 10px; }
-        .success { color: #28a745; margin-top: 10px; }
-        
+        .auth-section button:hover { background: #1d4ed8; }
+        .error { color: #dc2626; margin-top: 10px; }
+        .success { color: #059669; margin-top: 10px; }
+
+        /* Pages */
         .page { display: none; }
         .page.active { display: block; }
-        
-        .tenants-list {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: hidden;
+
+        /* Businesses list – cards */
+        .businesses-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
         }
-        .tenants-list table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .tenants-list th,
-        .tenants-list td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        .tenants-list th {
-            background: #f8f9fa;
-            font-weight: 600;
-        }
-        .tenants-list tr:hover { background: #f8f9fa; }
-        .tenants-list button {
-            padding: 4px 8px;
-            background: #007bff;
+        .businesses-header h2 { font-size: 22px; color: #111827; font-weight: 600; }
+        .btn-primary {
+            padding: 10px 20px;
+            background: #2563EB;
             color: white;
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        
-        .tenant-detail {
-            background: white;
-            padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 15px;
         }
-        .section {
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #eee;
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-secondary {
+            padding: 8px 14px;
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
         }
+        .btn-secondary:hover { background: #e5e7eb; }
+        .btn-danger {
+            padding: 8px 14px;
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-danger:hover { background: #fee2e2; }
+
+        .business-cards {
+            display: grid;
+            gap: 16px;
+        }
+        .business-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr auto auto auto auto;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        @media (max-width: 768px) {
+            .business-card {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+            }
+            .business-card .card-meta { grid-column: 1; }
+            .business-card .card-actions { grid-column: 1; }
+        }
+        .business-card .card-name { font-weight: 600; font-size: 17px; color: #111827; }
+        .business-card .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        .business-card .card-meta .type { text-transform: capitalize; }
+        .business-card .card-meta .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9ca3af;
+        }
+        .business-card .card-meta .dot.active { background: #22c55e; }
+        .business-card .card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        /* Tenant detail (View / Edit FAQs) */
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #2563EB;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .tenant-detail {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .section { margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; }
         .section:last-child { border-bottom: none; }
-        .section h2 { margin-bottom: 15px; color: #333; }
-        .section h3 { margin-bottom: 10px; color: #666; font-size: 14px; }
-        
-        .domains-list {
-            list-style: none;
+        .section h2 { margin-bottom: 16px; color: #111827; font-size: 18px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #374151; }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 15px;
         }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+        .stat-card {
+            background: #f9fafb;
+            padding: 16px;
+            border-radius: 8px;
+        }
+        .stat-card .label { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+        .stat-card .value { font-size: 22px; font-weight: 600; color: #111827; }
+        .domains-list { list-style: none; }
         .domains-list li {
-            padding: 8px;
-            background: #f8f9fa;
-            margin-bottom: 5px;
-            border-radius: 4px;
+            padding: 10px 12px;
+            background: #f9fafb;
+            margin-bottom: 6px;
+            border-radius: 6px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .domains-list button {
-            padding: 4px 8px;
-            background: #dc3545;
+
+        /* Onboarding wizard */
+        .wizard { max-width: 640px; margin: 0 auto; }
+        .wizard-step { display: none; margin-bottom: 32px; }
+        .wizard-step.active { display: block; }
+        .wizard-step h3 { font-size: 18px; color: #111827; margin-bottom: 20px; }
+        .wizard .form-group textarea { min-height: 72px; }
+        .wizard-actions { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+        .faq-list { list-style: none; margin-top: 16px; }
+        .faq-list li {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .faq-list li .q { font-weight: 500; color: #111827; }
+        .faq-list li .a { font-size: 14px; color: #6b7280; margin-top: 4px; }
+        .faq-list li .faq-actions { display: flex; gap: 8px; }
+        .faq-list li button { padding: 4px 10px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; }
+        .wizard-progress { margin: 16px 0; padding: 12px; background: #eff6ff; border-radius: 8px; font-size: 14px; }
+        .wizard-progress.done { background: #d1fae5; color: #065f46; }
+        .temp-password-box {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+        .temp-password-box strong { display: block; margin-bottom: 8px; }
+        .live-preview-box {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .live-preview-box .preview-header {
+            background: #f9fafb;
+            padding: 12px 16px;
+            font-weight: 500;
+            color: #374151;
+        }
+        .live-preview-box .chat-messages {
+            min-height: 200px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 16px;
+            background: #fff;
+        }
+        .live-preview-box .chat-msg { margin-bottom: 12px; }
+        .live-preview-box .chat-msg.user { text-align: right; }
+        .live-preview-box .chat-msg .bubble {
+            display: inline-block;
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            text-align: left;
+        }
+        .live-preview-box .chat-msg.user .bubble { background: #2563EB; color: #fff; }
+        .live-preview-box .chat-msg.bot .bubble { background: #f3f4f6; color: #1f2937; }
+        .live-preview-box .chat-input-row {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            background: #fff;
+        }
+        .live-preview-box .chat-input-row input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+        .live-preview-box .chat-input-row button {
+            padding: 10px 18px;
+            background: #2563EB;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 12px;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
             font-weight: 500;
         }
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: inherit;
+        .embed-code-box {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            position: relative;
         }
-        .form-group textarea {
-            min-height: 100px;
-            font-family: monospace;
-        }
-        
-        button.primary {
-            padding: 10px 20px;
-            background: #28a745;
+        .embed-code-box pre { font-size: 12px; white-space: pre-wrap; word-break: break-all; margin: 0; }
+        .embed-code-box .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 8px 14px;
+            background: #2563EB;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
         }
-        button.primary:hover { background: #218838; }
-        button.secondary {
-            padding: 10px 20px;
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        button.secondary:hover { background: #5a6268; }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-        .stat-card {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 4px;
-        }
-        .stat-card .label {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 5px;
-        }
-        .stat-card .value {
-            font-size: 24px;
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: #007bff;
-            text-decoration: none;
-        }
-        .back-link:hover { text-decoration: underline; }
+        .embed-code-box .copy-btn.copied { background: #059669; }
+        .min-faq-msg { color: #b45309; font-size: 14px; margin-top: 8px; }
     </style>
 </head>
 <body>
+    <header>
+        <div class="logo-wrap" id="logoWrap" title="Triple-click to toggle debug">
+            <span class="logo">MotionMade AI</span>
+            <span class="sub">Business Management</span>
+        </div>
+        <div class="header-actions" id="headerActions"></div>
+    </header>
+
+    <div id="uiDebugBanner">
+        <div style="font-weight: bold; margin-bottom: 8px;">🔍 Debug</div>
+        <div>Time: <span id="debugTime">-</span> | DOM: <span id="debugDomReady">no</span> | JS: <span id="debugJsRunning">no</span></div>
+        <div style="margin-top: 8px;">Last click: <span id="debugLastClick">(none)</span></div>
+        <div style="margin-top: 8px;"><strong>Errors:</strong></div>
+        <pre id="uiErrors" style="background: #f8f9fa; padding: 8px; border-radius: 4px; max-height: 100px; overflow-y: auto; font-size: 11px; margin-top: 4px;"></pre>
+    </div>
+
+    <div class="auth-section" id="authSection">
+        <h2 style="margin-bottom: 12px;">Admin login</h2>
+        <input type="password" id="adminToken" placeholder="Enter admin token" />
+        <button id="loginButton">Login</button>
+        <div id="authError" class="error"></div>
+    </div>
+
     <div class="container">
-        <!-- UI DEBUG Banner (ALWAYS VISIBLE) -->
-        <div id="uiDebugBanner" style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 4px; padding: 15px; margin-bottom: 20px; font-family: monospace; font-size: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
-                <div style="flex: 1; min-width: 200px;">
-                    <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">🔍 UI DEBUG</div>
-                    <div><strong>Current Time:</strong> <span id="debugTime">-</span></div>
-                    <div><strong>DOM Ready:</strong> <span id="debugDomReady" style="color: #6c757d;">no</span></div>
-                    <div><strong>JS Running:</strong> <span id="debugJsRunning" style="color: #6c757d;">no</span></div>
-                    <div><strong>Last Click:</strong> <span id="debugLastClick">(none)</span></div>
-                </div>
-                <div style="flex: 1; min-width: 200px;">
-                    <button id="debugTestButton" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; margin-bottom: 10px;">TEST JS</button>
-                    <div>
-                        <button id="copyCurlButton" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy curl</button>
-                    </div>
-                </div>
-                <div style="flex: 2; min-width: 300px;">
-                    <div><strong>API Base:</strong> <span id="apiBaseDisplay">-</span></div>
-                    <div><strong>Health:</strong> <span id="healthStatus">-</span> | <strong>Git SHA:</strong> <span id="gitShaDisplay">-</span></div>
-                </div>
-            </div>
-            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #dee2e6;">
-                <div><strong>Errors:</strong></div>
-                <pre id="uiErrors" style="background: #f8f9fa; padding: 8px; border-radius: 4px; max-height: 150px; overflow-y: auto; font-size: 11px; margin-top: 5px; white-space: pre-wrap; word-wrap: break-word;"></pre>
-            </div>
-        </div>
-        
-        <h1>FAQ Admin - Tenant Management</h1>
-        
-        <!-- Auth Section -->
-        <div class="auth-section" id="authSection">
-            <h2>Login</h2>
-            <input type="password" id="adminToken" placeholder="Enter admin token" />
-            <button id="loginButton">Login</button>
-            <div id="authError" class="error"></div>
-            <div id="loginDiagnostics" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 11px;">
-                <div><strong>Login Diagnostics:</strong></div>
-                <div id="loginClickStatus" style="margin-top: 5px;"></div>
-                <div id="loginTestStatus" style="margin-top: 5px;"></div>
-                <div id="loginResponse" style="margin-top: 5px; word-break: break-all;"></div>
-                <div id="loginError" style="margin-top: 5px; color: #dc3545;"></div>
-            </div>
-        </div>
-        
-        <!-- Tenants List Page -->
+        <!-- Businesses list -->
         <div class="page" id="tenantsPage">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>Tenants</h2>
-                <div style="display: flex; gap: 10px;">
-                    <button class="primary" id="showOnboardingButton">Onboarding</button>
-                    <button class="primary" id="showCreateTenantButton">+ New Tenant</button>
-                </div>
+            <div class="businesses-header">
+                <h2>Businesses</h2>
+                <button class="btn-primary" id="showNewBusinessButton">+ New Business</button>
             </div>
-            <div class="tenants-list">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tenantsTable"></tbody>
-                </table>
-            </div>
+            <div class="business-cards" id="businessCards"></div>
         </div>
-        
-        <!-- Tenant Detail Page -->
+
+        <!-- Tenant detail (View / Edit FAQs) -->
         <div class="page" id="tenantDetailPage">
-            <a href="#" class="back-link" id="backToTenantsLink1">← Back to Tenants</a>
+            <a href="#" class="back-link" id="backToListLink">← Back to All Businesses</a>
             <div class="tenant-detail" id="tenantDetail"></div>
         </div>
-        
-        <!-- Create Tenant Modal -->
-        <div class="page" id="createTenantPage">
-            <a href="#" class="back-link" id="backToTenantsLink1">← Back to Tenants</a>
-            <div class="tenant-detail">
-                <h2>Create New Tenant</h2>
-                <div class="form-group">
-                    <label>Tenant ID</label>
-                    <input type="text" id="newTenantId" placeholder="e.g., my_business" />
-                </div>
-                <div class="form-group">
-                    <label>Tenant Name</label>
-                    <input type="text" id="newTenantName" placeholder="My Business Name" />
-                </div>
-                <button class="primary" id="createTenantButton">Create Tenant</button>
-                <div id="createError" class="error"></div>
-            </div>
-        </div>
-        
-        <!-- Onboarding Page -->
-        <div class="page" id="onboardingPage">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>Tenant Onboarding</h2>
-                <button class="primary" id="backToTenantsButton">← Back to Tenants</button>
-            </div>
-            <div class="tenant-detail">
-                <!-- Step 1: Select/Create Tenant -->
-                <div class="section">
-                    <h2>1. Tenant</h2>
+
+        <!-- Onboarding wizard (one page, 3 steps) -->
+        <div class="page" id="wizardPage">
+            <a href="#" class="back-link" id="backFromWizardLink">← Back to All Businesses</a>
+            <div class="wizard">
+                <div class="wizard-step" id="wizardStep1">
+                    <h3>1. Business details</h3>
                     <div class="form-group">
-                        <label>Select or Create Tenant</label>
-                        <div style="display: flex; gap: 10px;">
-                            <select id="onboardTenantSelect" style="flex: 1; padding: 8px;">
-                                <option value="">-- Select Tenant --</option>
-                            </select>
-                            <button id="onboardShowCreateButton">+ New</button>
+                        <label>Business name</label>
+                        <input type="text" id="wizBusinessName" placeholder="e.g. Mike's Plumbing" />
+                    </div>
+                    <div class="form-group">
+                        <label>Business type</label>
+                        <select id="wizBusinessType">
+                            <option value="Plumber">Plumber</option>
+                            <option value="Electrician">Electrician</option>
+                            <option value="Cleaner">Cleaner</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Owner name</label>
+                        <input type="text" id="wizOwnerName" placeholder="e.g. Mike" />
+                    </div>
+                    <div class="form-group">
+                        <label>Owner email</label>
+                        <input type="email" id="wizOwnerEmail" placeholder="e.g. mike@mikesplumbing.com.au" />
+                    </div>
+                    <div class="form-group">
+                        <label>Owner phone</label>
+                        <input type="tel" id="wizOwnerPhone" placeholder="e.g. 0412 345 678" />
+                    </div>
+                    <p style="font-size: 14px; color: #6b7280; margin-bottom: 16px;">Business ID will be generated from the name (e.g. "Mike's Plumbing" → mikes_plumbing).</p>
+                    <div class="wizard-actions">
+                        <button class="btn-primary" id="wizStep1Next">Next →</button>
+                    </div>
+                    <div id="wizTempPasswordBox" class="temp-password-box" style="display: none;"></div>
+                    <div id="wizStep1Error" class="error"></div>
+                </div>
+
+                <div class="wizard-step" id="wizardStep2">
+                    <h3>2. Add FAQs</h3>
+                    <p style="color: #6b7280; margin-bottom: 16px;">Add questions and answers one at a time while you talk to the tradie.</p>
+                    <div class="form-group">
+                        <label>Question</label>
+                        <input type="text" id="wizFaqQuestion" placeholder="e.g. What areas do you service?" />
+                    </div>
+                    <div class="form-group">
+                        <label>Answer</label>
+                        <textarea id="wizFaqAnswer" rows="3" placeholder="e.g. We cover Brisbane, Logan, and Ipswich. $30 surcharge outside Brisbane metro."></textarea>
+                    </div>
+                    <div class="wizard-actions">
+                        <button class="btn-secondary" id="wizAddFaq">+ Add FAQ</button>
+                    </div>
+                    <p id="wizMinFaqMsg" class="min-faq-msg"></p>
+                    <ul class="faq-list" id="wizFaqList"></ul>
+                    <div class="wizard-actions" style="margin-top: 24px;">
+                        <button class="btn-primary" id="wizSaveAndGoLive">Save & Go Live</button>
+                    </div>
+                    <div id="wizGoLiveProgress" class="wizard-progress" style="display: none;"></div>
+                    <div id="wizStep2Error" class="error" style="margin-top: 12px;"></div>
+                </div>
+
+                <div class="wizard-step" id="wizardStep3">
+                    <h3>3. Live preview & install</h3>
+                    <p id="wizLiveTitle" style="font-weight: 500; margin-bottom: 16px;"></p>
+                    <div class="live-preview-box">
+                        <div class="preview-header">Try it — type a question like a customer:</div>
+                        <div class="chat-messages" id="wizChatMessages"></div>
+                        <div class="chat-input-row">
+                            <input type="text" id="wizChatInput" placeholder="Type a question..." />
+                            <button type="button" id="wizChatSend">Send</button>
                         </div>
                     </div>
-                    <div id="onboardTenantInfo" style="display: none; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-                        <strong>Tenant:</strong> <span id="onboardTenantName"></span>
-                    </div>
-                </div>
-                
-                <!-- Step 2: Add Domains -->
-                <div class="section">
-                    <h2>2. Domains</h2>
-                    <div class="form-group">
-                        <label>Add Domain</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="onboardDomain" placeholder="example.com" style="flex: 1;" />
-                            <button id="onboardAddDomainButton">Add Domain</button>
+                    <p style="font-size: 14px; color: #6b7280; margin: 16px 0 8px;">Test: try a question from your FAQs, messy text like "hw much u charge", or something you don't cover.</p>
+                    <div style="margin-top: 24px;">
+                        <strong style="display: block; margin-bottom: 8px;">Widget install code</strong>
+                        <div class="embed-code-box">
+                            <pre id="wizEmbedCode"></pre>
+                            <button type="button" class="copy-btn" id="wizCopyEmbed">Copy Code</button>
                         </div>
                     </div>
-                    <ul id="onboardDomainsList" class="domains-list"></ul>
-                </div>
-                
-                <!-- Step 3: Upload FAQs -->
-                <div class="section">
-                    <h2>3. Upload FAQs (Staged)</h2>
-                    <div class="form-group">
-                        <label>Paste FAQ JSON or Upload File</label>
-                        <textarea id="onboardFaqsJson" rows="10" style="width: 100%; font-family: monospace; font-size: 12px;" placeholder='[{"question": "...", "answer": "...", "variants": [...]}]'></textarea>
-                        <input type="file" id="onboardFaqsFile" accept=".json" style="margin-top: 10px;" />
-                    </div>
-                    <button class="primary" id="onboardUploadStagedButton">Upload to Staging</button>
-                    <div id="onboardUploadStatus" style="margin-top: 10px;"></div>
-                </div>
-                
-                <!-- Step 4: Promote -->
-                <div class="section">
-                    <h2>4. Promote (Runs Suite + Auto-Expands Variants)</h2>
-                    <button class="primary" id="onboardPromoteBtn">Promote to Live</button>
-                    <div id="onboardPromoteStatus" style="margin-top: 10px;"></div>
-                </div>
-                
-                <!-- Step 5: Benchmark -->
-                <div class="section">
-                    <h2>5. Run Benchmark</h2>
-                    <button class="primary" id="onboardBenchmarkBtn">Run Benchmark</button>
-                    <div id="onboardBenchmarkStatus" style="margin-top: 10px;"></div>
-                </div>
-                
-                <!-- Step 6: Sync Worker Domains -->
-                <div class="section">
-                    <h2>6. Sync Worker Domains</h2>
-                    <button id="onboardSyncBtn">Sync to Worker D1</button>
-                    <div id="onboardSyncStatus" style="margin-top: 10px;"></div>
-                </div>
-                
-                <!-- Step 7: Readiness & Install Snippet -->
-                <div class="section">
-                    <h2>7. Readiness & Install Snippet</h2>
-                    <button id="onboardCheckReadinessButton">Check Readiness</button>
-                    <div id="onboardReadinessStatus" style="margin-top: 10px;"></div>
-                    <div id="onboardInstallSnippet" style="margin-top: 20px; display: none;">
-                        <h3>Install Snippet</h3>
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; position: relative;">
-                            <pre id="onboardSnippetCode" style="margin: 0; white-space: pre-wrap; word-wrap: break-word;"></pre>
-                            <button id="copyOnboardSnippetButton" style="position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 12px;">Copy</button>
-                        </div>
-                        <div id="onboardCopySuccess" style="display: none; color: #28a745; margin-top: 5px;">✓ Copied!</div>
+                    <div class="wizard-actions" style="margin-top: 24px;">
+                        <button class="btn-secondary" id="wizBackToBusinesses">← Back to All Businesses</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <script src="/static/admin.js?v=1" defer></script>
 </body>
 </html>
-

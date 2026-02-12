@@ -202,6 +202,9 @@
             <button type="button" data-period="30d">Last 30 days</button>
             <button type="button" data-period="90d">Last 90 days</button>
         </div>
+        <div id="emptyStateWrap" class="chart-empty" style="display: none; margin-bottom: 24px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 24px;">
+            <p style="margin: 0; font-size: 16px; color: #0c4a6e;">Your widget hasn't received any questions yet. Once it's installed on your website, you'll see stats here.</p>
+        </div>
         <div class="cards">
             <div class="card">
                 <div class="label">Questions answered this week</div>
@@ -233,7 +236,7 @@
                 <pre id="embedSnippet">&lt;script src="https://YOUR_WIDGET_URL/widget.js" data-tenant="YOUR_TENANT_ID"&gt;&lt;/script&gt;</pre>
             </div>
         </div>
-        <p class="help-text">Need help? Text Abbed at 04XXXXXXXX</p>
+        <p class="help-text">Need changes? Contact Abbed</p>
         <footer>Powered by MotionMade AI</footer>
     </div>
     <script>
@@ -294,9 +297,12 @@
             }
 
             function renderStats(data) {
-                document.getElementById('statWeek').textContent = data.queries_this_week ?? data.total_queries ?? '0';
-                document.getElementById('statToday').textContent = data.queries_today ?? '0';
-                document.getElementById('statFallback').textContent = data.fallback_count ?? '0';
+                var week = data.queries_this_week ?? data.total_queries ?? 0;
+                var today = data.queries_today ?? 0;
+                var fallback = data.fallback_count ?? 0;
+                document.getElementById('statWeek').textContent = week;
+                document.getElementById('statToday').textContent = today;
+                document.getElementById('statFallback').textContent = fallback;
                 var trendEl = document.getElementById('statTrend');
                 var trend = data.trend;
                 var pct = data.trend_pct;
@@ -305,6 +311,10 @@
                     trendEl.className = 'trend ' + (trend === 'up' ? 'up' : trend === 'down' ? 'down' : '');
                 } else {
                     trendEl.textContent = '';
+                }
+                var emptyWrap = document.getElementById('emptyStateWrap');
+                if (emptyWrap) {
+                    emptyWrap.style.display = (week === 0 && today === 0) ? 'block' : 'none';
                 }
             }
 
@@ -409,7 +419,7 @@
                 var text = pre.textContent;
                 var btn = document.getElementById('copyEmbedBtn');
                 function showCopied() {
-                    btn.textContent = 'Copied!';
+                    btn.textContent = 'Copied! ✓';
                     setTimeout(function () { btn.textContent = 'Copy'; }, 2000);
                 }
                 if (navigator.clipboard && navigator.clipboard.writeText) {

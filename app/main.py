@@ -182,6 +182,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE IF NOT EXISTS tenants (
   id TEXT PRIMARY KEY,
   name TEXT,
+  business_type TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -836,6 +837,19 @@ def _startup():
                     conn.commit()
             except Exception:
                 pass  # Migration is best-effort
+
+            # Add business_type to tenants if missing
+            try:
+                with get_conn() as conn:
+                    conn.execute("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS business_type TEXT")
+                    conn.commit()
+            except Exception:
+                try:
+                    with get_conn() as conn:
+                        conn.execute("ALTER TABLE tenants ADD COLUMN business_type TEXT")
+                        conn.commit()
+                except Exception:
+                    pass  # Column may already exist
                 
         except Exception as e:
             # Log but don't fail startup - app can still serve /ping and other endpoints
@@ -2026,6 +2040,7 @@ def get_current_owner(authorization: str = Header(default="")):
 class TenantCreate(BaseModel):
     id: str
     name: str
+    business_type: Optional[str] = None
 
 
 class DomainAdd(BaseModel):
@@ -2333,19 +2348,29 @@ def admin_api_health():
 
 @app.get("/admin/api/tenants")
 def list_tenants(resp: Response, authorization: str = Header(default="")):
-    """List all tenants."""
+    """List all tenants with live FAQ count, queries this week, and status."""
     _check_admin_auth(authorization)
     
     with get_conn() as conn:
-        rows = conn.execute(
-            "SELECT id, name, created_at FROM tenants ORDER BY created_at DESC"
-        ).fetchall()
+        rows = conn.execute("""
+            SELECT t.id, t.name, t.business_type, t.created_at,
+                   COALESCE(faq.cnt, 0) AS live_faq_count,
+                   COALESCE(q7.qc, 0) AS queries_this_week
+            FROM tenants t
+            LEFT JOIN (SELECT tenant_id, COUNT(*) AS cnt FROM faq_items WHERE is_staged = false GROUP BY tenant_id) faq ON faq.tenant_id = t.id
+            LEFT JOIN (SELECT tenant_id, COUNT(*) AS qc FROM telemetry WHERE created_at > now() - interval '7 days' GROUP BY tenant_id) q7 ON q7.tenant_id = t.id
+            ORDER BY t.created_at DESC
+        """).fetchall()
     
     tenants = [
         {
             "id": row[0],
             "name": row[1] or row[0],
-            "created_at": row[2].isoformat() if row[2] else None
+            "business_type": row[2] or None,
+            "created_at": row[3].isoformat() if row[3] else None,
+            "live_faq_count": int(row[4]),
+            "queries_this_week": int(row[5]),
+            "active": int(row[5]) > 0,
         }
         for row in rows
     ]
@@ -2364,6 +2389,7 @@ def create_tenant(
     
     tenant_id = (tenant.id or "").strip()
     tenant_name = (tenant.name or "").strip()
+    business_type = (tenant.business_type or "").strip() or None
     
     if not tenant_id:
         raise HTTPException(status_code=400, detail="Tenant ID required")
@@ -2371,12 +2397,12 @@ def create_tenant(
     try:
         with get_conn() as conn:
             conn.execute(
-                "INSERT INTO tenants (id, name) VALUES (%s, %s) ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name",
-                (tenant_id, tenant_name or tenant_id)
+                "INSERT INTO tenants (id, name, business_type) VALUES (%s, %s, %s) ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, business_type=COALESCE(EXCLUDED.business_type, tenants.business_type)",
+                (tenant_id, tenant_name or tenant_id, business_type)
             )
             conn.commit()
         
-        return {"id": tenant_id, "name": tenant_name or tenant_id, "created": True}
+        return {"id": tenant_id, "name": tenant_name or tenant_id, "business_type": business_type, "created": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create tenant: {str(e)}")
 
@@ -2390,7 +2416,7 @@ def get_tenant_detail(tenantId: str, resp: Response, authorization: str = Header
     
     with get_conn() as conn:
         tenant_row = conn.execute(
-            "SELECT id, name, created_at FROM tenants WHERE id = %s",
+            "SELECT id, name, business_type, created_at FROM tenants WHERE id = %s",
             (tenantId,)
         ).fetchone()
         
@@ -2441,7 +2467,8 @@ def get_tenant_detail(tenantId: str, resp: Response, authorization: str = Header
     result = {
         "id": tenant_row[0],
         "name": tenant_row[1] or tenant_row[0],
-        "created_at": tenant_row[2].isoformat() if tenant_row[2] else None,
+        "business_type": tenant_row[2] if len(tenant_row) > 2 else None,
+        "created_at": tenant_row[3].isoformat() if len(tenant_row) > 3 and tenant_row[3] else None,
         "domains": domains,
         "staged_faq_count": staged_count,
         "live_faq_count": live_count,
@@ -2524,6 +2551,41 @@ def remove_domain(
         return {"tenant_id": tenantId, "domain": domain_str, "removed": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to remove domain: {str(e)}")
+
+
+@app.delete("/admin/api/tenant/{tenantId}")
+def delete_tenant(
+    tenantId: str,
+    authorization: str = Header(default=""),
+):
+    """Delete a tenant and all related data. Protected by ADMIN_TOKEN."""
+    _check_admin_auth(authorization)
+    tid = tenantId.strip()
+    if not tid:
+        raise HTTPException(status_code=400, detail="Tenant ID required")
+    try:
+        with get_conn() as conn:
+            conn.execute("DELETE FROM retrieval_cache WHERE tenant_id = %s", (tid,))
+            conn.execute("DELETE FROM telemetry WHERE tenant_id = %s", (tid,))
+            conn.execute("DELETE FROM query_stats WHERE tenant_id = %s", (tid,))
+            conn.execute("DELETE FROM tenant_promote_history WHERE tenant_id = %s", (tid,))
+            conn.execute("DELETE FROM tenant_owners WHERE tenant_id = %s", (tid,))
+            conn.execute("DELETE FROM tenant_domains WHERE tenant_id = %s", (tid,))
+            conn.execute(
+                "DELETE FROM faq_variants WHERE faq_id IN (SELECT id FROM faq_items WHERE tenant_id = %s)",
+                (tid,),
+            )
+            try:
+                conn.execute("DELETE FROM faq_variants_p WHERE tenant_id = %s", (tid,))
+            except Exception:
+                pass
+            conn.execute("DELETE FROM faq_items WHERE tenant_id = %s", (tid,))
+            conn.execute("DELETE FROM faq_items_last_good WHERE tenant_id = %s", (tid,))
+            conn.execute("DELETE FROM tenants WHERE id = %s", (tid,))
+            conn.commit()
+        return {"deleted": True, "tenant_id": tid}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete tenant: {str(e)}")
 
 
 @app.put("/admin/api/tenant/{tenantId}/faqs/staged")
