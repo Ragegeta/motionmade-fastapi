@@ -90,15 +90,17 @@ async function loadTenants() {
             card.className = 'business-card';
             const typeLabel = (t.business_type || '—') + '';
             const statusClass = t.active ? 'active' : '';
+            const ownerLine = t.owner_email ? ('Owner: ' + escapeHtml(t.owner_email)) : 'No owner account';
             card.innerHTML = `
                 <div>
                     <div class="card-name">${escapeHtml(t.name || t.id)}</div>
                     <div class="card-meta">
-                        <span class="type">${escapeHtml(typeLabel)}</span>
+                        <span class="type business-type-badge">${escapeHtml(typeLabel)}</span>
                         <span>${t.live_faq_count} FAQs</span>
                         <span>${t.queries_this_week} questions this week</span>
                         <span class="dot ${statusClass}" title="${t.active ? 'Active' : 'Inactive'}"></span>
                     </div>
+                    <div class="card-owner">${ownerLine}</div>
                 </div>
                 <div class="card-actions">
                     <button type="button" class="btn-secondary viewTenantButton" data-tenant-id="${escapeHtml(t.id)}">View</button>
@@ -132,13 +134,43 @@ async function deleteTenant(tenantId) {
 // ---------- Tenant detail (View / Edit FAQs) ----------
 async function showTenantDetail(tenantId) {
     try {
-        const [tenantRes, statsRes] = await Promise.all([
+        const [tenantRes, statsRes, ownerRes] = await Promise.all([
             fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId), { headers: getHeaders() }),
-            fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/stats', { headers: getHeaders() }).catch(() => null)
+            fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/stats', { headers: getHeaders() }).catch(() => null),
+            fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/owner', { headers: getHeaders() }).catch(() => null)
         ]);
         if (!tenantRes.ok) throw new Error('HTTP ' + tenantRes.status);
         const tenant = await tenantRes.json();
         const stats = statsRes && statsRes.ok ? await statsRes.json() : null;
+        let owner = null;
+        if (ownerRes && ownerRes.ok) try { owner = await ownerRes.json(); } catch (_) {}
+        const lastLoginStr = owner && owner.last_login ? new Date(owner.last_login).toLocaleString() : 'Never';
+        const ownerSectionHtml = owner
+            ? `<div class="section owner-section">
+                <h2>Owner Account</h2>
+                <p><strong>Email:</strong> ${escapeHtml(owner.email)}</p>
+                <p><strong>Name:</strong> ${escapeHtml(owner.display_name || '—')}</p>
+                <p><strong>Last login:</strong> ${escapeHtml(lastLoginStr)}</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+                    <button type="button" class="btn-primary" id="resetOwnerPasswordButton" data-tenant-id="${escapeHtml(tenant.id)}">Reset Password</button>
+                    <button type="button" class="btn-danger" id="deleteOwnerButton" data-tenant-id="${escapeHtml(tenant.id)}">Delete Owner</button>
+                </div>
+                <div id="ownerNewPasswordBox" class="new-password-box" style="display:none;"></div>
+            </div>`
+            : `<div class="section owner-section">
+                <h2>Owner Account</h2>
+                <p style="color:#6b7280;margin-bottom:12px;">No owner account set up yet.</p>
+                <button type="button" class="btn-primary" id="createOwnerAccountButton" data-tenant-id="${escapeHtml(tenant.id)}">Create Owner Account</button>
+                <div id="createOwnerForm" style="display:none;margin-top:16px;">
+                    <div class="form-group"><label>Email</label><input type="email" id="createOwnerEmail" placeholder="owner@example.com" /></div>
+                    <div class="form-group"><label>Temp password</label><input type="password" id="createOwnerPassword" placeholder="temp123" autocomplete="new-password" /></div>
+                    <div class="form-group"><label>Display name (optional)</label><input type="text" id="createOwnerDisplayName" placeholder="Mike" /></div>
+                    <button type="button" class="btn-primary" id="createOwnerButton" data-tenant-id="${escapeHtml(tenant.id)}">Create owner</button>
+                </div>
+                <div id="createOwnerError" class="error"></div>
+                <div id="createOwnerSuccess" class="success"></div>
+                <div id="ownerNewPasswordBox" class="new-password-box" style="display:none;"></div>
+            </div>`;
         const detailDiv = document.getElementById('tenantDetail');
         detailDiv.setAttribute('data-tenant-id', tenant.id);
         detailDiv.setAttribute('data-tenant-name', tenant.name || tenant.id);
@@ -175,16 +207,7 @@ async function showTenantDetail(tenantId) {
                 <h2>Stats (last 24 hours)</h2>
                 ${stats ? '<div class="stats-grid"><div class="stat-card"><div class="label">Questions answered</div><div class="value">' + stats.total_queries + '</div></div><div class="stat-card"><div class="label">FAQ match rate</div><div class="value">' + ((stats.faq_hit_rate || 0) * 100).toFixed(1) + '%</div></div><div class="stat-card"><div class="label">Avg latency</div><div class="value">' + (stats.avg_latency_ms || 0) + 'ms</div></div></div>' : '<p style="color:#6b7280;">No stats yet</p>'}
             </div>
-            <div class="section">
-                <h2>Create owner account</h2>
-                <p style="color:#6b7280;margin-bottom:12px;">Owner can log in at /dashboard/login.</p>
-                <div class="form-group"><label>Email</label><input type="email" id="createOwnerEmail" placeholder="owner@example.com" /></div>
-                <div class="form-group"><label>Temp password</label><input type="password" id="createOwnerPassword" placeholder="temp123" autocomplete="new-password" /></div>
-                <div class="form-group"><label>Display name (optional)</label><input type="text" id="createOwnerDisplayName" placeholder="Mike" /></div>
-                <button type="button" class="btn-primary" id="createOwnerButton" data-tenant-id="${escapeHtml(tenant.id)}">Create owner</button>
-                <div id="createOwnerError" class="error"></div>
-                <div id="createOwnerSuccess" class="success"></div>
-            </div>
+            ${ownerSectionHtml}
             <div class="section">
                 <h2>Widget install code</h2>
                 <p style="color:#6b7280;margin-bottom:12px;">Paste this before the <code>&lt;/body&gt;</code> tag on your website.</p>
@@ -263,7 +286,31 @@ async function createOwner(tenantId) {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) { if (errEl) errEl.textContent = data.detail || 'HTTP ' + res.status; return; }
         if (okEl) okEl.textContent = 'Owner created. They can log in at /dashboard/login.';
+        showTenantDetail(tenantId);
     } catch (e) { if (errEl) errEl.textContent = e.message; }
+}
+
+async function resetOwnerPassword(tenantId) {
+    const box = document.getElementById('ownerNewPasswordBox');
+    if (box) { box.style.display = 'none'; box.textContent = ''; }
+    try {
+        const res = await fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/owner/reset-password', { method: 'POST', headers: getHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { alert(data.detail || 'HTTP ' + res.status); return; }
+        if (box) {
+            box.textContent = 'New password: ' + (data.new_password || '') + ' — share this with the owner';
+            box.style.display = 'block';
+        }
+    } catch (e) { alert(e.message); }
+}
+
+async function deleteOwner(tenantId) {
+    if (!confirm('Delete this owner account? They will no longer be able to log in to the dashboard.')) return;
+    try {
+        const res = await fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/owner', { method: 'DELETE', headers: getHeaders() });
+        if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.detail || 'HTTP ' + res.status); }
+        showTenantDetail(tenantId);
+    } catch (e) { alert(e.message); }
 }
 
 async function uploadStagedFaqs(tenantId) {
@@ -360,6 +407,12 @@ function randomTempPassword() {
     return s;
 }
 
+function updateWizardWidgetIdPreview() {
+    const name = document.getElementById('wizBusinessName')?.value?.trim() || '';
+    const el = document.getElementById('wizWidgetIdPreview');
+    if (el) el.textContent = name ? ('Your widget ID: ' + slugFromName(name)) : '';
+}
+
 function showWizard() {
     wizardTenantId = '';
     wizardBusinessName = '';
@@ -369,6 +422,7 @@ function showWizard() {
     document.getElementById('wizBusinessType').value = 'Plumber';
     document.getElementById('wizOwnerName').value = '';
     document.getElementById('wizOwnerEmail').value = '';
+    updateWizardWidgetIdPreview();
     document.getElementById('wizOwnerPhone').value = '';
     document.getElementById('wizFaqQuestion').value = '';
     document.getElementById('wizFaqAnswer').value = '';
@@ -608,6 +662,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('adminToken').addEventListener('keydown', function (e) { if (e.key === 'Enter') login(); });
     document.getElementById('backToListLink').addEventListener('click', function (e) { e.preventDefault(); loadTenants(); });
     document.getElementById('showNewBusinessButton').addEventListener('click', showWizard);
+    document.getElementById('wizBusinessName').addEventListener('input', updateWizardWidgetIdPreview);
     document.getElementById('backFromWizardLink').addEventListener('click', function (e) { e.preventDefault(); loadTenants(); });
     document.getElementById('wizStep1Next').addEventListener('click', wizardStep1Next);
     document.getElementById('wizAddFaq').addEventListener('click', wizardAddFaq);
@@ -653,10 +708,25 @@ document.addEventListener('DOMContentLoaded', function () {
             const id = e.target.getAttribute('data-tenant-id');
             if (id) rollbackTenant(id);
         }
+        if (e.target.id === 'createOwnerAccountButton') {
+            e.preventDefault();
+            const form = document.getElementById('createOwnerForm');
+            if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
         if (e.target.id === 'createOwnerButton') {
             e.preventDefault();
             const id = e.target.getAttribute('data-tenant-id');
             if (id) createOwner(id);
+        }
+        if (e.target.id === 'resetOwnerPasswordButton') {
+            e.preventDefault();
+            const id = e.target.getAttribute('data-tenant-id');
+            if (id) resetOwnerPassword(id);
+        }
+        if (e.target.id === 'deleteOwnerButton') {
+            e.preventDefault();
+            const id = e.target.getAttribute('data-tenant-id');
+            if (id) deleteOwner(id);
         }
         if (e.target.id === 'copyButton') {
             e.preventDefault();

@@ -51,8 +51,13 @@
   var open = false;
   var state = 'main'; // 'main' | 'answer'
   var suggested = [];
+  var apiLoadFailed = false;
   var currentQuestion = '';
   var currentAnswer = '';
+
+  function networkErrorMessage() {
+    return phone ? ("Couldn't load right now. Call " + phone + " instead.") : "Couldn't load right now. Try again later.";
+  }
 
   function get(id) { return root.querySelector(id); }
   function all(sel) { return root.querySelectorAll(sel); }
@@ -120,7 +125,7 @@
       }
       renderMain();
     };
-    xhr.onerror = function () { suggested = []; renderMain(); };
+    xhr.onerror = function () { suggested = []; apiLoadFailed = true; renderMain(); };
     xhr.send();
   }
 
@@ -131,6 +136,9 @@
     currentQuestion = '';
     currentAnswer = '';
 
+    if (apiLoadFailed && suggested.length === 0) {
+      body.innerHTML += '<div class="mm-err" style="margin-bottom:12px">' + escapeHtml(networkErrorMessage()) + '</div>';
+    }
     body.innerHTML += '<div class="mm-suggest">Common questions:</div>';
     var ul = document.createElement('ul');
     ul.className = 'mm-qlist';
@@ -181,7 +189,7 @@
           ans = (data.replyText || '').trim();
         } catch (e) { err = 'Invalid response.'; }
       } else {
-        err = phone ? 'Answers are temporarily unavailable. Call ' + phone + ' directly.' : 'Answers are temporarily unavailable. Try again later.';
+        err = networkErrorMessage();
       }
       var block = panelBody.querySelector('.mm-answer-block');
       if (block) {
@@ -191,7 +199,7 @@
     };
     xhr.onerror = function () {
       var block = panelBody.querySelector('.mm-answer-block');
-      if (block) block.innerHTML = '<div class="mm-err">' + (phone ? 'Answers are temporarily unavailable. Call ' + escapeHtml(phone) + ' directly.' : 'Answers are temporarily unavailable. Try again later.') + '</div>';
+      if (block) block.innerHTML = '<div class="mm-err">' + escapeHtml(networkErrorMessage()) + '</div>';
     };
     xhr.send(JSON.stringify({ tenantId: tenant, customerMessage: questionText }));
   }

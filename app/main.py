@@ -2566,64 +2566,9 @@ def owner_list_faqs(owner: dict = Depends(get_current_owner)):
     return {"faqs": faqs, "count": len(faqs)}
 
 
-@app.post("/owner/faqs")
-def owner_add_faq(body: OwnerFaqCreate, owner: dict = Depends(get_current_owner)):
-    """Add a new FAQ (auto-promoted to live with variants and embeddings)."""
-    tenant_id = owner["tenant_id"]
-    try:
-        faq_id, warning = _owner_add_faq_to_live(tenant_id, body.question, body.answer)
-    except HTTPException:
-        raise
-    with get_conn() as conn:
-        row = conn.execute("SELECT id, question, answer FROM faq_items WHERE id = %s", (faq_id,)).fetchone()
-    faq = {"id": row[0], "question": row[1], "answer": row[2]}
-    result = {"faq": faq}
-    if warning:
-        result["warning"] = warning
-    return result
-
-
-@app.put("/owner/faqs/{faq_id}")
-def owner_update_faq(faq_id: int, body: OwnerFaqUpdate, owner: dict = Depends(get_current_owner)):
-    """Update an existing FAQ (re-expand variants, re-embed, re-promote)."""
-    tenant_id = owner["tenant_id"]
-    with get_conn() as conn:
-        row = conn.execute("SELECT id FROM faq_items WHERE id = %s AND tenant_id = %s", (faq_id, tenant_id)).fetchone()
-    if not row:
-        raise HTTPException(status_code=404, detail="FAQ not found")
-    try:
-        warning = _owner_update_faq_live(tenant_id, faq_id, body.question, body.answer)
-    except HTTPException:
-        raise
-    with get_conn() as conn:
-        row = conn.execute("SELECT id, question, answer FROM faq_items WHERE id = %s", (faq_id,)).fetchone()
-    faq = {"id": row[0], "question": row[1], "answer": row[2]}
-    result = {"faq": faq}
-    if warning:
-        result["warning"] = warning
-    return result
-
-
-@app.delete("/owner/faqs/{faq_id}")
-def owner_delete_faq(faq_id: int, owner: dict = Depends(get_current_owner)):
-    """Delete a FAQ. Must belong to owner's tenant."""
-    tenant_id = owner["tenant_id"]
-    with get_conn() as conn:
-        row = conn.execute("SELECT id FROM faq_items WHERE id = %s AND tenant_id = %s", (faq_id, tenant_id)).fetchone()
-    if not row:
-        raise HTTPException(status_code=404, detail="FAQ not found")
-    with get_conn() as conn:
-        conn.execute("DELETE FROM faq_variants WHERE faq_id = %s", (faq_id,))
-        conn.execute("DELETE FROM faq_variants_p WHERE faq_id = %s AND tenant_id = %s", (faq_id, tenant_id))
-        conn.execute("DELETE FROM faq_items WHERE id = %s", (faq_id,))
-        conn.commit()
-    try:
-        get_conn().execute("DELETE FROM retrieval_cache WHERE tenant_id = %s", (tenant_id,))
-        get_conn().commit()
-    except Exception:
-        pass
-    _invalidate_tenant_count_cache(tenant_id)
-    return {"deleted": True}
+# Owner FAQ write endpoints removed — quality controlled by admin only
+# POST /owner/faqs, PUT /owner/faqs/{id}, DELETE /owner/faqs/{id} are disabled.
+# Owners can only view FAQs via GET /owner/faqs.
 
 
 @app.get("/admin/api/health")
@@ -2666,17 +2611,19 @@ def admin_api_health():
 
 @app.get("/admin/api/tenants")
 def list_tenants(resp: Response, authorization: str = Header(default="")):
-    """List all tenants with live FAQ count, queries this week, and status."""
+    """List all tenants with live FAQ count, queries this week, owner email, and status."""
     _check_admin_auth(authorization)
     
     with get_conn() as conn:
         rows = conn.execute("""
             SELECT t.id, t.name, t.business_type, t.created_at,
                    COALESCE(faq.cnt, 0) AS live_faq_count,
-                   COALESCE(q7.qc, 0) AS queries_this_week
+                   COALESCE(q7.qc, 0) AS queries_this_week,
+                   o.owner_email
             FROM tenants t
             LEFT JOIN (SELECT tenant_id, COUNT(*) AS cnt FROM faq_items WHERE is_staged = false GROUP BY tenant_id) faq ON faq.tenant_id = t.id
             LEFT JOIN (SELECT tenant_id, COUNT(*) AS qc FROM telemetry WHERE created_at > now() - interval '7 days' GROUP BY tenant_id) q7 ON q7.tenant_id = t.id
+            LEFT JOIN (SELECT tenant_id, MIN(email) AS owner_email FROM tenant_owners GROUP BY tenant_id) o ON o.tenant_id = t.id
             ORDER BY t.created_at DESC
         """).fetchall()
     
@@ -2689,6 +2636,7 @@ def list_tenants(resp: Response, authorization: str = Header(default="")):
             "live_faq_count": int(row[4]),
             "queries_this_week": int(row[5]),
             "active": int(row[5]) > 0,
+            "owner_email": (row[6] or "").strip() or None,
         }
         for row in rows
     ]
@@ -2817,6 +2765,71 @@ def get_tenant_detail(tenantId: str, resp: Response, authorization: str = Header
                 pass
     
     return result
+
+
+@app.get("/admin/api/tenant/{tenantId}/owner")
+def get_tenant_owner(
+    tenantId: str,
+    authorization: str = Header(default=""),
+):
+    """Get owner account for a tenant. Returns 404 if no owner."""
+    _check_admin_auth(authorization)
+    tid = (tenantId or "").strip()
+    if not tid:
+        raise HTTPException(status_code=400, detail="Tenant ID required")
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT email, display_name, last_login, created_at FROM tenant_owners WHERE tenant_id = %s LIMIT 1",
+            (tid,),
+        ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="No owner account for this tenant")
+    return {
+        "email": row[0],
+        "display_name": (row[1] or "").strip() or None,
+        "last_login": row[2].isoformat() if row[2] else None,
+        "created_at": row[3].isoformat() if row[3] else None,
+    }
+
+
+@app.post("/admin/api/tenant/{tenantId}/owner/reset-password")
+def reset_tenant_owner_password(
+    tenantId: str,
+    authorization: str = Header(default=""),
+):
+    """Generate a new random password for the tenant's owner, store hash, return plain password."""
+    _check_admin_auth(authorization)
+    import secrets
+    tid = (tenantId or "").strip()
+    if not tid:
+        raise HTTPException(status_code=400, detail="Tenant ID required")
+    new_password = "TempPass_" + secrets.token_hex(4)
+    password_hash = _hash_password(new_password)
+    with get_conn() as conn:
+        cur = conn.execute(
+            "UPDATE tenant_owners SET password_hash = %s WHERE tenant_id = %s RETURNING email",
+            (password_hash, tid),
+        )
+        row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="No owner account for this tenant")
+    return {"email": row[0], "new_password": new_password}
+
+
+@app.delete("/admin/api/tenant/{tenantId}/owner")
+def delete_tenant_owner(
+    tenantId: str,
+    authorization: str = Header(default=""),
+):
+    """Delete the owner account for this tenant."""
+    _check_admin_auth(authorization)
+    tid = (tenantId or "").strip()
+    if not tid:
+        raise HTTPException(status_code=400, detail="Tenant ID required")
+    with get_conn() as conn:
+        conn.execute("DELETE FROM tenant_owners WHERE tenant_id = %s", (tid,))
+        conn.commit()
+    return {"deleted": True, "tenant_id": tid}
 
 
 @app.post("/admin/api/tenant/{tenantId}/domains")

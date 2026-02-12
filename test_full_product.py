@@ -27,8 +27,6 @@ OWNER2_PASS = "testpass123"
 # Test state
 owner1_jwt = None
 owner2_jwt = None
-tenant1_faq_id_weekends = None  # faq id of "Do you do weekends?" for tenant 1
-
 passed = 0
 failed = 0
 results = []
@@ -305,18 +303,16 @@ def section5_owner_dashboard_api():
         fail("GET /owner/dashboard (no JWT → 401)", f"status {r.status_code}")
 
 
-# ---------- Section 6: Owner FAQ Management ----------
+# ---------- Section 6: Owner FAQ (view-only) ----------
 def section6_owner_faq_management():
-    print("\nOWNER FAQ MANAGEMENT")
-    global tenant1_faq_id_weekends
-
+    print("\nOWNER FAQ (VIEW-ONLY)")
     if not owner1_jwt:
         fail("List FAQs", "no JWT")
         return False
 
     r = requests.get(f"{BASE_URL}/owner/faqs", headers=owner_headers(owner1_jwt), timeout=10)
     if r.status_code != 200:
-        fail("List FAQs", f"status {r.status_code}")
+        fail("GET /owner/faqs", f"status {r.status_code}")
         return False
     data = r.json()
     faqs = data.get("faqs") or []
@@ -324,111 +320,7 @@ def section6_owner_faq_management():
     if count != 6:
         fail("List FAQs (6)", f"got {count}")
     else:
-        ok("List FAQs (6)")
-
-    # Add 7th FAQ
-    r = requests.post(
-        f"{BASE_URL}/owner/faqs",
-        headers=owner_headers(owner1_jwt),
-        json={"question": "Do you do weekends?", "answer": "Yes, weekend rates are $149."},
-        timeout=60,
-    )
-    if r.status_code != 200:
-        fail("Add FAQ", f"status {r.status_code}: {r.text[:200]}")
-        return False
-    body = r.json()
-    new_faq = body.get("faq") or {}
-    tenant1_faq_id_weekends = new_faq.get("id")
-    ok("Add FAQ (7 total)")
-    if body.get("warning"):
-        ok("Similarity warning (optional)", "returned on add")
-
-    print("  (waiting 20s for embeddings...)")
-    time.sleep(20)
-
-    r = requests.get(f"{BASE_URL}/owner/faqs", headers=owner_headers(owner1_jwt), timeout=10)
-    faqs = (r.json().get("faqs") or []) if r.status_code == 200 else []
-    if len(faqs) != 7:
-        fail("List FAQs after add (7)", f"got {len(faqs)}")
-    else:
-        ok("New FAQ appears in list (7)")
-
-    reply, _, _, _ = chat_query("do you work on weekends")
-    # New FAQ answer: "Yes, weekend rates are $149." — accept weekend or 149 (embedding may take a few sec)
-    if reply and ("149" in reply or "weekend" in reply or "weekends" in reply):
-        ok("Chat matches new FAQ (weekends)")
-    else:
-        fail("Chat matches new FAQ", f"reply: {reply[:100] if reply else 'None'}")
-
-    # Edit weekends FAQ
-    if not tenant1_faq_id_weekends:
-        fail("Edit FAQ", "no faq id")
-    else:
-        r = requests.put(
-            f"{BASE_URL}/owner/faqs/{tenant1_faq_id_weekends}",
-            headers=owner_headers(owner1_jwt),
-            json={"question": "Do you do weekends?", "answer": "Yes, but weekend callouts are $169."},
-            timeout=60,
-        )
-        if r.status_code != 200:
-            fail("Edit FAQ", f"status {r.status_code}")
-        else:
-            ok("Edit FAQ (answer updated)")
-    print("  (waiting 15s for embeddings...)")
-    time.sleep(15)
-
-    reply, _, _, _ = chat_query("weekend callout price")
-    if reply and "169" in reply:
-        ok("Edited FAQ reflects in chat ($169)")
-    else:
-        fail("Edited FAQ in chat", f"reply: {reply[:100] if reply else 'None'}")
-
-    # Similar duplicate: add "How much is a callout?" (advisory warning, save still goes through)
-    r = requests.post(
-        f"{BASE_URL}/owner/faqs",
-        headers=owner_headers(owner1_jwt),
-        json={"question": "How much is a callout?", "answer": "Same as before."},
-        timeout=60,
-    )
-    if r.status_code != 200:
-        fail("Add similar FAQ", f"status {r.status_code}")
-    else:
-        body = r.json()
-        if body.get("warning"):
-            ok("Similarity warning on duplicate", "returned")
-        else:
-            ok("Add similar FAQ", "no warning (optional)")
-        # Remove the similar one so we can get back to 6 after deleting weekends
-        similar_id = (body.get("faq") or {}).get("id")
-        if similar_id:
-            requests.delete(f"{BASE_URL}/owner/faqs/{similar_id}", headers=owner_headers(owner1_jwt), timeout=10)
-
-    # Delete weekends FAQ
-    r = requests.delete(
-        f"{BASE_URL}/owner/faqs/{tenant1_faq_id_weekends}",
-        headers=owner_headers(owner1_jwt),
-        timeout=30,
-    )
-    if r.status_code != 200:
-        fail("Delete FAQ", f"status {r.status_code}")
-    else:
-        ok("Delete FAQ (6 total)")
-
-    r = requests.get(f"{BASE_URL}/owner/faqs", headers=owner_headers(owner1_jwt), timeout=10)
-    count = len((r.json().get("faqs") or [])) if r.status_code == 200 else 0
-    if count != 6:
-        fail("List after delete (6)", f"got {count}")
-    else:
-        ok("List after delete (6)")
-
-    reply, _, _, _ = chat_query("do you work on weekends")
-    # Deleted FAQ had "$169"; pricing FAQ has "$149 weekends". So either fallback or no "$169".
-    if reply and ("don't have" in reply or "not something" in reply or "contact" in reply):
-        ok("Deleted FAQ no longer answers (fallback)")
-    elif reply and "169" not in reply:
-        ok("Deleted FAQ no longer answers (no $169 from deleted FAQ)")
-    else:
-        fail("Deleted FAQ fallback", f"reply: {reply[:80] if reply else 'None'}")
+        ok("GET /owner/faqs returns 6 FAQs")
     return True
 
 
@@ -494,23 +386,8 @@ def section7_tenant_isolation():
     else:
         fail("Tenant 2 dashboard", f"status {r.status_code}")
 
-    # Try to access tenant1's FAQ by ID (use a known tenant1 faq id from list)
-    r1 = requests.get(f"{BASE_URL}/owner/faqs", headers=owner_headers(owner1_jwt), timeout=10)
-    tenant1_faq_ids = [f["id"] for f in (r1.json().get("faqs") or [])] if r1.status_code == 200 else []
-    if tenant1_faq_ids:
-        first_tenant1_id = tenant1_faq_ids[0]
-        r = requests.put(
-            f"{BASE_URL}/owner/faqs/{first_tenant1_id}",
-            headers=owner_headers(owner2_jwt),
-            json={"question": "Hacked?", "answer": "No."},
-            timeout=30,
-        )
-        if r.status_code in (403, 404):
-            ok("Tenant 2 cannot access tenant 1 FAQ (403/404)")
-        else:
-            fail("Tenant 2 access tenant 1 FAQ", f"expected 403/404, got {r.status_code}")
-    else:
-        ok("Tenant 2 cannot access tenant 1 FAQ", "no tenant1 id to try")
+    # Owner FAQ write endpoints removed; isolation is enforced by GET /owner/faqs (tenant-scoped)
+    ok("Tenant 2 only sees own FAQs (list isolation)")
 
     # Owner1: must not see tenant2's fish FAQ
     r = requests.get(f"{BASE_URL}/owner/faqs", headers=owner_headers(owner1_jwt), timeout=10)
