@@ -195,14 +195,6 @@
         }
         .faq-section-title { font-size: 18px; color: #111827; margin-bottom: 8px; }
         .faq-section-desc { font-size: 14px; color: #6B7280; margin-bottom: 20px; line-height: 1.5; }
-        .faq-warning-banner {
-            background: #fef3c7;
-            color: #92400e;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 14px;
-        }
         .faq-list { margin-bottom: 16px; }
         .faq-card {
             background: #f9fafb;
@@ -211,22 +203,8 @@
             padding: 16px;
             margin-bottom: 12px;
         }
-        .faq-card.editing { border-left: 4px solid #2563EB; }
         .faq-card .faq-q { font-weight: 600; color: #111827; margin-bottom: 8px; }
         .faq-card .faq-a { font-size: 14px; color: #6B7280; line-height: 1.5; white-space: pre-wrap; }
-        .faq-card-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
-        .faq-edit-btn, .faq-delete-btn {
-            padding: 8px 14px;
-            min-height: 40px;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            border: none;
-        }
-        .faq-edit-btn { background: #2563EB; color: white; }
-        .faq-edit-btn:hover { background: #1d4ed8; }
-        .faq-delete-btn { background: #f3f4f6; color: #374151; }
-        .faq-delete-btn:hover { background: #e5e7eb; }
         .faq-empty-state { margin-bottom: 16px; }
         .faq-empty-state p { font-size: 14px; color: #6B7280; margin-bottom: 0; }
         .faq-contact-line { font-size: 14px; color: #6B7280; margin-top: 16px; }
@@ -244,64 +222,8 @@
         .suggest-section .submit-btn { padding: 10px 20px; background: #2563EB; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
         .suggest-section .submit-btn:hover { background: #1d4ed8; }
         .suggest-section .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .suggest-section .prev-title { font-size: 16px; font-weight: 600; color: #111827; margin-top: 24px; margin-bottom: 12px; }
-        .suggest-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
-        .suggest-card .sq { font-weight: 500; color: #111827; margin-bottom: 4px; }
-        .suggest-card .status { font-size: 13px; color: #6B7280; }
-        .suggest-card .status.pending { color: #b45309; }
-        .suggest-card .status.approved { color: #059669; }
-        .suggest-card .status.rejected { color: #dc2626; }
         .suggest-error { color: #dc2626; font-size: 14px; margin-top: 10px; }
         .suggest-success { color: #059669; font-size: 14px; margin-top: 10px; }
-        .faq-add-btn {
-            padding: 10px 18px;
-            min-height: 44px;
-            background: #f3f4f6;
-            border: 1px dashed #d1d5db;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #374151;
-            cursor: pointer;
-            width: 100%;
-            max-width: 320px;
-        }
-        .faq-add-btn:hover { background: #e5e7eb; border-color: #9ca3af; }
-        .faq-form-wrap { margin-top: 16px; }
-        .faq-form {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-left: 4px solid #2563EB;
-            border-radius: 8px;
-            padding: 20px;
-        }
-        .faq-form label { display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px; }
-        .faq-form input, .faq-form textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            font-size: 14px;
-            margin-bottom: 16px;
-            font-family: inherit;
-        }
-        .faq-form textarea { min-height: 80px; resize: vertical; }
-        .faq-form-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .faq-save-btn, .faq-cancel-btn {
-            padding: 10px 18px;
-            min-height: 44px;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            border: none;
-        }
-        .faq-save-btn { background: #2563EB; color: white; }
-        .faq-save-btn:hover { background: #1d4ed8; }
-        .faq-save-btn:disabled { opacity: 0.7; cursor: not-allowed; }
-        .faq-cancel-btn { background: #f3f4f6; color: #374151; }
-        .faq-cancel-btn:hover { background: #e5e7eb; }
-        .faq-success-msg { color: #059669; font-size: 14px; margin-top: 8px; }
-        @media (max-width: 480px) { .faq-form-actions { flex-direction: column; } .faq-add-btn { max-width: none; } }
-
         /* Widget install section */
         .embed-section {
             background: #FFFFFF;
@@ -442,7 +364,7 @@
                 <div class="card">
                     <div class="label">Couldn't Answer</div>
                     <div class="value" id="statFallback">0</div>
-                    <a href="#" id="addFaqLink" class="faq-link">Add more FAQs →</a>
+                    <a href="#suggestSection" id="addFaqLink" class="faq-link">Suggest a question →</a>
                 </div>
             </div>
 
@@ -458,35 +380,6 @@
                     <canvas id="dailyChart"></canvas>
                 </div>
                 <p class="chart-insight" id="busiestDayInsight"></p>
-            </div>
-        </div>
-
-        <!-- Your Questions & Answers (view-only; changes via Abbed) -->
-        <div class="faq-section" id="faqSection">
-            <h2 class="faq-section-title">Your Questions & Answers</h2>
-            <p class="faq-section-desc">These are the questions your widget can answer.</p>
-            <div id="faqList" class="faq-list"></div>
-            <div id="faqEmptyState" class="faq-empty-state" style="display: none;">
-                <p>You don't have any questions set up yet.</p>
-            </div>
-            <p class="faq-contact-line">Want to add or change a question? Contact Abbed — <a href="tel:0400000000">0400 000 000</a></p>
-
-            <div class="suggest-section" id="suggestSection">
-                <h2>Suggest a question</h2>
-                <p class="intro">Think customers are asking something your widget can't answer? Suggest it below and we'll add it for you.</p>
-                <div class="form-group">
-                    <label for="suggestQuestion">Question customers ask:</label>
-                    <input type="text" id="suggestQuestion" placeholder="e.g. Do you do carpet cleaning?" />
-                </div>
-                <div class="form-group">
-                    <label for="suggestAnswer">The answer (optional — we can write it for you):</label>
-                    <textarea id="suggestAnswer" rows="3" placeholder="e.g. Yes, carpet cleaning from $50 per room."></textarea>
-                </div>
-                <button type="button" class="submit-btn" id="submitSuggestionBtn">Submit Suggestion</button>
-                <div id="suggestError" class="suggest-error" style="display:none;"></div>
-                <div id="suggestSuccess" class="suggest-success" style="display:none;"></div>
-                <p class="prev-title">Previous suggestions:</p>
-                <div id="suggestList"></div>
             </div>
         </div>
 
@@ -517,8 +410,35 @@
             </details>
         </div>
 
+        <!-- Your Questions & Answers (view-only; changes via Abbed) -->
+        <div class="faq-section" id="faqSection">
+            <h2 class="faq-section-title">Your Questions & Answers</h2>
+            <p class="faq-section-desc">These are the questions your widget can answer.</p>
+            <div id="faqList" class="faq-list"></div>
+            <div id="faqEmptyState" class="faq-empty-state" style="display: none;">
+                <p>You don't have any questions set up yet.</p>
+            </div>
+            <p class="faq-contact-line">Want to add or change a question? Call Abbed — <a href="tel:+61437037584">0437 037 584</a></p>
+
+            <div class="suggest-section" id="suggestSection">
+                <h2>Suggest a new question</h2>
+                <p class="intro">Think your customers are asking something the widget can't answer?</p>
+                <div class="form-group">
+                    <label for="suggestQuestion">Question they ask:</label>
+                    <input type="text" id="suggestQuestion" placeholder="e.g. Do you do carpet cleaning?" />
+                </div>
+                <div class="form-group">
+                    <label for="suggestAnswer">Your answer (optional):</label>
+                    <textarea id="suggestAnswer" rows="3" placeholder="e.g. Yes, carpet cleaning from $50 per room."></textarea>
+                </div>
+                <button type="button" class="submit-btn" id="submitSuggestionBtn">Submit</button>
+                <div id="suggestError" class="suggest-error" style="display:none;"></div>
+                <div id="suggestSuccess" class="suggest-success" style="display:none;"></div>
+            </div>
+        </div>
+
         <footer>
-            <p class="contact">Need help? Contact Abbed — <a href="tel:0400000000">0400 000 000</a></p>
+            <p class="contact">Need help? Contact Abbed — <a href="tel:+61437037584">0437 037 584</a></p>
             <p class="powered">Powered by MotionMade AI</p>
         </footer>
     </div>
@@ -782,8 +702,8 @@
 
             document.getElementById('addFaqLink').addEventListener('click', function (e) {
                 e.preventDefault();
-                var faqSection = document.getElementById('faqSection');
-                if (faqSection) faqSection.scrollIntoView({ behavior: 'smooth' });
+                var suggestSection = document.getElementById('suggestSection');
+                if (suggestSection) suggestSection.scrollIntoView({ behavior: 'smooth' });
             });
 
             // ---------- Owner FAQ (view-only) ----------
@@ -821,40 +741,12 @@
                     var card = document.createElement('div');
                     card.className = 'faq-card';
                     card.innerHTML =
-                        '<div class="faq-q">Q: ' + escapeHtml(faq.question) + '</div>' +
-                        '<div class="faq-a">A: ' + escapeHtml(faq.answer) + '</div>';
+                        '<div class="faq-q">' + escapeHtml(faq.question) + '</div>' +
+                        '<div class="faq-a">' + escapeHtml(faq.answer) + '</div>';
                     list.appendChild(card);
                 });
             }
-            // ---------- FAQ suggestions ----------
-            var suggestions = [];
-            function loadSuggestions() {
-                return fetch('/owner/faqs/suggestions', { headers: authHeaders() }).then(function (res) {
-                    if (res.status === 401) return Promise.reject(new Error('Unauthorized'));
-                    if (!res.ok) return Promise.reject(new Error('Failed to load suggestions'));
-                    return res.json();
-                }).then(function (data) {
-                    suggestions = (data && data.suggestions) ? data.suggestions : [];
-                    renderSuggestList();
-                }).catch(function () { suggestions = []; renderSuggestList(); });
-            }
-            function renderSuggestList() {
-                var list = document.getElementById('suggestList');
-                if (!list) return;
-                list.innerHTML = '';
-                if (suggestions.length === 0) {
-                    list.innerHTML = '<p style="font-size:14px;color:#6B7280;">No suggestions yet.</p>';
-                    return;
-                }
-                suggestions.forEach(function (s) {
-                    var card = document.createElement('div');
-                    card.className = 'suggest-card';
-                    var statusText = s.status === 'pending' ? 'Pending ⏳' : (s.status === 'approved' ? 'Added ✅' : 'Rejected');
-                    var statusClass = 'status ' + (s.status || '').toLowerCase();
-                    card.innerHTML = '<div class="sq">' + escapeHtml(s.question) + '</div><div class="' + statusClass + '">Status: ' + escapeHtml(statusText) + '</div>';
-                    list.appendChild(card);
-                });
-            }
+            // ---------- FAQ suggestions (form only) ----------
             document.getElementById('submitSuggestionBtn').addEventListener('click', function () {
                 var q = document.getElementById('suggestQuestion').value.trim();
                 var a = document.getElementById('suggestAnswer').value.trim();
@@ -877,14 +769,12 @@
                         document.getElementById('suggestAnswer').value = '';
                         okEl.textContent = 'Suggestion submitted. We\'ll review it soon.';
                         okEl.style.display = 'block';
-                        loadSuggestions();
                     });
                 }).catch(function (e) {
                     errEl.textContent = e.message || 'Something went wrong.';
                     errEl.style.display = 'block';
                 }).finally(function () { btn.disabled = false; });
             });
-            loadSuggestions();
         })();
     </script>
 </body>

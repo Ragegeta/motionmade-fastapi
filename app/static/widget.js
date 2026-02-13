@@ -40,14 +40,17 @@
     '#mm-widget-root .mm-panel-hdr .mm-sub{font-size:12px;color:#6b7280;margin-top:2px}',
     '#mm-widget-root .mm-panel-close{background:none;border:none;cursor:pointer;padding:4px;color:#6b7280;font-size:20px;line-height:1}',
     '#mm-widget-root .mm-panel-body{flex:1;overflow-y:auto;padding:16px}',
-    '#mm-widget-root .mm-suggest{font-size:13px;color:#6b7280;margin-bottom:10px}',
-    '#mm-widget-root .mm-select-wrap{margin-bottom:16px}',
-    '#mm-widget-root .mm-select{width:100%;min-height:44px;padding:10px 12px;font-size:16px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#111827;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath fill=\'%236b7280\' d=\'M6 8L1 3h10z\'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}',
-    '#mm-widget-root .mm-select option{font-size:16px}',
-    '#mm-widget-root .mm-or{font-size:13px;color:#6b7280;margin:12px 0 8px}',
-    '#mm-widget-root .mm-inrow{display:flex;gap:8px;margin-top:8px}',
-    '#mm-widget-root .mm-inrow input{flex:1;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px}',
-    '#mm-widget-root .mm-inrow button{padding:10px 16px;background:#2563EB;color:#fff;border:none;border-radius:8px;font-weight:500;cursor:pointer;font-size:14px}',
+    '#mm-widget-root .mm-inrow{display:flex;gap:8px;align-items:stretch;margin-top:0}',
+    '#mm-widget-root .mm-input-wrap{position:relative;flex:1;min-width:0}',
+    '#mm-widget-root .mm-input{width:100%;min-height:44px;padding:10px 40px 10px 12px;font-size:16px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#111827}',
+    '#mm-widget-root .mm-input-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:#6b7280;font-size:12px;pointer-events:auto;user-select:none}',
+    '#mm-widget-root .mm-input-arrow:hover{color:#111827}',
+    '#mm-widget-root .mm-dropdown{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);max-height:220px;overflow-y:auto;z-index:10;display:none}',
+    '#mm-widget-root .mm-dropdown.open{display:block}',
+    '#mm-widget-root .mm-dropdown-item{padding:10px 12px;font-size:14px;color:#111827;cursor:pointer;border-bottom:1px solid #f3f4f6}',
+    '#mm-widget-root .mm-dropdown-item:last-child{border-bottom:none}',
+    '#mm-widget-root .mm-dropdown-item:hover{background:#f3f4f6}',
+    '#mm-widget-root .mm-ask-btn{padding:10px 20px;min-height:44px;background:#2563EB;color:#fff;border:none;border-radius:8px;font-weight:500;cursor:pointer;font-size:15px}',
     '#mm-widget-root .mm-foot{padding:10px 16px;border-top:1px solid #e5e7eb;text-align:center;font-size:11px;color:#9ca3af}',
     '#mm-widget-root .mm-answer-block{margin-top:12px}',
     '#mm-widget-root .mm-your-q{font-size:13px;color:#6b7280;margin-bottom:6px}',
@@ -162,54 +165,67 @@
         return d;
       })());
     }
-    var selectWrap = document.createElement('div');
-    selectWrap.className = 'mm-select-wrap';
-    var selectEl = document.createElement('select');
-    selectEl.className = 'mm-select';
-    selectEl.setAttribute('aria-label', 'Select a common question');
-    var placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Select a common question...';
-    placeholder.disabled = true;
-    placeholder.selected = true;
-    selectEl.appendChild(placeholder);
-    suggested.forEach(function (q) {
-      var opt = document.createElement('option');
-      opt.value = q;
-      opt.textContent = q;
-      selectEl.appendChild(opt);
-    });
-    selectEl.onchange = function () {
-      var v = (selectEl.value || '').trim();
-      if (v) {
-        ask(v);
-        selectEl.value = '';
-        selectEl.selectedIndex = 0;
-      }
-    };
-    selectWrap.appendChild(selectEl);
-    body.appendChild(selectWrap);
-    var orLabel = document.createElement('div');
-    orLabel.className = 'mm-or';
-    orLabel.textContent = 'Or ask your own:';
-    body.appendChild(orLabel);
     var row = document.createElement('div');
     row.className = 'mm-inrow';
+    var wrap = document.createElement('div');
+    wrap.className = 'mm-input-wrap';
     var input = document.createElement('input');
     input.type = 'text';
-    input.placeholder = 'Type your question...';
-    input.setAttribute('aria-label', 'Your question');
+    input.className = 'mm-input';
+    input.placeholder = 'Ask a question...';
+    input.setAttribute('aria-label', 'Ask a question');
+    var arrow = document.createElement('span');
+    arrow.className = 'mm-input-arrow';
+    arrow.setAttribute('aria-label', 'Common questions');
+    arrow.textContent = '\u25BC';
+    var dropdown = document.createElement('div');
+    dropdown.className = 'mm-dropdown';
+    dropdown.setAttribute('role', 'listbox');
+    suggested.forEach(function (q) {
+      var item = document.createElement('div');
+      item.className = 'mm-dropdown-item';
+      item.textContent = q;
+      item.setAttribute('role', 'option');
+      item.onclick = function () {
+        input.value = q;
+        dropdown.classList.remove('open');
+        ask(q);
+      };
+      dropdown.appendChild(item);
+    });
+    arrow.onclick = function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var open = dropdown.classList.toggle('open');
+      if (open) {
+        setTimeout(function () {
+          document.addEventListener('click', function closeHandler(ev) {
+            if (!wrap.contains(ev.target)) {
+              dropdown.classList.remove('open');
+              document.removeEventListener('click', closeHandler);
+            }
+          });
+        }, 0);
+      }
+    };
     var askBtn = document.createElement('button');
     askBtn.type = 'button';
+    askBtn.className = 'mm-ask-btn';
     askBtn.textContent = 'Ask';
     askBtn.onclick = function () {
       var t = input.value.trim();
       if (t) ask(t);
     };
     input.onkeydown = function (e) {
-      if (e.key === 'Enter') { e.preventDefault(); askBtn.click(); }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        askBtn.click();
+      }
     };
-    row.appendChild(input);
+    wrap.appendChild(input);
+    wrap.appendChild(arrow);
+    wrap.appendChild(dropdown);
+    row.appendChild(wrap);
     row.appendChild(askBtn);
     body.appendChild(row);
   }
