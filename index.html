@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MotionMade — Instant Customer Answers for Service Businesses</title>
+<meta name="description" content="Smart FAQ widget for tradies and service businesses. Your customers get instant answers to pricing, services, and booking questions. 24/7.">
+<meta property="og:title" content="MotionMade — Instant Customer Answers">
+<meta property="og:description" content="Your customers get instant answers. You get more bookings.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --ink: #0F1A2E;
+  --ink-light: #3D4F6F;
+  --ink-muted: #7A8BA8;
+  --surface: #FFFFFF;
+  --surface-alt: #F4F7FA;
+  --accent: #2563EB;
+  --accent-dark: #1A4FCC;
+  --accent-glow: rgba(37, 99, 235, 0.12);
+  --accent-light: #EBF2FF;
+  --warm: #F59E0B;
+  --radius: 12px;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'DM Sans', -apple-system, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--surface);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  transition: all 0.3s ease;
+}
+nav.scrolled {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+  padding: 12px 24px;
+}
+.nav-logo {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 700;
+  color: white;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+nav.scrolled .nav-logo { color: var(--ink); }
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  color: rgba(255,255,255,0.8); text-decoration: none;
+  font-size: 15px; font-weight: 500;
+  transition: color 0.3s;
+}
+nav.scrolled .nav-links a { color: var(--ink-light); }
+.nav-links a:hover { color: white; }
+nav.scrolled .nav-links a:hover { color: var(--ink); }
+.nav-cta {
+  background: white; color: var(--accent) !important;
+  padding: 10px 22px; border-radius: 8px;
+  font-weight: 600 !important; font-size: 14px !important;
+  transition: all 0.3s;
+  opacity: 1 !important;
+}
+nav.scrolled .nav-cta {
+  background: var(--accent); color: white !important;
+}
+.nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+@media (max-width: 700px) {
+  .nav-links a:not(.nav-cta) { display: none; }
+}
+
+/* HERO */
+.hero {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  padding: 120px 24px 80px;
+  background: linear-gradient(160deg, #0F1A2E 0%, #1A3260 40%, #2563EB 100%);
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at 30% 50%, rgba(37,99,235,0.15) 0%, transparent 70%);
+}
+.hero-content { position: relative; z-index: 1; max-width: 680px; }
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 6vw, 56px);
+  font-weight: 800; color: white;
+  line-height: 1.15; margin-bottom: 20px;
+  letter-spacing: -0.5px;
+}
+.hero h1 span { color: var(--warm); }
+.hero p {
+  font-size: clamp(17px, 2.5vw, 20px);
+  color: rgba(255,255,255,0.75);
+  max-width: 520px; margin: 0 auto 36px;
+  line-height: 1.6;
+}
+.hero-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 16px 30px; border-radius: 10px;
+  font-size: 16px; font-weight: 600;
+  text-decoration: none; cursor: pointer; border: none;
+  transition: all 0.25s ease;
+}
+.btn-primary {
+  background: var(--accent); color: white;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.3);
+}
+.btn-primary:hover { background: var(--accent-dark); transform: translateY(-2px); box-shadow: 0 6px 24px rgba(37,99,235,0.35); }
+.btn-ghost {
+  background: rgba(255,255,255,0.1); color: white;
+  border: 1px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(4px);
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.18); transform: translateY(-2px); }
+.hero-trust {
+  margin-top: 48px; font-size: 14px;
+  color: rgba(255,255,255,0.45);
+}
+
+/* WAVE TRANSITION */
+.wave-divider {
+  display: block; width: 100%;
+  margin-top: -1px;
+}
+
+/* SECTIONS */
+section { padding: 80px 24px; }
+.container { max-width: 960px; margin: 0 auto; }
+.section-label {
+  font-size: 13px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 2px;
+  color: var(--accent); margin-bottom: 12px;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700; color: var(--ink);
+  line-height: 1.2; margin-bottom: 16px;
+}
+.section-subtitle {
+  font-size: 18px; color: var(--ink-muted);
+  max-width: 560px; line-height: 1.6;
+}
+
+/* PROBLEM */
+.problem { background: var(--surface); }
+.problem-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; margin-top: 40px;
+}
+.problem-card {
+  padding: 24px 28px;
+  background: var(--surface-alt);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--warm);
+  font-size: 16px; color: var(--ink-light);
+  line-height: 1.5;
+  transition: transform 0.3s;
+}
+.problem-card:hover { transform: translateX(4px); }
+.problem-card strong { color: var(--ink); }
+@media (max-width: 600px) { .problem-grid { grid-template-columns: 1fr; } }
+
+/* SOLUTION */
+.solution { background: var(--surface-alt); }
+.solution-cards {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 20px; margin-top: 40px;
+}
+.sol-card {
+  background: white; padding: 32px 28px;
+  border-radius: var(--radius);
+  border: 1px solid #E8ECF2;
+  transition: all 0.3s ease;
+}
+.sol-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+  border-color: var(--accent);
+}
+.sol-icon {
+  width: 48px; height: 48px;
+  background: var(--accent-light);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin-bottom: 16px;
+}
+.sol-card h3 {
+  font-family: var(--font-display);
+  font-size: 20px; font-weight: 700;
+  margin-bottom: 8px; color: var(--ink);
+}
+.sol-card p { font-size: 15px; color: var(--ink-muted); line-height: 1.6; }
+.solution-note {
+  margin-top: 32px; padding: 20px 28px;
+  background: var(--accent-light);
+  border-radius: var(--radius);
+  font-size: 16px; color: var(--ink);
+  text-align: center; font-weight: 500;
+}
+@media (max-width: 700px) { .solution-cards { grid-template-columns: 1fr; } }
+
+/* HOW IT WORKS */
+.how { background: var(--surface); }
+.steps {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 24px; margin-top: 40px;
+  counter-reset: step;
+}
+.step {
+  position: relative;
+  padding: 32px 24px;
+  counter-increment: step;
+}
+.step::before {
+  content: counter(step);
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  background: var(--accent); color: white;
+  border-radius: 50%; font-weight: 700; font-size: 18px;
+  margin-bottom: 16px;
+}
+.step h3 {
+  font-family: var(--font-display);
+  font-size: 19px; font-weight: 700;
+  margin-bottom: 8px;
+}
+.step p { font-size: 15px; color: var(--ink-muted); line-height: 1.6; }
+@media (max-width: 700px) { .steps { grid-template-columns: 1fr; } }
+
+/* DEMO */
+.demo { background: var(--surface-alt); }
+.demo-wrapper {
+  max-width: 480px; margin: 40px auto 0;
+  border-radius: 16px; overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+  border: 1px solid #E0E5EC;
+}
+.demo-hints {
+  margin-top: 20px; text-align: center;
+  font-size: 14px; color: var(--ink-muted);
+}
+.demo-hints code {
+  background: var(--accent-light); padding: 2px 8px;
+  border-radius: 4px; font-size: 13px; color: var(--accent);
+}
+
+/* PRICING */
+.pricing { background: var(--surface); text-align: center; }
+.price-card {
+  max-width: 440px; margin: 40px auto 0;
+  background: white; border-radius: 16px;
+  padding: 40px 36px;
+  border: 2px solid var(--accent);
+  box-shadow: 0 8px 32px var(--accent-glow);
+}
+.price-amount {
+  font-family: var(--font-display);
+  font-size: 48px; font-weight: 800;
+  color: var(--ink);
+}
+.price-amount small {
+  font-size: 18px; font-weight: 500;
+  color: var(--ink-muted);
+}
+.price-period {
+  font-size: 22px; color: var(--accent);
+  font-weight: 600; margin: 4px 0 24px;
+}
+.price-features {
+  list-style: none; text-align: left;
+  margin-bottom: 32px;
+}
+.price-features li {
+  padding: 10px 0; font-size: 15px;
+  color: var(--ink-light);
+  border-bottom: 1px solid #F0F2F5;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.price-features li::before {
+  content: '✓'; color: var(--accent);
+  font-weight: 700; flex-shrink: 0;
+}
+.price-features li:last-child { border: none; }
+.price-highlight {
+  font-weight: 600; color: var(--ink);
+}
+.price-note {
+  margin-top: 16px; font-size: 14px; color: var(--ink-muted);
+}
+
+/* FAQ */
+.faq { background: var(--surface-alt); }
+.faq-list { max-width: 640px; margin: 40px auto 0; }
+.faq-item {
+  background: white;
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  border: 1px solid #E8ECF2;
+  overflow: hidden;
+}
+.faq-item summary {
+  padding: 18px 24px;
+  font-size: 16px; font-weight: 600;
+  color: var(--ink); cursor: pointer;
+  list-style: none;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.faq-item summary::after {
+  content: '+'; font-size: 20px; color: var(--accent);
+  transition: transform 0.2s;
+}
+.faq-item[open] summary::after {
+  content: '−';
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-answer {
+  padding: 0 24px 18px;
+  font-size: 15px; color: var(--ink-muted);
+  line-height: 1.7;
+}
+
+/* FOOTER CTA */
+.footer-cta {
+  background: linear-gradient(160deg, #0F1A2E 0%, #1A3260 50%, #2563EB 100%);
+  padding: 80px 24px;
+  text-align: center;
+  color: white;
+}
+.footer-cta h2 {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 700; margin-bottom: 24px;
+}
+.footer-cta .btn-primary {
+  font-size: 18px; padding: 18px 36px;
+}
+.footer-contact {
+  margin-top: 40px;
+  font-size: 15px; color: rgba(255,255,255,0.6);
+}
+.footer-contact a {
+  color: rgba(255,255,255,0.8);
+  text-decoration: none;
+}
+.footer-contact a:hover { color: white; }
+.footer-copy {
+  margin-top: 32px; font-size: 13px;
+  color: rgba(255,255,255,0.3);
+}
+
+/* ANIMATIONS */
+.reveal {
+  opacity: 0; transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1; transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+
+/* HERO ANIMATIONS */
+.hero-content h1 { animation: fadeUp 0.8s ease forwards; }
+.hero-content p { animation: fadeUp 0.8s ease 0.15s forwards; opacity: 0; }
+.hero-buttons { animation: fadeUp 0.8s ease 0.3s forwards; opacity: 0; }
+.hero-trust { animation: fadeUp 0.8s ease 0.45s forwards; opacity: 0; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="nav-logo">MotionMade</a>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#demo">Live demo</a>
+    <a href="#pricing">Pricing</a>
+    <!-- STRIPE_LINK: Replace this URL with your Stripe payment link -->
+    <a href="https://buy.stripe.com/PLACEHOLDER" class="nav-cta">Get started</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <h1>Your customers get instant&nbsp;answers.<br><span>You get more bookings.</span></h1>
+    <p>A smart widget on your website that answers customer questions — pricing, services, availability — 24/7.</p>
+    <div class="hero-buttons">
+      <!-- STRIPE_LINK: Replace this URL with your Stripe payment link -->
+      <a href="https://buy.stripe.com/PLACEHOLDER" class="btn btn-primary">Get started — $299 setup</a>
+      <a href="#demo" class="btn btn-ghost">See it in action ↓</a>
+    </div>
+    <p class="hero-trust">Trusted by Brisbane service businesses</p>
+  </div>
+</section>
+
+<!-- WAVE -->
+<svg class="wave-divider" viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;height:60px;background:white;">
+  <path d="M0 0 C480 55 960 55 1440 0 L1440 60 L0 60 Z" fill="white"/>
+  <path d="M0 0 C480 55 960 55 1440 0" fill="none" stroke="white" stroke-width="0"/>
+  <defs><linearGradient id="wg" x1="0" y1="0" x2="1440" y2="0"><stop offset="0%" stop-color="#0F1A2E"/><stop offset="40%" stop-color="#1A3260"/><stop offset="100%" stop-color="#2563EB"/></linearGradient></defs>
+  <rect width="1440" height="60" fill="url(#wg)" mask="url(#wm)"/>
+  <mask id="wm"><path d="M0 0 C480 55 960 55 1440 0 L1440 0 L0 0 Z" fill="white"/></mask>
+</svg>
+
+<!-- PROBLEM -->
+<section class="problem" id="problem">
+  <div class="container">
+    <p class="section-label reveal">The problem</p>
+    <h2 class="section-title reveal">Sound familiar?</h2>
+    <div class="problem-grid">
+      <div class="problem-card reveal reveal-delay-1"><strong>Missed calls.</strong> Customers ring while you're on a job. They call the next guy.</div>
+      <div class="problem-card reveal reveal-delay-2"><strong>Same questions, all day.</strong> "How much?", "What areas?", "Do you do weekends?"</div>
+      <div class="problem-card reveal reveal-delay-3"><strong>Lost leads.</strong> Someone visits your site at 9pm. No one answers. They're gone.</div>
+      <div class="problem-card reveal reveal-delay-1"><strong>Evenings wasted.</strong> You spend your downtime replying to messages instead of resting.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTION -->
+<section class="solution" id="solution">
+  <div class="container">
+    <p class="section-label reveal">The fix</p>
+    <h2 class="section-title reveal">Instant answers for your customers.</h2>
+    <p class="section-subtitle reveal">MotionMade sits on your website and handles the questions so you don't have to.</p>
+    <div class="solution-cards">
+      <div class="sol-card reveal reveal-delay-1">
+        <div class="sol-icon">⚡</div>
+        <h3>Instant</h3>
+        <p>Pricing, services, booking info — answered in under a second. No waiting.</p>
+      </div>
+      <div class="sol-card reveal reveal-delay-2">
+        <div class="sol-icon">🌙</div>
+        <h3>Always on</h3>
+        <p>Works at 2am on a Sunday. Catches the leads you'd normally miss.</p>
+      </div>
+      <div class="sol-card reveal reveal-delay-3">
+        <div class="sol-icon">💬</div>
+        <h3>Handles real people</h3>
+        <p>Understands slang, typos, and messy text. "hw much 4 bond cleen" — no problem.</p>
+      </div>
+    </div>
+    <div class="solution-note reveal">Not a chatbot. No AI waffle. One clear answer to their question — that's it.</div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="container">
+    <p class="section-label reveal">How it works</p>
+    <h2 class="section-title reveal">Live in under 24 hours.</h2>
+    <div class="steps">
+      <div class="step reveal reveal-delay-1">
+        <h3>Quick chat</h3>
+        <p>You tell us your pricing, services, areas, and common questions. 10 minutes.</p>
+      </div>
+      <div class="step reveal reveal-delay-2">
+        <h3>We build it</h3>
+        <p>We set up your FAQ system and install the widget on your site. You don't touch any code.</p>
+      </div>
+      <div class="step reveal reveal-delay-3">
+        <h3>Customers get answers</h3>
+        <p>Someone visits your site and asks "how much for a bond clean?" — instant answer. No missed leads.</p>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:40px;" class="reveal">
+      <!-- STRIPE_LINK: Replace this URL with your Stripe payment link -->
+      <a href="https://buy.stripe.com/PLACEHOLDER" class="btn btn-primary">Get started →</a>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section class="demo" id="demo">
+  <div class="container" style="text-align:center;">
+    <p class="section-label reveal">Live demo</p>
+    <h2 class="section-title reveal">Try it yourself.</h2>
+    <p class="section-subtitle reveal" style="margin: 0 auto 0;">Real MotionMade widget for a Brisbane cleaning business. Ask it anything.</p>
+    <div class="demo-wrapper reveal">
+      <div id="motionmade-widget"></div>
+    </div>
+    <div class="demo-hints reveal">
+      Try: <code>how much for bond clean</code> · <code>do u come to logan</code> · <code>wats included</code>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="container">
+    <p class="section-label reveal">Pricing</p>
+    <h2 class="section-title reveal">Simple. No lock-in.</h2>
+    <div class="price-card reveal">
+      <div class="price-amount">$299 <small>one-time setup</small></div>
+      <div class="price-period">+ $49/month</div>
+      <ul class="price-features">
+        <li>Custom FAQ system built for your business</li>
+        <li>Widget installed on your website</li>
+        <li>Works with any website platform</li>
+        <li>Dashboard to see what customers ask</li>
+        <li>Unlimited customer questions</li>
+        <li class="price-highlight">We write and manage the answers for you</li>
+        <li>Cancel anytime — no lock-in</li>
+      </ul>
+      <!-- STRIPE_LINK: Replace this URL with your Stripe payment link -->
+      <a href="https://buy.stripe.com/PLACEHOLDER" class="btn btn-primary" style="width:100%;justify-content:center;">Get started →</a>
+      <p class="price-note">Setup takes less than 24 hours</p>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="container">
+    <p class="section-label reveal">Questions</p>
+    <h2 class="section-title reveal">Common questions</h2>
+    <div class="faq-list">
+      <details class="faq-item reveal">
+        <summary>What kind of businesses is this for?</summary>
+        <div class="faq-answer">Any service business — cleaners, plumbers, electricians, landscapers, mobile mechanics, pest control. If customers keep asking you the same questions, this is for you.</div>
+      </details>
+      <details class="faq-item reveal">
+        <summary>Do I need to be tech-savvy?</summary>
+        <div class="faq-answer">No. We set everything up for you. You don't write any code or install anything yourself.</div>
+      </details>
+      <details class="faq-item reveal">
+        <summary>What if a customer asks something not in the FAQ?</summary>
+        <div class="faq-answer">The widget tells them to contact you directly, with your phone number. It never makes up answers.</div>
+      </details>
+      <details class="faq-item reveal">
+        <summary>Can I change the answers later?</summary>
+        <div class="faq-answer">Yes. You suggest changes through your dashboard and we update them for you — usually within a few hours.</div>
+      </details>
+      <details class="faq-item reveal">
+        <summary>What websites does it work with?</summary>
+        <div class="faq-answer">Everything — WordPress, Squarespace, Wix, Shopify, custom sites. It's one line of code that we install for you.</div>
+      </details>
+      <details class="faq-item reveal">
+        <summary>Is there a lock-in contract?</summary>
+        <div class="faq-answer">No. Month-to-month. Cancel anytime.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER CTA -->
+<section class="footer-cta">
+  <h2 class="reveal">Ready to stop answering the same questions?</h2>
+  <!-- STRIPE_LINK: Replace this URL with your Stripe payment link -->
+  <a href="https://buy.stripe.com/PLACEHOLDER" class="btn btn-primary reveal">Get started — $299 setup</a>
+  <div class="footer-contact reveal">
+    <p style="margin-bottom:8px;">Or get in touch</p>
+    <a href="mailto:abbed@motionmadebne.com.au">abbed@motionmadebne.com.au</a> · <a href="tel:+61437037584">0437 037 584</a>
+  </div>
+  <p class="footer-copy">© 2026 MotionMade. Brisbane, Australia.</p>
+</section>
+
+<!-- WIDGET SCRIPT -->
+<script src="https://motionmade-fastapi.onrender.com/widget.js"
+  data-tenant="demo_cleaner"
+  data-name="Brisbane Bond Cleaning"
+  data-phone="0400 111 222"
+  data-color="#2563EB"
+  data-mode="inline"
+  data-api="https://motionmade-fastapi.onrender.com"></script>
+
+<!-- SCROLL ANIMATIONS -->
+<script>
+// Nav scroll effect
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 60);
+});
+
+// Reveal on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
