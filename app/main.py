@@ -484,6 +484,79 @@ def _get_tenant_contact(tenant_id: str) -> tuple:
     return (tenant_id, "")
 
 
+def _get_tenant_name_and_type(tenant_id: str) -> tuple:
+    """Return (display_name, business_type) for off-topic check. business_type defaults to 'general'."""
+    if not tenant_id:
+        return ("this business", "general")
+    try:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT name, COALESCE(business_type, 'general') FROM tenants WHERE id = %s",
+                (tenant_id.strip(),),
+            ).fetchone()
+        if row:
+            name = (row[0] or tenant_id).strip()
+            btype = (row[1] or "general").strip() or "general"
+            return (name, btype)
+    except Exception:
+        pass
+    return (tenant_id, "general")
+
+
+# Off-topic check cache: (tenant_id, question_lower) -> (is_off_topic: bool, timestamp)
+_off_topic_cache: dict = {}
+_OFF_TOPIC_CACHE_TTL = 3600  # 1 hour
+
+
+def _is_off_topic(
+    tenant_id: str,
+    question: str,
+    business_name: str,
+    business_type: str,
+    matched_faq: str,
+    confidence: float,
+) -> bool:
+    """Check if the customer question is unrelated to this business. Only runs when confidence < 0.85. Fail-open."""
+    if confidence >= 0.85:
+        return False
+    cache_key = (tenant_id or "", (question or "").strip().lower()[:200])
+    now = time.time()
+    if cache_key in _off_topic_cache:
+        cached_val, ts = _off_topic_cache[cache_key]
+        if now - ts < _OFF_TOPIC_CACHE_TTL:
+            return cached_val
+    try:
+        system = f"""You are a relevance checker for {business_name} ({business_type}).
+This business has FAQs about their services. A customer asked a question on their website.
+Decide if the customer's question is RELEVANT to this type of business.
+
+Reply ONLY with "relevant" or "off-topic".
+
+Examples for a cleaning business:
+- "how much for a clean" → relevant
+- "do you sell cars" → off-topic
+- "what areas" → relevant
+- "whats the weather" → off-topic
+- "can i book online" → relevant
+- "how do i make a website" → off-topic"""
+        user = f'Customer asked: "{question}"\nBest FAQ match: "{matched_faq}"\nIs this relevant to {business_name} ({business_type})?'
+        reply = chat_once(
+            system,
+            user,
+            temperature=0,
+            max_tokens=10,
+            timeout=2.0,
+            model="gpt-4o-mini",
+        )
+        result = (reply or "").strip().lower()
+        is_off = "off-topic" in result
+        _off_topic_cache[cache_key] = (is_off, now)
+        return is_off
+    except Exception:
+        return False  # fail open
+    return (tenant_id, "")
+
+
 def _hash_text(text: str) -> str:
     """Generate a short hash for privacy-safe logging. Returns empty string for empty input."""
     if not text:
@@ -965,6 +1038,23 @@ def _startup():
                         conn.commit()
                 except Exception:
                     pass  # Column may already exist
+
+            # Seed business_type for known tenants (idempotent)
+            try:
+                with get_conn() as conn:
+                    for tid, btype in [
+                        ("demo_cleaner", "cleaner"),
+                        ("brissy_cleaners", "cleaner"),
+                        ("sparkys_electrical", "electrician"),
+                        ("muassis", "founder_program"),
+                    ]:
+                        conn.execute(
+                            "UPDATE tenants SET business_type = %s WHERE id = %s",
+                            (btype, tid),
+                        )
+                    conn.commit()
+            except Exception:
+                pass
 
             # Add contact_phone to tenants if missing
             try:
@@ -1497,6 +1587,18 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         resp.headers["X-Faq-Hit"] = str(hit).lower()
 
         if hit and ans:
+            resp.headers["X-Off-Topic-Check"] = "false"  # default when we have a match
+            # Off-topic gate: only when confidence < 0.85 (don't slow down high-confidence matches)
+            if score < 0.85:
+                tenant_name_ot, tenant_type = _get_tenant_name_and_type(tenant_id)
+                if _is_off_topic(
+                    tenant_id, msg, tenant_name_ot, tenant_type,
+                    retrieval_result.get("question") or "",
+                    float(score),
+                ):
+                    resp.headers["X-Off-Topic-Check"] = "true"
+                    hit = False
+                    ans = None
             resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
             stage = retrieval_result.get("stage", "embedding")
             if stage == "selector":
@@ -1508,40 +1610,64 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             else:
                 resp.headers["X-Debug-Branch"] = "fact_hit"
             
-            payload["replyText"] = str(ans).strip()
-            
-            # Cache the result (only for FAQ hits) - already cached by retriever
-            cache_result(tenant_id, primary_query, {
-                "replyText": payload["replyText"],
-                "debug_branch": resp.headers.get("X-Debug-Branch", "fact_hit"),
-                "retrieval_score": score,
-                "top_faq_id": faq_id
-            })
-            
-            timings["total_ms"] = int((time.time() - _start_time) * 1000)
-            _set_timing_headers(request, resp, timings, _cache_hit)
-            _log_telemetry(
-                tenant_id=tenant_id,
-                query_text=msg,
-                normalized_text=normalized_msg,
-                intent_count=int(resp.headers.get("X-Intent-Count", "1")),
-                debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
-                faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
-                top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
-                retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
-                rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-                latency_ms=timings["total_ms"],
-                candidate_count=retrieval_trace.get("candidates_count"),
-                retrieval_mode=retrieval_trace.get("retrieval_mode"),
-                selector_called=retrieval_trace.get("selector_called"),
-                selector_confidence=retrieval_trace.get("selector_confidence"),
-                chosen_faq_id=chosen_faq_id,
-                retrieval_latency_ms=retrieval_trace.get("retrieval_ms"),
-                selector_latency_ms=retrieval_trace.get("selector_ms"),
-                retrieval_path=retrieval_trace.get("retrieval_path") or resp.headers.get("X-Retrieval-Path") or "fallback",
-                answer_given=payload["replyText"],
-            )
-            return payload
+            if hit and ans:
+                resp.headers["X-Off-Topic-Check"] = "false"
+                payload["replyText"] = str(ans).strip()
+                # Cache the result (only for FAQ hits) - already cached by retriever
+                cache_result(tenant_id, primary_query, {
+                    "replyText": payload["replyText"],
+                    "debug_branch": resp.headers.get("X-Debug-Branch", "fact_hit"),
+                    "retrieval_score": score,
+                    "top_faq_id": faq_id
+                })
+                timings["total_ms"] = int((time.time() - _start_time) * 1000)
+                _set_timing_headers(request, resp, timings, _cache_hit)
+                _log_telemetry(
+                    tenant_id=tenant_id,
+                    query_text=msg,
+                    normalized_text=normalized_msg,
+                    intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+                    debug_branch=resp.headers.get("X-Debug-Branch", "unknown"),
+                    faq_hit=resp.headers.get("X-Faq-Hit", "false") == "true",
+                    top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
+                    retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
+                    rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+                    latency_ms=timings["total_ms"],
+                    candidate_count=retrieval_trace.get("candidates_count"),
+                    retrieval_mode=retrieval_trace.get("retrieval_mode"),
+                    selector_called=retrieval_trace.get("selector_called"),
+                    selector_confidence=retrieval_trace.get("selector_confidence"),
+                    chosen_faq_id=chosen_faq_id,
+                    retrieval_latency_ms=retrieval_trace.get("retrieval_ms"),
+                    selector_latency_ms=retrieval_trace.get("selector_ms"),
+                    retrieval_path=retrieval_trace.get("retrieval_path") or resp.headers.get("X-Retrieval-Path") or "fallback",
+                    answer_given=payload["replyText"],
+                )
+                return payload
+            # Off-topic: return fallback immediately (do not try rewrite)
+            if resp.headers.get("X-Off-Topic-Check") == "true":
+                resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
+                resp.headers["X-Retrieval-Path"] = "fallback"
+                resp.headers["X-Debug-Branch"] = "off_topic"
+                resp.headers["X-Faq-Hit"] = "false"
+                payload["replyText"] = _fallback_text()
+                timings["total_ms"] = int((time.time() - _start_time) * 1000)
+                _set_timing_headers(request, resp, timings, _cache_hit)
+                _log_telemetry(
+                    tenant_id=tenant_id,
+                    query_text=msg,
+                    normalized_text=normalized_msg,
+                    intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+                    debug_branch="off_topic",
+                    faq_hit=False,
+                    top_faq_id=None,
+                    retrieval_score=float(score) if score is not None else None,
+                    rewrite_triggered=False,
+                    latency_ms=timings["total_ms"],
+                    retrieval_path="fallback",
+                    answer_given=payload["replyText"],
+                )
+                return payload
 
         # 2) Miss -> rewrite for retrieval only (skip for wrong-service and gibberish to keep speed)
         resp.headers["X-Debug-Branch"] = "fact_rewrite_try"
@@ -4131,6 +4257,81 @@ def promote_staged(
                 "timings_ms": timings
             }
         )
+
+
+@app.post("/admin/api/tenant/{tenantId}/regenerate-variants")
+def regenerate_variants(
+    tenantId: str,
+    resp: Response,
+    authorization: str = Header(default="")
+):
+    """Regenerate variants for all live FAQs using the current variant prompt (no re-upload)."""
+    _check_admin_auth(authorization)
+    import json as json_lib
+    tenant_id = (tenantId or "").strip()
+    if not tenant_id:
+        raise HTTPException(status_code=400, detail="tenant_id required")
+    try:
+        with get_conn() as conn:
+            conn.execute("SELECT ensure_faq_variants_partition(%s)", (tenant_id,))
+            conn.commit()
+        live_faqs = None
+        with get_conn() as conn:
+            live_faqs = conn.execute("""
+                SELECT id, question, answer FROM faq_items
+                WHERE tenant_id = %s AND is_staged = false AND enabled = true
+            """, (tenant_id,)).fetchall()
+        if not live_faqs:
+            return {"tenant_id": tenant_id, "regenerated": 0, "new_variants": 0, "message": "No live FAQs"}
+        faqs_to_expand = [
+            {"question": q, "answer": a, "variants": []}
+            for _, q, a in live_faqs
+        ]
+        expanded_faqs = expand_faq_list(faqs_to_expand, max_variants_per_faq=50)
+        expanded_map = {f["question"]: f.get("variants", []) for f in expanded_faqs}
+        total_new_variants = 0
+        with get_conn() as conn:
+            for faq_id, q, a in live_faqs:
+                variants = expanded_map.get(q, []) or []
+                all_variants = [q] + [v for v in variants if v and (v or "").strip().lower() != (q or "").lower()]
+                conn.execute("DELETE FROM faq_variants WHERE faq_id=%s", (faq_id,))
+                conn.execute("DELETE FROM faq_variants_p WHERE faq_id=%s AND tenant_id=%s", (faq_id, tenant_id))
+                for variant in all_variants[:50]:
+                    v = (variant or "").strip()
+                    if not v:
+                        continue
+                    try:
+                        v_emb = embed_text(v)
+                        conn.execute("""
+                            INSERT INTO faq_variants (faq_id, variant_question, variant_embedding, enabled)
+                            VALUES (%s, %s, %s, true)
+                        """, (faq_id, v, Vector(v_emb)))
+                        conn.execute("""
+                            INSERT INTO faq_variants_p (tenant_id, faq_id, variant_question, variant_embedding, enabled)
+                            VALUES (%s, %s, %s, %s, true)
+                        """, (tenant_id, faq_id, v, Vector(v_emb)))
+                        total_new_variants += 1
+                    except Exception:
+                        continue
+                question_variants_text = (q or "") + " " + " ".join(all_variants[1:])
+                answer_text = a or ""
+                conn.execute("""
+                    UPDATE faq_items SET search_vector =
+                        setweight(to_tsvector('english', %s), 'A') ||
+                        setweight(to_tsvector('english', %s), 'C')
+                    WHERE id = %s
+                """, (question_variants_text, answer_text, faq_id))
+            conn.commit()
+        return {
+            "tenant_id": tenant_id,
+            "regenerated": len(live_faqs),
+            "new_variants": total_new_variants,
+            "message": f"Regenerated variants for {len(live_faqs)} FAQs ({total_new_variants} variants)"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Regenerate variants failed: {str(e)}")
 
 
 @app.post("/admin/api/tenant/{tenantId}/rollback")

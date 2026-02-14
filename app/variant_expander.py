@@ -173,31 +173,71 @@ def expand_with_question_forms(keywords: List[str]) -> List[str]:
     return list(set(expanded))
 
 
-def generate_variants_llm(question: str, answer: str, max_extra: int = 18) -> List[str]:
-    """Use GPT-4o-mini to generate diverse phrasings: slang, casual, specific-scenario, synonyms."""
-    try:
-        from .openai_client import chat_once
-        prompt = f"""Generate {max_extra} short alternative phrasings that customers might use to ask this question. Include:
-- Text-speak/slang: "hw much", "wat", "u", "4", "r u", "do u"
-- Casual: "how much 4", "can i pay later", "wats included"
-- Specific scenarios: if the answer mentions something (e.g. tap, bond), include "how long to fix tap" style
-- Synonyms: cost/price/charge/fee/rate, pay later/afterpay/payment plans
-- Question forms: "Do you do X?", "Can you X?", "Is X available?", "What about X?"
-Return ONLY one phrasing per line, no numbers or bullets. Lowercase. Keep each under 10 words where possible.
+# Prompt for LLM variant generation: casual, messy, slang, fragments (scales to any business)
+VARIANT_GENERATION_PROMPT = """You generate search variants for a FAQ question. These variants help match real customer queries to the right FAQ.
 
-Question: {question}
-Answer (for context): {answer[:200]}"""
+For each FAQ question, generate 10-15 variants covering:
+
+1. CASUAL REWORDING: How a normal person would ask this in conversation
+   "What is included in the program?" → "what do you get", "what do i get out of it", "what comes with it"
+
+2. SHORT/LAZY: Minimum effort typing
+   "What is included?" → "whats included", "wats included", "included?", "what do u get"
+
+3. TYPOS AND SLANG: Common misspellings, text-speak, Australian slang
+   "How much does it cost?" → "how much is it", "hw much", "is it free", "cost?", "price?"
+
+4. DIFFERENT ANGLE: Same intent, different framing
+   "How do I apply?" → "how do i sign up", "where do i register", "application process", "how to join"
+
+5. FRAGMENTS: Partial questions people actually type
+   "What areas do you cover?" → "areas", "what suburbs", "do you come to [area]", "where"
+
+Return ONLY a JSON array of strings. No numbering, no categories, no explanation.
+Example: ["what do you get", "wats included", "whats in it", "what comes with the program", ...]
+
+Critical: Include at least 2-3 with typos/textspeak (u, ur, wats, hw, coz, etc.), at least 2-3 ultra-short fragments (1-3 words), and at least 2-3 that rephrase the intent completely. Remove any that are too similar to each other."""
+
+
+def generate_variants_llm(question: str, answer: str, max_extra: int = 15) -> List[str]:
+    """Use GPT-4o-mini to generate diverse phrasings: slang, casual, fragments (12-15 variants)."""
+    try:
+        import json as _json
+        from .openai_client import chat_once
+        prompt = f"""FAQ question: {question}
+Answer (context): {answer[:200]}
+
+{VARIANT_GENERATION_PROMPT}"""
         reply = chat_once(
-            "You output only alternative phrasings, one per line. No other text.",
+            "You output ONLY a JSON array of variant strings. No other text, no markdown.",
             prompt,
-            temperature=0.7,
-            max_tokens=400,
-            timeout=10,
+            temperature=0.6,
+            max_tokens=500,
+            timeout=12,
         )
         if not reply:
             return []
-        lines = [ln.strip().lower() for ln in reply.strip().splitlines() if ln.strip() and len(ln.strip()) > 4]
-        return lines[:max_extra]
+        reply = reply.strip()
+        # Strip markdown code block if present
+        if reply.startswith("```"):
+            reply = reply.split("\n", 1)[-1].rsplit("```", 1)[0]
+        reply = reply.strip()
+        parsed = _json.loads(reply)
+        if not isinstance(parsed, list):
+            return []
+        lines = [
+            (str(x).strip().lower())
+            for x in parsed
+            if x and len(str(x).strip()) >= 2
+        ]
+        # Dedupe and limit
+        seen = set()
+        out = []
+        for v in lines:
+            if v not in seen:
+                seen.add(v)
+                out.append(v)
+        return out[:max_extra]
     except Exception:
         return []
 
@@ -222,9 +262,9 @@ def generate_variants(question: str, answer: str, max_variants: int = 50) -> Lis
         variants.extend(expand_with_symptoms(keywords))
         variants.extend(expand_with_question_forms(keywords[:3]))
     
-    # 4. LLM-generated slang/casual/specific variants (aim for 15–20 total per FAQ)
+    # 4. LLM-generated slang/casual/fragments (12-15 variants per FAQ for any business)
     try:
-        llm_variants = generate_variants_llm(question, answer, max_extra=18)
+        llm_variants = generate_variants_llm(question, answer, max_extra=15)
         variants.extend(llm_variants)
     except Exception:
         pass
