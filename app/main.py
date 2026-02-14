@@ -421,6 +421,18 @@ CREATE TABLE IF NOT EXISTS query_stats (
 );
 
 CREATE INDEX IF NOT EXISTS query_stats_tenant_date_idx ON query_stats(tenant_id, query_date);
+
+CREATE TABLE IF NOT EXISTS query_log (
+    id SERIAL PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    customer_question TEXT NOT NULL,
+    matched_faq TEXT,
+    confidence REAL,
+    retrieval_path TEXT,
+    was_fallback BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_query_log_tenant_created ON query_log (tenant_id, created_at DESC);
 """
 
 
@@ -565,6 +577,34 @@ def _set_timing_headers(req: Request, resp: Response, timings: dict, cache_hit: 
     # X-Retrieval-Stage is already set by the endpoint if available
 
 
+def _log_query_log(
+    tenant_id: str,
+    customer_question: str,
+    matched_faq_id: Optional[int],
+    confidence: Optional[float],
+    retrieval_path: Optional[str],
+    was_fallback: bool,
+):
+    """Log individual query for owner dashboard. Fire-and-forget; never breaks response."""
+    try:
+        matched_faq_text = None
+        with get_conn() as conn:
+            if matched_faq_id:
+                row = conn.execute(
+                    "SELECT question FROM faq_items WHERE id = %s", (matched_faq_id,)
+                ).fetchone()
+                if row:
+                    matched_faq_text = (row[0] or "").strip() or None
+            conn.execute(
+                """INSERT INTO query_log (tenant_id, customer_question, matched_faq, confidence, retrieval_path, was_fallback)
+                   VALUES (%s, %s, %s, %s, %s, %s)""",
+                (tenant_id, (customer_question or "").strip() or "", matched_faq_text, confidence, retrieval_path or None, was_fallback),
+            )
+            conn.commit()
+    except Exception:
+        pass
+
+
 def _log_telemetry(
     tenant_id: str,
     query_text: str,
@@ -582,7 +622,8 @@ def _log_telemetry(
     selector_confidence: Optional[float] = None,
     chosen_faq_id: Optional[int] = None,
     retrieval_latency_ms: Optional[int] = None,
-    selector_latency_ms: Optional[int] = None
+    selector_latency_ms: Optional[int] = None,
+    retrieval_path: Optional[str] = None,
 ):
     """Log request telemetry for analytics. Privacy-safe: stores only lengths and hashes, not raw text."""
     try:
@@ -620,6 +661,15 @@ def _log_telemetry(
                 (tenant_id, succ, fall, conf)
             )
             conn.commit()
+        # Owner dashboard query log (fire-and-forget, no conn reuse to avoid holding)
+        _log_query_log(
+            tenant_id=tenant_id,
+            customer_question=query_text,
+            matched_faq_id=int(top_faq_id) if top_faq_id is not None else None,
+            confidence=float(retrieval_score) if retrieval_score is not None else None,
+            retrieval_path=retrieval_path,
+            was_fallback=not faq_hit,
+        )
     except Exception:
         pass  # Don't fail request if telemetry fails
 
@@ -1110,7 +1160,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         payload["replyText"] = f"Ask me a question about {tenant_name} — like pricing, services, or how to book."
         timings = {"triage_ms": 0, "normalize_split_ms": 0, "embedding_ms": 0, "retrieval_ms": 0, "rewrite_ms": 0, "llm_ms": 0, "general_llm_ms": 0, "general_safety_ms": 0, "general_total_ms": 0, "total_ms": int((time.time() - _start_time) * 1000)}
         _set_timing_headers(request, resp, timings, False)
-        _log_telemetry(tenant_id=tenant_id, query_text=msg, normalized_text=msg, intent_count=0, debug_branch="greeting", faq_hit=False, top_faq_id=None, retrieval_score=None, rewrite_triggered=False, latency_ms=timings["total_ms"])
+        _log_telemetry(tenant_id=tenant_id, query_text=msg, normalized_text=msg, intent_count=0, debug_branch="greeting", faq_hit=False, top_faq_id=None, retrieval_score=None, rewrite_triggered=False, latency_ms=timings["total_ms"], retrieval_path="fallback")
         return payload
 
     # Timing breakdown
@@ -1153,7 +1203,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
             retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=timings["total_ms"]
+            latency_ms=timings["total_ms"],
+            retrieval_path=resp.headers.get("X-Retrieval-Path") or "fallback",
         )
         return payload
 
@@ -1213,7 +1264,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
                 top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
                 retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
                 rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-                latency_ms=timings["total_ms"]
+                latency_ms=timings["total_ms"],
+                retrieval_path=resp.headers.get("X-Retrieval-Path") or "fallback",
             )
             return payload
 
@@ -1236,7 +1288,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
                 top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
                 retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
                 rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-                latency_ms=timings["total_ms"]
+                latency_ms=timings["total_ms"],
+                retrieval_path=resp.headers.get("X-Retrieval-Path") or "fallback",
             )
             return payload
 
@@ -1257,7 +1310,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
             retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=timings["total_ms"]
+            latency_ms=timings["total_ms"],
+            retrieval_path=resp.headers.get("X-Retrieval-Path") or "fallback",
         )
         return payload
 
@@ -1334,7 +1388,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
                 top_faq_id=cached_result.get("top_faq_id"),
                 retrieval_score=cached_result.get("retrieval_score"),
                 rewrite_triggered=False,
-                latency_ms=timings["total_ms"]
+                latency_ms=timings["total_ms"],
+                retrieval_path=resp.headers.get("X-Retrieval-Path") or "cache",
             )
             return payload
 
@@ -1466,7 +1521,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
                 selector_confidence=retrieval_trace.get("selector_confidence"),
                 chosen_faq_id=chosen_faq_id,
                 retrieval_latency_ms=retrieval_trace.get("retrieval_ms"),
-                selector_latency_ms=retrieval_trace.get("selector_ms")
+                selector_latency_ms=retrieval_trace.get("selector_ms"),
+                retrieval_path=retrieval_trace.get("retrieval_path") or resp.headers.get("X-Retrieval-Path") or "fallback",
             )
             return payload
 
@@ -1554,7 +1610,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
                     top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
                     retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
                     rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-                    latency_ms=timings["total_ms"]
+                    latency_ms=timings["total_ms"],
+                    retrieval_path=resp.headers.get("X-Retrieval-Path") or "llm-rewrite",
                 )
                 return payload
 
@@ -1577,7 +1634,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
             retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=timings["total_ms"]
+            latency_ms=timings["total_ms"],
+            retrieval_path=resp.headers.get("X-Retrieval-Path") or "fallback",
         )
         return payload
 
@@ -1604,7 +1662,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             top_faq_id=None,
             retrieval_score=None,
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=timings["total_ms"]
+            latency_ms=timings["total_ms"],
+            retrieval_path="fallback",
         )
         return payload
 
@@ -1626,7 +1685,8 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             top_faq_id=int(resp.headers.get("X-Top-Faq-Id")) if resp.headers.get("X-Top-Faq-Id") else None,
             retrieval_score=float(resp.headers.get("X-Retrieval-Score")) if resp.headers.get("X-Retrieval-Score") else None,
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
-            latency_ms=timings["total_ms"]
+            latency_ms=timings["total_ms"],
+            retrieval_path=resp.headers.get("X-Retrieval-Path") or "fallback",
         )
         return payload
 
@@ -2653,6 +2713,216 @@ def owner_list_suggestions(owner: dict = Depends(get_current_owner)):
     return {"suggestions": suggestions}
 
 
+@app.get("/owner/queries")
+def owner_queries(
+    owner: dict = Depends(get_current_owner),
+    days: int = 7,
+    limit: int = 50,
+    offset: int = 0,
+    fallbacks_only: bool = False,
+):
+    """Query log for owner dashboard. Paginated; optional filter to unanswered only."""
+    tenant_id = owner["tenant_id"]
+    days = max(1, min(365, days))
+    limit = max(1, min(200, limit))
+    offset = max(0, offset)
+    with get_conn() as conn:
+        where = "tenant_id = %s AND created_at > now() - (%s::text || ' days')::interval"
+        params = [tenant_id, str(days)]
+        if fallbacks_only:
+            where += " AND was_fallback = true"
+        total_row = conn.execute(
+            f"SELECT COUNT(*) FROM query_log WHERE {where}",
+            params,
+        ).fetchone()
+        total = total_row[0] or 0
+        rows = conn.execute(
+            f"""SELECT id, customer_question, matched_faq, was_fallback, created_at
+                FROM query_log WHERE {where}
+                ORDER BY created_at DESC
+                LIMIT %s OFFSET %s""",
+            params + [limit, offset],
+        ).fetchall()
+    queries = [
+        {
+            "id": r[0],
+            "question": (r[1] or "").strip(),
+            "matched_to": (r[2] or "").strip() or None,
+            "answered": not (r[3] or False),
+            "timestamp": r[4].isoformat() if r[4] else None,
+        }
+        for r in rows
+    ]
+    return {"queries": queries, "total": total, "period_days": days}
+
+
+@app.get("/owner/queries/match-counts")
+def owner_queries_match_counts(
+    owner: dict = Depends(get_current_owner),
+    days: int = 7,
+):
+    """Count of how many times each matched_faq was hit in the period (for 'most asked' badge)."""
+    tenant_id = owner["tenant_id"]
+    days = max(1, min(365, days))
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT matched_faq, COUNT(*) AS c
+               FROM query_log
+               WHERE tenant_id = %s AND created_at > now() - (%s::text || ' days')::interval
+                 AND matched_faq IS NOT NULL AND TRIM(matched_faq) != ''
+               GROUP BY matched_faq""",
+            (tenant_id, str(days)),
+        ).fetchall()
+    return { (r[0] or "").strip(): r[1] for r in rows if (r[0] or "").strip() }
+
+
+@app.get("/owner/queries/summary")
+def owner_queries_summary(owner: dict = Depends(get_current_owner)):
+    """Quick summary for stat cards: this_week, today, unanswered, busiest_hour, trend."""
+    tenant_id = owner["tenant_id"]
+    with get_conn() as conn:
+        row = conn.execute(
+            """SELECT
+                COUNT(*) FILTER (WHERE created_at > now() - interval '7 days'),
+                COUNT(*) FILTER (WHERE created_at >= date_trunc('day', now())),
+                COUNT(*) FILTER (WHERE created_at > now() - interval '7 days' AND was_fallback = true)
+               FROM query_log WHERE tenant_id = %s""",
+            (tenant_id,),
+        ).fetchone()
+        busiest = conn.execute(
+            """SELECT EXTRACT(HOUR FROM created_at)::integer
+               FROM query_log
+               WHERE tenant_id = %s AND created_at > now() - interval '7 days'
+               GROUP BY EXTRACT(HOUR FROM created_at)
+               ORDER BY COUNT(*) DESC LIMIT 1""",
+            (tenant_id,),
+        ).fetchone()
+        this_week = row[0] or 0
+        prev_week = conn.execute(
+            """SELECT COUNT(*) FROM query_log
+               WHERE tenant_id = %s
+                 AND created_at > now() - interval '14 days'
+                 AND created_at <= now() - interval '7 days'""",
+            (tenant_id,),
+        ).fetchone()
+        prev_week = prev_week[0] or 0
+    trend_pct = None
+    if prev_week and this_week is not None:
+        if prev_week > 0:
+            trend_pct = round(((this_week - prev_week) / prev_week) * 100)
+        else:
+            trend_pct = 100 if this_week else 0
+    hour = int(busiest[0]) if busiest and busiest[0] is not None else None
+    if hour is not None:
+        if hour == 0:
+            busiest_hour = "12am"
+        elif hour < 12:
+            busiest_hour = f"{hour}am"
+        elif hour == 12:
+            busiest_hour = "12pm"
+        else:
+            busiest_hour = f"{hour - 12}pm"
+    else:
+        busiest_hour = None
+    this_week = row[0] or 0
+    busiest_insight = None
+    if this_week >= 20 and busiest_hour:
+        busiest_insight = f"Your busiest time: {busiest_hour} — this is when most customers visit your site."
+    return {
+        "this_week": this_week,
+        "today": row[1] or 0,
+        "unanswered_this_week": row[2] or 0,
+        "busiest_hour": busiest_hour,
+        "trend_vs_last_week": f"{'+' if trend_pct and trend_pct >= 0 else ''}{trend_pct}%" if trend_pct is not None else None,
+        "busiest_insight": busiest_insight,
+    }
+
+
+@app.get("/owner/queries/daily")
+def owner_queries_daily(
+    owner: dict = Depends(get_current_owner),
+    period: str = "7d",
+):
+    """Daily query counts from query_log for chart. period=7d|30d|90d."""
+    tenant_id = owner["tenant_id"]
+    days, _ = _owner_dashboard_period(period)
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT date_trunc('day', created_at)::date AS d, COUNT(*) AS c
+               FROM query_log
+               WHERE tenant_id = %s AND created_at > now() - (%s::text || ' days')::interval
+               GROUP BY date_trunc('day', created_at)
+               ORDER BY d""",
+            (tenant_id, str(days)),
+        ).fetchall()
+    return [{"date": str(r[0]), "count": r[1]} for r in rows]
+
+
+@app.get("/owner/queries/export")
+def owner_queries_export(
+    owner: dict = Depends(get_current_owner),
+    days: int = 30,
+):
+    """Export query log as CSV. JWT protected."""
+    tenant_id = owner["tenant_id"]
+    days = max(1, min(365, days))
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT created_at, customer_question, matched_faq, was_fallback
+               FROM query_log
+               WHERE tenant_id = %s AND created_at > now() - (%s::text || ' days')::interval
+               ORDER BY created_at DESC""",
+            (tenant_id, str(days)),
+        ).fetchall()
+    import io
+    import csv
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["timestamp", "question", "matched_to", "answered"])
+    for r in rows:
+        w.writerow([
+            r[0].strftime("%Y-%m-%d %H:%M:%S") if r[0] else "",
+            (r[1] or "").strip(),
+            (r[2] or "").strip() or "",
+            "yes" if not (r[3] or False) else "no",
+        ])
+    response = Response(content=buf.getvalue(), media_type="text/csv")
+    response.headers["Content-Disposition"] = f'attachment; filename="queries_{tenant_id}_{days}d.csv"'
+    return response
+
+
+@app.get("/admin/weekly-summary-log")
+def admin_weekly_summary_log(authorization: str = Header(default="")):
+    """Log weekly query summary per tenant. Call from cron (e.g. Monday 9am AEST).
+    # TODO: Send actual email summaries to owners."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        tenants = conn.execute(
+            "SELECT id FROM tenants ORDER BY id",
+            (),
+        ).fetchall()
+    for (tid,) in tenants:
+        tid = tid or ""
+        with get_conn() as conn:
+            row = conn.execute(
+                """SELECT
+                    COUNT(*) FILTER (WHERE created_at > now() - interval '7 days'),
+                    COUNT(*) FILTER (WHERE created_at > now() - interval '14 days' AND created_at <= now() - interval '7 days'),
+                    COUNT(*) FILTER (WHERE created_at > now() - interval '7 days' AND was_fallback = true)
+                   FROM query_log WHERE tenant_id = %s""",
+                (tid,),
+            ).fetchone()
+        this_week = row[0] or 0
+        prev_week = row[1] or 0
+        unanswered = row[2] or 0
+        trend = ""
+        if prev_week and this_week is not None:
+            pct = round(((this_week - prev_week) / prev_week) * 100)
+            trend = f"{'+' if pct >= 0 else ''}{pct}%"
+        print(f"[WEEKLY_SUMMARY] {tid}: {this_week} questions this week ({trend}), {unanswered} unanswered")
+    return {"ok": True}
+
+
 # Owner FAQ write endpoints removed — quality controlled by admin only
 # POST /owner/faqs, PUT /owner/faqs/{id}, DELETE /owner/faqs/{id} are disabled.
 # Owners can only view FAQs via GET /owner/faqs.
@@ -3176,6 +3446,7 @@ def delete_tenant(
             conn.execute("DELETE FROM retrieval_cache WHERE tenant_id = %s", (tid,))
             conn.execute("DELETE FROM telemetry WHERE tenant_id = %s", (tid,))
             conn.execute("DELETE FROM query_stats WHERE tenant_id = %s", (tid,))
+            conn.execute("DELETE FROM query_log WHERE tenant_id = %s", (tid,))
             conn.execute("DELETE FROM tenant_promote_history WHERE tenant_id = %s", (tid,))
             conn.execute("DELETE FROM tenant_owners WHERE tenant_id = %s", (tid,))
             conn.execute("DELETE FROM tenant_domains WHERE tenant_id = %s", (tid,))
