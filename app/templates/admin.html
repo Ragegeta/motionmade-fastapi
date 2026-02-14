@@ -405,6 +405,10 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label>Website URL (optional)</label>
+                        <input type="url" id="wizWebsiteUrl" placeholder="https://www.example.com.au" style="width:100%;max-width:400px;" />
+                    </div>
+                    <div class="form-group">
                         <label>Owner name</label>
                         <input type="text" id="wizOwnerName" placeholder="e.g. Mike" />
                     </div>
@@ -436,7 +440,11 @@
 
                 <div class="wizard-step" id="wizardStep2">
                     <h3>2. Add FAQs</h3>
-                    <p style="color: #6b7280; margin-bottom: 16px;">Add questions and answers one at a time while you talk to the tradie.</p>
+                    <p id="wizStep2Intro" style="color: #6b7280; margin-bottom: 16px;">Add questions and answers one at a time while you talk to the tradie.</p>
+                    <div id="wizWebsiteFaqsNote" style="display: none; margin-bottom: 16px; padding: 12px; background: #eff6ff; border-radius: 8px; font-size: 14px;">
+                        <span id="wizWebsiteFaqsNoteText"></span>
+                        <button type="button" id="wizLoadTemplateInsteadBtn" class="btn-secondary" style="margin-left: 8px;">Load template instead</button>
+                    </div>
                     <div class="form-group">
                         <label>Question</label>
                         <input type="text" id="wizFaqQuestion" placeholder="e.g. What areas do you service?" />

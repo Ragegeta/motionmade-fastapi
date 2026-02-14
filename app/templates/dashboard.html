@@ -158,8 +158,14 @@
         .query-card:last-child { border-bottom: none; }
         .query-card.answered { border-left-color: #059669; }
         .query-card.unanswered { border-left-color: #ea580c; }
-        .query-card .q-text { font-weight: 500; color: var(--text-primary); margin-bottom: 6px; }
+        .query-card .q-text { font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
         .query-card .q-text::before, .query-card .q-text::after { content: '"'; color: var(--text-muted); }
+        .query-card .answer-block { margin-bottom: 10px; }
+        .query-card .answer-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+        .query-card .answer-text { font-size: 14px; color: var(--text-primary); line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+        .query-card .answer-text.truncated { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .query-card .show-full-btn { font-size: 13px; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; margin-top: 4px; font-family: inherit; }
+        .query-card .show-full-btn:hover { text-decoration: underline; }
         .query-card .match-line {
             font-size: 14px;
             color: var(--text-muted);
@@ -558,12 +564,37 @@
                     var countBadge = '';
                     if (q.answered && q.matched_to && matchCounts[q.matched_to] >= 5)
                         countBadge = '<span class="badge">🔥 Asked ' + matchCounts[q.matched_to] + ' times</span>';
+                    var answerHtml = '';
+                    var answer = (q.answer || '').trim();
+                    if (answer) {
+                        var truncated = answer.length > 200 || (answer.match(/\n/g) || []).length >= 3;
+                        var displayAnswer = truncated ? (answer.slice(0, 200) + (answer.length > 200 ? '...' : '')) : answer;
+                        if (truncated) {
+                            var id = 'ans-' + q.id + '-' + Math.random().toString(36).slice(2, 8);
+                            answerHtml = '<div class="answer-block">' +
+                                '<div class="answer-label">Answer:</div>' +
+                                '<div class="answer-text truncated" id="' + id + '">' + escapeHtml(displayAnswer) + '</div>' +
+                                '<div class="answer-full" style="display:none"></div>' +
+                                '<button type="button" class="show-full-btn" data-target="' + id + '">Show full answer</button>' +
+                                '</div>';
+                        } else {
+                            answerHtml = '<div class="answer-block">' +
+                                '<div class="answer-label">Answer:</div>' +
+                                '<div class="answer-text">' + escapeHtml(answer) + '</div>' +
+                                '</div>';
+                        }
+                    }
                     var addFaqHtml = q.answered ? '' : '<button type="button" class="add-faq-btn" data-question="' + escapeHtml(q.question).replace(/"/g, '&quot;') + '">Add FAQ</button>';
                     card.innerHTML =
                         '<div class="q-text">' + escapeHtml(q.question) + '</div>' +
+                        answerHtml +
                         '<div class="match-line">→ ' + escapeHtml(matchText) + ' <span class="status">' + statusIcon + '</span> ' + countBadge + '</div>' +
                         '<div class="time">' + formatTimestamp(q.timestamp) + '</div>' +
                         addFaqHtml;
+                    if (answer && truncated) {
+                        var fullEl = card.querySelector('.answer-full');
+                        if (fullEl) fullEl.textContent = answer;
+                    }
                     list.appendChild(card);
                 });
                 var showMoreWrap = document.getElementById('showMoreWrap');
@@ -578,6 +609,19 @@
                             document.getElementById('suggestQuestion').value = q;
                             document.getElementById('suggestAnswer').focus();
                             document.getElementById('suggestSection').scrollIntoView({ behavior: 'smooth' });
+                        }
+                    });
+                });
+                document.querySelectorAll('.show-full-btn').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var targetId = this.getAttribute('data-target');
+                        var textEl = targetId ? document.getElementById(targetId) : null;
+                        var block = this.closest('.answer-block');
+                        var fullEl = block ? block.querySelector('.answer-full') : null;
+                        if (textEl && fullEl && fullEl.textContent) {
+                            textEl.textContent = fullEl.textContent;
+                            textEl.classList.remove('truncated');
+                            this.style.display = 'none';
                         }
                     });
                 });

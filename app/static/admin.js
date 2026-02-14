@@ -1,5 +1,6 @@
 const API_BASE = window.location.origin;
 let adminToken = '';
+let generatedFaqsFromUrl = [];
 
 // ---------- Debug (triple-click logo toggles) ----------
 (function () {
@@ -208,6 +209,20 @@ async function showTenantDetail(tenantId) {
                 <div id="faqsSuccess" class="success"></div>
             </div>
             <div class="section">
+                <h2>Generate FAQs from website</h2>
+                <p style="color:#6b7280;margin-bottom:12px;font-size:14px;">Paste their website URL to suggest FAQs. Review and add to staged below.</p>
+                <div class="form-group" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                    <input type="url" id="tenantWebsiteUrl" placeholder="https://www.example.com.au" style="flex:1;min-width:200px;max-width:400px;" />
+                    <button type="button" class="btn-primary" id="generateFaqsFromUrlButton" data-tenant-id="${escapeHtml(tenant.id)}">Generate</button>
+                </div>
+                <div id="generateFaqsError" class="error" style="margin-top:8px;"></div>
+                <div id="generateFaqsResult" style="display:none;margin-top:16px;">
+                    <p style="font-weight:500;margin-bottom:10px;">Generated FAQs — edit if needed, then add to staged:</p>
+                    <ul id="generatedFaqsList" class="faq-list" style="margin-bottom:12px;"></ul>
+                    <button type="button" class="btn-primary" id="addGeneratedToStagedButton">Add these to staged FAQs</button>
+                </div>
+            </div>
+            <div class="section">
                 <h2>Stats (last 24 hours)</h2>
                 ${stats ? '<div class="stats-grid"><div class="stat-card"><div class="label">Questions answered</div><div class="value">' + stats.total_queries + '</div></div><div class="stat-card"><div class="label">FAQ match rate</div><div class="value">' + ((stats.faq_hit_rate || 0) * 100).toFixed(1) + '%</div></div><div class="stat-card"><div class="label">Avg latency</div><div class="value">' + (stats.avg_latency_ms || 0) + 'ms</div></div></div>' : '<p style="color:#6b7280;">No stats yet</p>'}
             </div>
@@ -382,6 +397,62 @@ async function uploadStagedFaqs(tenantId) {
     }
 }
 
+async function generateFaqsFromUrl(tenantId, url, businessName) {
+    const errEl = document.getElementById('generateFaqsError');
+    const resultEl = document.getElementById('generateFaqsResult');
+    const listEl = document.getElementById('generatedFaqsList');
+    const btn = document.getElementById('generateFaqsFromUrlButton');
+    errEl.textContent = '';
+    resultEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+    try {
+        const res = await fetch(API_BASE + '/admin/api/generate-faqs-from-url', {
+            method: 'POST', headers: getHeaders(),
+            body: JSON.stringify({ url: url, business_type: 'other', business_name: businessName || '' })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data.error) throw new Error(data.error);
+        const suggested = data.suggested_faqs || [];
+        generatedFaqsFromUrl = suggested.map(f => ({ question: f.question || '', answer: f.answer || '' }));
+        listEl.innerHTML = generatedFaqsFromUrl.map((faq, i) => {
+        const q = (faq.question || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const a = escapeHtml(faq.answer || '');
+        return `<li style="margin-bottom:12px;padding:10px;background:#f9fafb;border-radius:6px;">
+                <input type="text" class="generated-faq-q" data-i="${i}" value="${q}" placeholder="Question" style="width:100%;margin-bottom:6px;padding:6px 10px;" />
+                <textarea class="generated-faq-a" data-i="${i}" rows="2" placeholder="Answer" style="width:100%;padding:6px 10px;resize:vertical;">${a}</textarea>
+            </li>`;
+    }).join('');
+        resultEl.style.display = 'block';
+    } catch (e) {
+        errEl.textContent = e.message;
+    }
+    btn.disabled = false;
+    btn.textContent = 'Generate';
+}
+
+function addGeneratedToStaged() {
+    const listEl = document.getElementById('generatedFaqsList');
+    if (!listEl) return;
+    const items = [];
+    listEl.querySelectorAll('li').forEach((li, i) => {
+        const q = (li.querySelector('.generated-faq-q') || {}).value || '';
+        const a = (li.querySelector('.generated-faq-a') || {}).value || '';
+        if (q.trim()) items.push({ question: q.trim(), answer: a.trim() });
+    });
+    const textarea = document.getElementById('stagedFaqsJson');
+    if (!textarea) return;
+    let existing = [];
+    try {
+        const t = textarea.value.trim();
+        if (t) existing = JSON.parse(t);
+    } catch (e) {}
+    const combined = Array.isArray(existing) ? existing.concat(items) : items;
+    textarea.value = JSON.stringify(combined, null, 2);
+    document.getElementById('faqsSuccess').textContent = 'Added ' + items.length + ' FAQs to the list above. Click "Upload Staged" to save.';
+    document.getElementById('faqsError').textContent = '';
+}
+
 async function promoteStaged(tenantId) {
     document.getElementById('faqsError').textContent = '';
     document.getElementById('faqsSuccess').textContent = 'Going live...';
@@ -475,6 +546,7 @@ function showWizard() {
     wizardTemplateVars = {};
     document.getElementById('wizBusinessName').value = '';
     document.getElementById('wizBusinessType').value = 'Plumber';
+    document.getElementById('wizWebsiteUrl').value = '';
     document.getElementById('wizOwnerName').value = '';
     document.getElementById('wizOwnerEmail').value = '';
     updateWizardWidgetIdPreview();
@@ -489,6 +561,10 @@ function showWizard() {
     document.getElementById('wizStep2Error').textContent = '';
     document.getElementById('wizPreviewBody').innerHTML = '';
     wizardSuggestedQuestions = [];
+    const wizIntro = document.getElementById('wizStep2Intro');
+    const wizNote = document.getElementById('wizWebsiteFaqsNote');
+    if (wizIntro) wizIntro.style.display = '';
+    if (wizNote) wizNote.style.display = 'none';
     document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
     document.getElementById('wizardStep1').classList.add('active');
     showPage('wizardPage');
@@ -497,11 +573,13 @@ function showWizard() {
 function wizardStep1Next() {
     const name = document.getElementById('wizBusinessName').value.trim();
     const type = document.getElementById('wizBusinessType').value;
+    const websiteUrl = document.getElementById('wizWebsiteUrl').value.trim();
     const ownerName = document.getElementById('wizOwnerName').value.trim();
     const ownerEmail = document.getElementById('wizOwnerEmail').value.trim().toLowerCase();
     const ownerPhone = document.getElementById('wizOwnerPhone').value.trim();
     const errEl = document.getElementById('wizStep1Error');
     const boxEl = document.getElementById('wizTempPasswordBox');
+    const nextBtn = document.getElementById('wizStep1Next');
     errEl.textContent = '';
     boxEl.style.display = 'none';
     if (!name) { errEl.textContent = 'Business name required'; return; }
@@ -539,20 +617,66 @@ function wizardStep1Next() {
             boxEl.style.display = 'block';
             const bizType = document.getElementById('wizBusinessType').value;
             const typeKey = bizType.toLowerCase();
+
+            if (websiteUrl && (typeKey === 'cleaner' || typeKey === 'plumber' || typeKey === 'electrician' || typeKey === 'other')) {
+                nextBtn.disabled = true;
+                nextBtn.textContent = 'Reading website and generating FAQs...';
+                try {
+                    const faqRes = await fetch(API_BASE + '/admin/api/generate-faqs-from-url', {
+                        method: 'POST', headers: getHeaders(),
+                        body: JSON.stringify({ url: websiteUrl, business_type: typeKey, business_name: name })
+                    });
+                    const faqData = await faqRes.json().catch(() => ({}));
+                    if (faqData.error) throw new Error(faqData.error);
+                    const suggested = faqData.suggested_faqs || [];
+                    if (suggested.length > 0) {
+                        wizardFaqs = suggested.map(f => ({ question: f.question || '', answer: f.answer || '' }));
+                        document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+                        document.getElementById('wizardStep2').classList.add('active');
+                        document.getElementById('wizStep2Intro').style.display = 'none';
+                        const noteEl = document.getElementById('wizWebsiteFaqsNote');
+                        const noteText = document.getElementById('wizWebsiteFaqsNoteText');
+                        if (typeKey === 'cleaner' || typeKey === 'plumber' || typeKey === 'electrician') {
+                            wizardTemplateType = typeKey;
+                            noteEl.style.display = 'block';
+                            noteText.textContent = 'These FAQs were generated from the website. You can also load the ' + (typeKey.charAt(0).toUpperCase() + typeKey.slice(1)) + ' template instead.';
+                            document.getElementById('wizLoadTemplateInsteadBtn').style.display = 'inline-block';
+                        } else {
+                            noteEl.style.display = 'none';
+                        }
+                        document.getElementById('wizSaveAndGoLive').disabled = wizardFaqs.length < 5;
+                        renderWizardFaqList();
+                        nextBtn.disabled = false;
+                        nextBtn.textContent = 'Next →';
+                        return;
+                    }
+                } catch (e) {
+                    errEl.textContent = e.message || 'Website scrape failed. Continuing with template or blank.';
+                }
+                nextBtn.disabled = false;
+                nextBtn.textContent = 'Next →';
+            }
+
             if (typeKey === 'cleaner' || typeKey === 'plumber' || typeKey === 'electrician') {
                 wizardTemplateType = typeKey;
                 document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
                 document.getElementById('wizardStep1b').classList.add('active');
+                document.getElementById('wizStep2Intro').style.display = '';
+                document.getElementById('wizWebsiteFaqsNote').style.display = 'none';
                 loadWizardTemplateStep();
             } else {
                 wizardFaqs = [];
                 document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
                 document.getElementById('wizardStep2').classList.add('active');
+                document.getElementById('wizStep2Intro').style.display = '';
+                document.getElementById('wizWebsiteFaqsNote').style.display = 'none';
                 document.getElementById('wizSaveAndGoLive').disabled = wizardFaqs.length < 5;
                 renderWizardFaqList();
             }
         } catch (e) {
             errEl.textContent = e.message;
+            nextBtn.disabled = false;
+            nextBtn.textContent = 'Next →';
         }
     })();
 }
@@ -593,6 +717,20 @@ function wizardUseTemplate() {
             wizardFaqs = (data.faqs || []).map(f => ({ question: f.question, answer: f.answer }));
             document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
             document.getElementById('wizardStep2').classList.add('active');
+            document.getElementById('wizWebsiteFaqsNote').style.display = 'none';
+            document.getElementById('wizSaveAndGoLive').disabled = wizardFaqs.length < 5;
+            renderWizardFaqList();
+        })
+        .catch(e => alert(e.message));
+}
+
+function wizardLoadTemplateInstead() {
+    if (!wizardTemplateType) return;
+    fetch(API_BASE + '/admin/api/faq-templates/' + encodeURIComponent(wizardTemplateType), { headers: getHeaders() })
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to load template')))
+        .then(data => {
+            wizardFaqs = (data.faqs || []).map(f => ({ question: f.question, answer: f.answer }));
+            document.getElementById('wizWebsiteFaqsNote').style.display = 'none';
             document.getElementById('wizSaveAndGoLive').disabled = wizardFaqs.length < 5;
             renderWizardFaqList();
         })
@@ -787,6 +925,8 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('wizStep1Next').addEventListener('click', wizardStep1Next);
     document.getElementById('wizUseTemplateBtn').addEventListener('click', wizardUseTemplate);
     document.getElementById('wizWriteOwnFaqsBtn').addEventListener('click', wizardWriteOwnFaqs);
+    const loadTemplateInsteadBtn = document.getElementById('wizLoadTemplateInsteadBtn');
+    if (loadTemplateInsteadBtn) loadTemplateInsteadBtn.addEventListener('click', wizardLoadTemplateInstead);
     document.getElementById('wizAddFaq').addEventListener('click', wizardAddFaq);
     document.getElementById('wizFaqAnswer').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); wizardAddFaq(); } });
     document.getElementById('wizSaveAndGoLive').addEventListener('click', wizardSaveAndGoLive);
@@ -831,6 +971,19 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             const id = e.target.getAttribute('data-tenant-id');
             if (id) rollbackTenant(id);
+        }
+        if (e.target.id === 'generateFaqsFromUrlButton') {
+            e.preventDefault();
+            const tenantId = e.target.getAttribute('data-tenant-id');
+            const url = document.getElementById('tenantWebsiteUrl')?.value?.trim();
+            const detail = document.getElementById('tenantDetail');
+            const name = (detail && detail.getAttribute('data-tenant-name')) || '';
+            if (tenantId && url) generateFaqsFromUrl(tenantId, url, name);
+            else document.getElementById('generateFaqsError').textContent = 'Enter a website URL';
+        }
+        if (e.target.id === 'addGeneratedToStagedButton') {
+            e.preventDefault();
+            addGeneratedToStaged();
         }
         if (e.target.id === 'createOwnerAccountButton') {
             e.preventDefault();

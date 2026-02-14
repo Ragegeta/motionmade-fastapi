@@ -430,9 +430,17 @@ CREATE TABLE IF NOT EXISTS query_log (
     confidence REAL,
     retrieval_path TEXT,
     was_fallback BOOLEAN DEFAULT FALSE,
+    answer_given TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_query_log_tenant_created ON query_log (tenant_id, created_at DESC);
+
+DO $$
+BEGIN
+  ALTER TABLE query_log ADD COLUMN answer_given TEXT;
+EXCEPTION
+  WHEN duplicate_column THEN NULL;
+END $$;
 """
 
 
@@ -584,6 +592,7 @@ def _log_query_log(
     confidence: Optional[float],
     retrieval_path: Optional[str],
     was_fallback: bool,
+    answer_given: Optional[str] = None,
 ):
     """Log individual query for owner dashboard. Fire-and-forget; never breaks response."""
     try:
@@ -596,9 +605,9 @@ def _log_query_log(
                 if row:
                     matched_faq_text = (row[0] or "").strip() or None
             conn.execute(
-                """INSERT INTO query_log (tenant_id, customer_question, matched_faq, confidence, retrieval_path, was_fallback)
-                   VALUES (%s, %s, %s, %s, %s, %s)""",
-                (tenant_id, (customer_question or "").strip() or "", matched_faq_text, confidence, retrieval_path or None, was_fallback),
+                """INSERT INTO query_log (tenant_id, customer_question, matched_faq, confidence, retrieval_path, was_fallback, answer_given)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                (tenant_id, (customer_question or "").strip() or "", matched_faq_text, confidence, retrieval_path or None, was_fallback, (answer_given or "").strip() or None),
             )
             conn.commit()
     except Exception:
@@ -624,6 +633,7 @@ def _log_telemetry(
     retrieval_latency_ms: Optional[int] = None,
     selector_latency_ms: Optional[int] = None,
     retrieval_path: Optional[str] = None,
+    answer_given: Optional[str] = None,
 ):
     """Log request telemetry for analytics. Privacy-safe: stores only lengths and hashes, not raw text."""
     try:
@@ -669,6 +679,7 @@ def _log_telemetry(
             confidence=float(retrieval_score) if retrieval_score is not None else None,
             retrieval_path=retrieval_path,
             was_fallback=not faq_hit,
+            answer_given=answer_given,
         )
     except Exception:
         pass  # Don't fail request if telemetry fails
@@ -1160,7 +1171,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
         payload["replyText"] = f"Ask me a question about {tenant_name} — like pricing, services, or how to book."
         timings = {"triage_ms": 0, "normalize_split_ms": 0, "embedding_ms": 0, "retrieval_ms": 0, "rewrite_ms": 0, "llm_ms": 0, "general_llm_ms": 0, "general_safety_ms": 0, "general_total_ms": 0, "total_ms": int((time.time() - _start_time) * 1000)}
         _set_timing_headers(request, resp, timings, False)
-        _log_telemetry(tenant_id=tenant_id, query_text=msg, normalized_text=msg, intent_count=0, debug_branch="greeting", faq_hit=False, top_faq_id=None, retrieval_score=None, rewrite_triggered=False, latency_ms=timings["total_ms"], retrieval_path="fallback")
+        _log_telemetry(tenant_id=tenant_id, query_text=msg, normalized_text=msg, intent_count=0, debug_branch="greeting", faq_hit=False, top_faq_id=None, retrieval_score=None, rewrite_triggered=False, latency_ms=timings["total_ms"], retrieval_path="fallback", answer_given=payload["replyText"])
         return payload
 
     # Timing breakdown
@@ -1205,6 +1216,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
             latency_ms=timings["total_ms"],
             retrieval_path=resp.headers.get("X-Retrieval-Path") or "fallback",
+            answer_given=payload["replyText"],
         )
         return payload
 
@@ -1266,6 +1278,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
                 rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
                 latency_ms=timings["total_ms"],
                 retrieval_path=resp.headers.get("X-Retrieval-Path") or "fallback",
+                answer_given=payload["replyText"],
             )
             return payload
 
@@ -1290,6 +1303,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
                 rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
                 latency_ms=timings["total_ms"],
                 retrieval_path=resp.headers.get("X-Retrieval-Path") or "fallback",
+                answer_given=payload["replyText"],
             )
             return payload
 
@@ -1312,6 +1326,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
             latency_ms=timings["total_ms"],
             retrieval_path=resp.headers.get("X-Retrieval-Path") or "fallback",
+            answer_given=payload["replyText"],
         )
         return payload
 
@@ -1390,6 +1405,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
                 rewrite_triggered=False,
                 latency_ms=timings["total_ms"],
                 retrieval_path=resp.headers.get("X-Retrieval-Path") or "cache",
+                answer_given=payload["replyText"],
             )
             return payload
 
@@ -1523,6 +1539,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
                 retrieval_latency_ms=retrieval_trace.get("retrieval_ms"),
                 selector_latency_ms=retrieval_trace.get("selector_ms"),
                 retrieval_path=retrieval_trace.get("retrieval_path") or resp.headers.get("X-Retrieval-Path") or "fallback",
+                answer_given=payload["replyText"],
             )
             return payload
 
@@ -1612,6 +1629,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
                     rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
                     latency_ms=timings["total_ms"],
                     retrieval_path=resp.headers.get("X-Retrieval-Path") or "llm-rewrite",
+                    answer_given=payload["replyText"],
                 )
                 return payload
 
@@ -1636,6 +1654,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
             latency_ms=timings["total_ms"],
             retrieval_path=resp.headers.get("X-Retrieval-Path") or "fallback",
+            answer_given=payload["replyText"],
         )
         return payload
 
@@ -1664,6 +1683,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
             latency_ms=timings["total_ms"],
             retrieval_path="fallback",
+            answer_given=payload["replyText"],
         )
         return payload
 
@@ -1687,6 +1707,7 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
             rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
             latency_ms=timings["total_ms"],
             retrieval_path=resp.headers.get("X-Retrieval-Path") or "fallback",
+            answer_given=payload["replyText"],
         )
         return payload
 
@@ -2737,7 +2758,7 @@ def owner_queries(
         ).fetchone()
         total = total_row[0] or 0
         rows = conn.execute(
-            f"""SELECT id, customer_question, matched_faq, was_fallback, created_at
+            f"""SELECT id, customer_question, answer_given, matched_faq, was_fallback, created_at
                 FROM query_log WHERE {where}
                 ORDER BY created_at DESC
                 LIMIT %s OFFSET %s""",
@@ -2747,9 +2768,10 @@ def owner_queries(
         {
             "id": r[0],
             "question": (r[1] or "").strip(),
-            "matched_to": (r[2] or "").strip() or None,
-            "answered": not (r[3] or False),
-            "timestamp": r[4].isoformat() if r[4] else None,
+            "answer": (r[2] or "").strip() or None,
+            "matched_to": (r[3] or "").strip() or None,
+            "answered": not (r[4] or False),
+            "timestamp": r[5].isoformat() if r[5] else None,
         }
         for r in rows
     ]
@@ -2868,7 +2890,7 @@ def owner_queries_export(
     days = max(1, min(365, days))
     with get_conn() as conn:
         rows = conn.execute(
-            """SELECT created_at, customer_question, matched_faq, was_fallback
+            """SELECT created_at, customer_question, answer_given, matched_faq, was_fallback
                FROM query_log
                WHERE tenant_id = %s AND created_at > now() - (%s::text || ' days')::interval
                ORDER BY created_at DESC""",
@@ -2878,13 +2900,14 @@ def owner_queries_export(
     import csv
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["timestamp", "question", "matched_to", "answered"])
+    w.writerow(["timestamp", "question", "answer", "matched_to", "answered"])
     for r in rows:
         w.writerow([
             r[0].strftime("%Y-%m-%d %H:%M:%S") if r[0] else "",
             (r[1] or "").strip(),
             (r[2] or "").strip() or "",
-            "yes" if not (r[3] or False) else "no",
+            (r[3] or "").strip() or "",
+            "yes" if not (r[4] or False) else "no",
         ])
     response = Response(content=buf.getvalue(), media_type="text/csv")
     response.headers["Content-Disposition"] = f'attachment; filename="queries_{tenant_id}_{days}d.csv"'
@@ -2921,6 +2944,109 @@ def admin_weekly_summary_log(authorization: str = Header(default="")):
             trend = f"{'+' if pct >= 0 else ''}{pct}%"
         print(f"[WEEKLY_SUMMARY] {tid}: {this_week} questions this week ({trend}), {unanswered} unanswered")
     return {"ok": True}
+
+
+class GenerateFaqsFromUrlBody(BaseModel):
+    url: str
+    business_type: str = "other"
+    business_name: str = ""
+
+
+@app.post("/admin/api/generate-faqs-from-url")
+def admin_generate_faqs_from_url(
+    body: GenerateFaqsFromUrlBody,
+    authorization: str = Header(default=""),
+):
+    """Fetch a website, extract text, and use GPT to suggest 8-12 FAQs. ADMIN_TOKEN protected."""
+    _check_admin_auth(authorization)
+    url = (body.url or "").strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="url required")
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = "https://" + url
+    business_type = (body.business_type or "other").strip() or "other"
+    business_name = (body.business_name or "").strip() or "this business"
+    try:
+        import requests as req_lib
+        resp = req_lib.get(url, timeout=10, headers={"User-Agent": "MotionMade FAQ Builder"})
+        resp.raise_for_status()
+        html_content = resp.text
+    except Exception as e:
+        return {"error": "Couldn't access that website. Check the URL and try again."}
+    try:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html_content, "html.parser")
+        for tag in soup(["script", "style", "nav", "footer", "header"]):
+            tag.decompose()
+        text = soup.get_text(separator=" ", strip=True)
+        website_text = (text or "")[:4000]
+    except Exception:
+        return {"error": "Couldn't extract text from that website. Try again."}
+    system_prompt = f'''You are a FAQ generator for small service businesses.
+Given website content from a {business_type} business called "{business_name}",
+generate 8-12 frequently asked questions that customers would ask.
+
+Rules:
+- Questions should be from the CUSTOMER's perspective ("How much...", "Do you...", "What areas...")
+- Answers should use specific details from the website (prices, areas, services, phone numbers)
+- If the website doesn't have specific info (like prices), write the answer with a placeholder like "[PRICE]" that the admin can fill in
+- Keep answers concise (1-3 sentences)
+- Include questions about: pricing, areas/coverage, booking process, what's included, payment methods, guarantees, insurance/licensing
+- Write in a natural, friendly Australian tone
+
+Return ONLY a JSON array of objects: [{{"question": "...", "answer": "..."}}]
+No other text, no markdown, no explanation.'''
+    user_prompt = f"Website content from {business_name} ({url}):\n\n{website_text}"
+    try:
+        raw = chat_once(
+            system_prompt,
+            user_prompt,
+            temperature=0.3,
+            max_tokens=2000,
+            timeout=15,
+            model="gpt-4o-mini",
+        )
+    except Exception:
+        return {"error": "Couldn't generate FAQs from that site. Try adding some manually."}
+    raw = (raw or "").strip()
+    # Strip markdown code fence if present
+    if raw.startswith("```"):
+        raw = re.sub(r"^```(?:json)?\s*", "", raw)
+        raw = re.sub(r"\s*```$", "", raw)
+    try:
+        suggested = json.loads(raw)
+    except json.JSONDecodeError:
+        try:
+            raw2 = chat_once(
+                system_prompt,
+                user_prompt,
+                temperature=0.2,
+                max_tokens=2000,
+                timeout=15,
+                model="gpt-4o-mini",
+            )
+            raw2 = (raw2 or "").strip()
+            if raw2.startswith("```"):
+                raw2 = re.sub(r"^```(?:json)?\s*", "", raw2)
+                raw2 = re.sub(r"\s*```$", "", raw2)
+            suggested = json.loads(raw2)
+        except (json.JSONDecodeError, Exception):
+            return {"error": "Couldn't generate FAQs from that site. Try adding some manually."}
+    if not isinstance(suggested, list):
+        return {"error": "Couldn't generate FAQs from that site. Try adding some manually."}
+    faqs = []
+    for item in suggested[:20]:
+        if isinstance(item, dict) and item.get("question"):
+            faqs.append({
+                "question": str(item.get("question", "")).strip(),
+                "answer": str(item.get("answer", "")).strip() or "",
+            })
+    return {
+        "business_name": business_name,
+        "url": url,
+        "suggested_faqs": faqs,
+        "source": "website_scrape",
+    }
 
 
 # Owner FAQ write endpoints removed — quality controlled by admin only
