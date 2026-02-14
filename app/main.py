@@ -148,7 +148,10 @@ def serve_widget_js():
     return Response(
         content=_widget_js_path.read_text(encoding="utf-8"),
         media_type="application/javascript",
-        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+        },
     )
 
 

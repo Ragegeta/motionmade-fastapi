@@ -45,17 +45,21 @@
     '#mm-widget-root .mm-panel-body{flex:1;overflow-y:auto;padding:16px}',
     '#mm-widget-root .mm-inrow{display:flex;gap:8px;align-items:stretch;margin-top:0}',
     '#mm-widget-root .mm-input-wrap{position:relative;flex:1;min-width:0}',
+    '#mm-widget-root .mm-input-wrap.dropdown-open .mm-input{border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom-color:transparent}',
+    '#mm-widget-root .mm-input-wrap.dropdown-open .mm-dropdown{border-top:1px solid #d1d5db}',
     '#mm-widget-root .mm-input{width:100%;min-height:44px;padding:10px 40px 10px 12px;font-size:16px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#111827}',
     '#mm-widget-root .mm-input-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:#6b7280;font-size:12px;pointer-events:auto;user-select:none}',
     '#mm-widget-root .mm-input-arrow:hover{color:#111827}',
-    '#mm-widget-root .mm-dropdown{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);max-height:220px;overflow-y:auto;z-index:10;display:none}',
+    '#mm-widget-root .mm-dropdown{position:absolute;left:0;right:0;top:100%;margin-top:0;background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);max-height:220px;overflow-y:auto;z-index:10;display:none}',
     '#mm-widget-root .mm-dropdown.open{display:block}',
-    '#mm-widget-root .mm-dropdown-item{padding:10px 12px;font-size:14px;color:#111827;cursor:pointer;border-bottom:1px solid #f3f4f6}',
+    '#mm-widget-root .mm-dropdown-item{padding:12px 14px;font-size:14px;color:#111827;cursor:pointer;border-bottom:1px solid #f3f4f6}',
     '#mm-widget-root .mm-dropdown-item:last-child{border-bottom:none}',
-    '#mm-widget-root .mm-dropdown-item:hover{background:#f3f4f6}',
+    '#mm-widget-root .mm-dropdown-item:hover{background:#EFF6FF}',
     '#mm-widget-root .mm-ask-btn{padding:10px 20px;min-height:44px;background:#2563EB;color:#fff;border:none;border-radius:8px;font-weight:500;cursor:pointer;font-size:15px}',
     '#mm-widget-root .mm-foot{padding:10px 16px;border-top:1px solid #e5e7eb;text-align:center;font-size:11px;color:#9ca3af}',
     '#mm-widget-root .mm-answer-slot{margin-top:14px;min-height:0}',
+    '#mm-widget-root .mm-you-asked{font-size:12px;color:#6b7280;margin-bottom:8px}',
+    '#mm-widget-root .mm-you-asked q{font-style:normal;color:#374151}',
     '#mm-widget-root .mm-loading{font-size:14px;color:#6b7280}',
     '#mm-widget-root .mm-ans-box{padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:14px;color:#0c4a6e;white-space:pre-wrap}',
     '#mm-widget-root .mm-spinner{height:24px;width:24px;border:3px solid #e5e7eb;border-top-color:#2563EB;border-radius:50%;animation:mm-spin .6s linear infinite}',
@@ -182,6 +186,7 @@
       item.onclick = function () {
         input.value = q;
         dropdown.classList.remove('open');
+        wrap.classList.remove('dropdown-open');
         ask(input, q);
       };
       dropdown.appendChild(item);
@@ -189,12 +194,14 @@
     arrow.onclick = function (e) {
       e.preventDefault();
       e.stopPropagation();
-      var open = dropdown.classList.toggle('open');
-      if (open) {
+      var isOpen = dropdown.classList.toggle('open');
+      wrap.classList.toggle('dropdown-open', isOpen);
+      if (isOpen) {
         setTimeout(function () {
           document.addEventListener('click', function closeHandler(ev) {
             if (!wrap.contains(ev.target)) {
               dropdown.classList.remove('open');
+              wrap.classList.remove('dropdown-open');
               document.removeEventListener('click', closeHandler);
             }
           });
@@ -214,6 +221,10 @@
         e.preventDefault();
         askBtn.click();
       }
+      if (e.key === 'Escape') {
+        dropdown.classList.remove('open');
+        wrap.classList.remove('dropdown-open');
+      }
     };
     wrap.appendChild(input);
     wrap.appendChild(arrow);
@@ -230,7 +241,8 @@
     inputEl.value = '';
     var slot = panelBody.querySelector('.mm-answer-slot');
     if (!slot) return;
-    slot.innerHTML = '<div class="mm-loading">Getting answer...</div>';
+    var youAsked = '<div class="mm-you-asked">You asked: <q>' + escapeHtml(questionText) + '</q></div>';
+    slot.innerHTML = youAsked + '<div class="mm-loading">Getting answer...</div>';
     var xhr = new XMLHttpRequest();
     xhr.open('POST', apiBase + '/api/v2/generate-quote-reply', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -246,12 +258,12 @@
         err = networkErrorMessage();
       }
       if (slot.parentNode) {
-        if (err) slot.innerHTML = '<div class="mm-err">' + escapeHtml(err) + '</div>';
-        else slot.innerHTML = '<div class="mm-ans-box">' + escapeHtml(ans) + '</div>';
+        if (err) slot.innerHTML = youAsked + '<div class="mm-err">' + escapeHtml(err) + '</div>';
+        else slot.innerHTML = youAsked + '<div class="mm-ans-box">' + escapeHtml(ans) + '</div>';
       }
     };
     xhr.onerror = function () {
-      if (slot.parentNode) slot.innerHTML = '<div class="mm-err">' + escapeHtml(networkErrorMessage()) + '</div>';
+      if (slot.parentNode) slot.innerHTML = youAsked + '<div class="mm-err">' + escapeHtml(networkErrorMessage()) + '</div>';
     };
     xhr.send(JSON.stringify({ tenantId: tenant, customerMessage: questionText }));
   }
