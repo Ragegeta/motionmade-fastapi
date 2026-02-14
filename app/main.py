@@ -1064,6 +1064,21 @@ def get_suggested_questions(tenant_id: str):
         return {"questions": []}
 
 
+@app.post("/api/v2/contact-form")
+async def contact_form(request: Request):
+    """Receive contact form submissions from the landing page."""
+    data = await request.json()
+    print(f"\n{'='*50}")
+    print(f"[NEW LEAD] {data.get('name', 'Unknown')}")
+    print(f"  Business: {data.get('business', '')}")
+    print(f"  Email: {data.get('email', '')}")
+    print(f"  Phone: {data.get('phone', '')}")
+    print(f"  Type: {data.get('type', '')}")
+    print(f"  Questions: {data.get('message', '')}")
+    print(f"{'='*50}\n")
+    return {"ok": True}
+
+
 @app.post("/api/v2/generate-quote-reply")
 def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
     _start_time = time.monotonic()

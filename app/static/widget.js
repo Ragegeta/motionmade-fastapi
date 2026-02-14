@@ -33,8 +33,11 @@
     '#mm-widget-root .mm-btn{position:fixed;bottom:20px;right:20px;z-index:99998;padding:12px 20px;border:none;border-radius:999px;font-size:15px;font-weight:500;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:transform .15s,box-shadow .15s}',
     '#mm-widget-root .mm-btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,0.2)}',
     '#mm-widget-root .mm-panel{position:fixed;bottom:80px;right:20px;width:min(380px,calc(100vw - 40px));max-height:min(420px,calc(100vh - 120px));z-index:99997;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);display:flex;flex-direction:column;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;font-size:15px}',
-    '#mm-widget-root.mm-inline .mm-panel{position:relative;bottom:auto;right:auto;width:100%;max-width:500px;max-height:none;margin:0 auto;box-shadow:0 1px 3px rgba(0,0,0,0.1);border:1px solid #e5e7eb}',
+    '#mm-widget-root.mm-inline .mm-panel{position:relative;bottom:auto;right:auto;width:100%;max-width:500px;max-height:none;overflow:visible;margin:0 auto;box-shadow:0 1px 3px rgba(0,0,0,0.1);border:1px solid #e5e7eb}',
+    '#mm-widget-root.mm-inline .mm-panel-body{overflow:visible;flex:none}',
     '#mm-widget-root.mm-inline .mm-panel-hdr .mm-panel-close{display:none}',
+    '#mm-widget-root.mm-inline .mm-panel-hdr>div{text-align:left}',
+    '#mm-widget-root.mm-inline .mm-foot{font-size:10px;color:#b0b8c4}',
     '#mm-widget-root .mm-panel-hdr{padding:14px 16px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center}',
     '#mm-widget-root .mm-panel-hdr h3{margin:0;font-size:16px;font-weight:600;color:#111827}',
     '#mm-widget-root .mm-panel-hdr .mm-sub{font-size:12px;color:#6b7280;margin-top:2px}',
@@ -52,25 +55,18 @@
     '#mm-widget-root .mm-dropdown-item:hover{background:#f3f4f6}',
     '#mm-widget-root .mm-ask-btn{padding:10px 20px;min-height:44px;background:#2563EB;color:#fff;border:none;border-radius:8px;font-weight:500;cursor:pointer;font-size:15px}',
     '#mm-widget-root .mm-foot{padding:10px 16px;border-top:1px solid #e5e7eb;text-align:center;font-size:11px;color:#9ca3af}',
-    '#mm-widget-root .mm-answer-block{margin-top:12px}',
-    '#mm-widget-root .mm-your-q{font-size:13px;color:#6b7280;margin-bottom:6px}',
-    '#mm-widget-root .mm-your-q q{font-style:normal;color:#374151}',
+    '#mm-widget-root .mm-answer-slot{margin-top:14px;min-height:0}',
+    '#mm-widget-root .mm-loading{font-size:14px;color:#6b7280}',
     '#mm-widget-root .mm-ans-box{padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:14px;color:#0c4a6e;white-space:pre-wrap}',
     '#mm-widget-root .mm-spinner{height:24px;width:24px;border:3px solid #e5e7eb;border-top-color:#2563EB;border-radius:50%;animation:mm-spin .6s linear infinite}',
     '@keyframes mm-spin{to{transform:rotate(360deg)}}',
-    '#mm-widget-root .mm-again{margin-top:14px}',
-    '#mm-widget-root .mm-again button{padding:8px 14px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-size:14px}',
-    '#mm-widget-root .mm-again button:hover{background:#e5e7eb}',
     '#mm-widget-root .mm-err{color:#dc2626;font-size:14px}'
   ].join('\n');
   root.appendChild(sheet);
 
   var open = false;
-  var state = 'main'; // 'main' | 'answer'
   var suggested = [];
   var apiLoadFailed = false;
-  var currentQuestion = '';
-  var currentAnswer = '';
 
   function networkErrorMessage() {
     return phone ? ("Couldn't load right now. Call " + phone + " instead.") : "Couldn't load right now. Try again later.";
@@ -89,7 +85,7 @@
     btn.onclick = function () {
       open = !open;
       panel.style.display = open ? 'flex' : 'none';
-      if (open && state === 'main' && suggested.length === 0) fetchSuggested();
+      if (open && suggested.length === 0) fetchSuggested();
     };
     root.appendChild(btn);
   }
@@ -152,9 +148,6 @@
   function renderMain() {
     var body = panelBody;
     body.innerHTML = '';
-    state = 'main';
-    currentQuestion = '';
-    currentAnswer = '';
 
     if (apiLoadFailed && suggested.length === 0) {
       body.appendChild((function () {
@@ -189,7 +182,7 @@
       item.onclick = function () {
         input.value = q;
         dropdown.classList.remove('open');
-        ask(q);
+        ask(input, q);
       };
       dropdown.appendChild(item);
     });
@@ -214,7 +207,7 @@
     askBtn.textContent = 'Ask';
     askBtn.onclick = function () {
       var t = input.value.trim();
-      if (t) ask(t);
+      if (t) ask(input, t);
     };
     input.onkeydown = function (e) {
       if (e.key === 'Enter') {
@@ -228,14 +221,16 @@
     row.appendChild(wrap);
     row.appendChild(askBtn);
     body.appendChild(row);
+    var answerSlot = document.createElement('div');
+    answerSlot.className = 'mm-answer-slot';
+    body.appendChild(answerSlot);
   }
 
-  function ask(questionText) {
-    currentQuestion = questionText;
-    state = 'answer';
-    panelBody.innerHTML = '<div class="mm-your-q">Your question:</div><q>' + escapeHtml(questionText) + '</q><div class="mm-answer-block" style="margin-top:12px"><div class="mm-spinner"></div></div><div class="mm-again" style="margin-top:14px"><button type="button">Ask another question</button></div>';
-    panelBody.querySelector('.mm-again button').onclick = renderMain;
-
+  function ask(inputEl, questionText) {
+    inputEl.value = '';
+    var slot = panelBody.querySelector('.mm-answer-slot');
+    if (!slot) return;
+    slot.innerHTML = '<div class="mm-loading">Getting answer...</div>';
     var xhr = new XMLHttpRequest();
     xhr.open('POST', apiBase + '/api/v2/generate-quote-reply', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -250,15 +245,13 @@
       } else {
         err = networkErrorMessage();
       }
-      var block = panelBody.querySelector('.mm-answer-block');
-      if (block) {
-        if (err) block.innerHTML = '<div class="mm-err">' + escapeHtml(err) + '</div>';
-        else block.innerHTML = '<div class="mm-ans-box">' + escapeHtml(ans) + '</div>';
+      if (slot.parentNode) {
+        if (err) slot.innerHTML = '<div class="mm-err">' + escapeHtml(err) + '</div>';
+        else slot.innerHTML = '<div class="mm-ans-box">' + escapeHtml(ans) + '</div>';
       }
     };
     xhr.onerror = function () {
-      var block = panelBody.querySelector('.mm-answer-block');
-      if (block) block.innerHTML = '<div class="mm-err">' + escapeHtml(networkErrorMessage()) + '</div>';
+      if (slot.parentNode) slot.innerHTML = '<div class="mm-err">' + escapeHtml(networkErrorMessage()) + '</div>';
     };
     xhr.send(JSON.stringify({ tenantId: tenant, customerMessage: questionText }));
   }
