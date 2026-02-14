@@ -135,11 +135,13 @@ async function deleteTenant(tenantId) {
 // ---------- Tenant detail (View / Edit FAQs) ----------
 async function showTenantDetail(tenantId) {
     try {
-        const [tenantRes, statsRes, ownerRes, suggestionsRes] = await Promise.all([
+        const [tenantRes, statsRes, ownerRes, suggestionsRes, faqDumpRes, queriesRes] = await Promise.all([
             fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId), { headers: getHeaders() }),
             fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/stats', { headers: getHeaders() }).catch(() => null),
             fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/owner', { headers: getHeaders() }).catch(() => null),
-            fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/suggestions', { headers: getHeaders() }).catch(() => null)
+            fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/suggestions', { headers: getHeaders() }).catch(() => null),
+            fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/faq-dump', { headers: getHeaders() }).catch(() => null),
+            fetch(API_BASE + '/admin/api/tenant/' + encodeURIComponent(tenantId) + '/queries?days=7&limit=50', { headers: getHeaders() }).catch(() => null)
         ]);
         if (!tenantRes.ok) throw new Error('HTTP ' + tenantRes.status);
         const tenant = await tenantRes.json();
@@ -148,6 +150,10 @@ async function showTenantDetail(tenantId) {
         if (ownerRes && ownerRes.ok) try { owner = await ownerRes.json(); } catch (_) {}
         let suggestions = [];
         if (suggestionsRes && suggestionsRes.ok) try { const d = await suggestionsRes.json(); suggestions = d.suggestions || []; } catch (_) {}
+        let liveFaqs = [];
+        if (faqDumpRes && faqDumpRes.ok) try { const d = await faqDumpRes.json(); liveFaqs = d.faqs || []; } catch (_) {}
+        let recentQueries = [];
+        if (queriesRes && queriesRes.ok) try { const d = await queriesRes.json(); recentQueries = d.queries || []; } catch (_) {}
         const pendingSuggestions = suggestions.filter(s => (s.status || '').toLowerCase() === 'pending');
         const lastLoginStr = owner && owner.last_login ? new Date(owner.last_login).toLocaleString() : 'Never';
         const ownerSectionHtml = owner
@@ -207,6 +213,30 @@ async function showTenantDetail(tenantId) {
                 </div>
                 <div id="faqsError" class="error"></div>
                 <div id="faqsSuccess" class="success"></div>
+            </div>
+            <div class="section">
+                <h2>Live FAQs (${liveFaqs.length})</h2>
+                ${liveFaqs.length === 0 ? '<p style="color:#6b7280;">No live FAQs yet. Upload staged and click Go Live.</p>' : liveFaqs.map(f => `
+                <div class="faq-card" style="border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin-bottom:12px;background:#fff;">
+                    <div class="faq-question" style="font-weight:600;color:#111827;margin-bottom:6px;">${escapeHtml(f.question)}</div>
+                    <div class="faq-answer" style="font-size:14px;color:#6b7280;line-height:1.5;border-left:3px solid #e5e7eb;padding-left:12px;">${escapeHtml(typeof f.answer === 'string' ? f.answer : (f.answer || ''))}</div>
+                </div>`).join('')}
+            </div>
+            <div class="section">
+                <h2>Recent Customer Questions (last 7 days)</h2>
+                ${recentQueries.length === 0 ? '<p style="color:#6b7280;">No customer questions yet. Queries will appear here once the widget is in use.</p>' : recentQueries.map(q => {
+                    const borderColor = q.answered ? '#10b981' : '#f59e0b';
+                    const status = q.answered ? '✅' : '❌';
+                    const answerText = (q.answer || '').trim() || '—';
+                    const answerShort = answerText.length > 120 ? answerText.slice(0, 120) + '…' : answerText;
+                    const timeStr = q.timestamp ? new Date(q.timestamp).toLocaleString() : '';
+                    return `
+                <div class="query-card" style="border:1px solid #e5e7eb;border-left:4px solid ${borderColor};border-radius:8px;padding:14px 16px;margin-bottom:12px;background:#fff;">
+                    <div style="font-weight:600;color:#111827;margin-bottom:6px;">"${escapeHtml(q.question)}"</div>
+                    <div style="font-size:14px;color:#6b7280;margin-bottom:6px;">Answer: ${escapeHtml(answerShort)}</div>
+                    <div style="font-size:13px;color:#6b7280;">→ ${q.matched_to ? 'Matched: ' + escapeHtml(q.matched_to) : 'No match'} ${status} · ${escapeHtml(timeStr)}</div>
+                </div>`;
+                }).join('')}
             </div>
             <div class="section">
                 <h2>Generate FAQs from website</h2>

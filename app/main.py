@@ -670,6 +670,8 @@ def _log_query_log(
     answer_given: Optional[str] = None,
 ):
     """Log individual query for owner dashboard. Fire-and-forget; never breaks response."""
+    q_preview = ((customer_question or "").strip() or "")[:50]
+    print(f"[QUERY_LOG] Writing: tenant={tenant_id} q={q_preview!r}")
     try:
         matched_faq_text = None
         with get_conn() as conn:
@@ -685,8 +687,8 @@ def _log_query_log(
                 (tenant_id, (customer_question or "").strip() or "", matched_faq_text, confidence, retrieval_path or None, was_fallback, (answer_given or "").strip() or None),
             )
             conn.commit()
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[QUERY_LOG] ERROR: {e}")
 
 
 def _log_telemetry(
@@ -711,27 +713,22 @@ def _log_telemetry(
     answer_given: Optional[str] = None,
 ):
     """Log request telemetry for analytics. Privacy-safe: stores only lengths and hashes, not raw text."""
+    # Telemetry: only columns that exist in schema (candidate_count, retrieval_mode, etc. may not exist)
     try:
         query_len = len(query_text) if query_text else 0
         normalized_len = len(normalized_text) if normalized_text else 0
         query_hash = _hash_text(query_text)
         normalized_hash = _hash_text(normalized_text)
-        
         with get_conn() as conn:
             conn.execute(
                 """INSERT INTO telemetry 
                    (tenant_id, query_length, normalized_length, query_hash, normalized_hash, 
                     intent_count, debug_branch, faq_hit, top_faq_id, retrieval_score, 
-                    rewrite_triggered, latency_ms, candidate_count, retrieval_mode, 
-                    selector_called, selector_confidence, chosen_faq_id, 
-                    retrieval_latency_ms, selector_latency_ms)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (tenant_id, query_len, normalized_len, query_hash, normalized_hash, intent_count, 
-                 debug_branch, faq_hit, top_faq_id, retrieval_score, rewrite_triggered, latency_ms,
-                 candidate_count, retrieval_mode, selector_called, selector_confidence, chosen_faq_id,
-                 retrieval_latency_ms, selector_latency_ms)
+                    rewrite_triggered, latency_ms)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (tenant_id, query_len, normalized_len, query_hash, normalized_hash, intent_count,
+                 debug_branch, faq_hit, top_faq_id, retrieval_score, rewrite_triggered, latency_ms)
             )
-            # Upsert query_stats for owner dashboard (per tenant/date/hour)
             succ = 1 if faq_hit else 0
             fall = 0 if faq_hit else 1
             conf = float(retrieval_score) if retrieval_score is not None else None
@@ -746,7 +743,10 @@ def _log_telemetry(
                 (tenant_id, succ, fall, conf)
             )
             conn.commit()
-        # Owner dashboard query log (fire-and-forget, no conn reuse to avoid holding)
+    except Exception as e:
+        print(f"[TELEMETRY] ERROR: {e}")
+    # Owner dashboard query log: always attempt so query_log is populated even if telemetry fails
+    try:
         _log_query_log(
             tenant_id=tenant_id,
             customer_question=query_text,
@@ -756,8 +756,8 @@ def _log_telemetry(
             was_fallback=not faq_hit,
             answer_given=answer_given,
         )
-    except Exception:
-        pass  # Don't fail request if telemetry fails
+    except Exception as e:
+        print(f"[QUERY_LOG] ERROR (from telemetry): {e}")
 
 
 def _replica_fact_domain(msg: str) -> str:
@@ -3413,6 +3413,49 @@ def get_tenant_detail(tenantId: str, resp: Response, authorization: str = Header
                 pass
     
     return result
+
+
+@app.get("/admin/api/tenant/{tenantId}/queries")
+def admin_get_tenant_queries(
+    tenantId: str,
+    days: int = 7,
+    limit: int = 50,
+    authorization: str = Header(default=""),
+):
+    """Get query log for a specific tenant (admin view). Same data as owner dashboard."""
+    _check_admin_auth(authorization)
+    tid = (tenantId or "").strip()
+    if not tid:
+        raise HTTPException(status_code=400, detail="Tenant ID required")
+    days = max(1, min(365, days))
+    limit = max(1, min(200, limit))
+    with get_conn() as conn:
+        where = "tenant_id = %s AND created_at > now() - (%s::text || ' days')::interval"
+        params = [tid, str(days)]
+        total_row = conn.execute(
+            f"SELECT COUNT(*) FROM query_log WHERE {where}",
+            params,
+        ).fetchone()
+        total = total_row[0] or 0
+        rows = conn.execute(
+            f"""SELECT id, customer_question, answer_given, matched_faq, was_fallback, created_at
+                FROM query_log WHERE {where}
+                ORDER BY created_at DESC
+                LIMIT %s OFFSET 0""",
+            params + [limit],
+        ).fetchall()
+    queries = [
+        {
+            "id": r[0],
+            "question": (r[1] or "").strip(),
+            "answer": (r[2] or "").strip() or None,
+            "matched_to": (r[3] or "").strip() or None,
+            "answered": not (r[4] or False),
+            "timestamp": r[5].isoformat() if r[5] else None,
+        }
+        for r in rows
+    ]
+    return {"tenant_id": tid, "queries": queries, "total": total, "period_days": days}
 
 
 @app.get("/admin/api/tenant/{tenantId}/owner")
