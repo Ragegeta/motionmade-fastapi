@@ -539,7 +539,10 @@ Examples for a cleaning business:
 - "whats the weather" → off-topic
 - "can i book online" → relevant
 - "how do i make a website" → off-topic"""
-        user = f'Customer asked: "{question}"\nBest FAQ match: "{matched_faq}"\nIs this relevant to {business_name} ({business_type})?'
+        if (matched_faq or "").strip() in ("(no match)", "(no match found)", ""):
+            user = f'Customer asked: "{question}"\nNo FAQ matched this question.\nIs this relevant to {business_name} ({business_type})?'
+        else:
+            user = f'Customer asked: "{question}"\nBest FAQ match: "{matched_faq}"\nIs this relevant to {business_name} ({business_type})?'
         reply = chat_once(
             system,
             user,
@@ -554,7 +557,6 @@ Examples for a cleaning business:
         return is_off
     except Exception:
         return False  # fail open
-    return (tenant_id, "")
 
 
 def _hash_text(text: str) -> str:
@@ -1839,7 +1841,44 @@ def generate_quote_reply(req: QuoteRequest, resp: Response, request: Request):
 
     # -----------------------------
     # General chat (professional tone, brief)
+    # Off-topic check: if question is unrelated to this business, return fallback instead of general LLM
     # -----------------------------
+    try:
+        tenant_name_ot, tenant_type = _get_tenant_name_and_type(tenant_id)
+        if _is_off_topic(
+            tenant_id=tenant_id,
+            question=msg,
+            business_name=tenant_name_ot,
+            business_type=tenant_type,
+            matched_faq="(no match)",
+            confidence=0.0,
+        ):
+            resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
+            resp.headers["X-Retrieval-Path"] = "fallback"
+            resp.headers["X-Debug-Branch"] = "off_topic_general"
+            resp.headers["X-Off-Topic-Check"] = "true"
+            resp.headers["X-Faq-Hit"] = "false"
+            payload["replyText"] = _fallback_text()
+            timings["total_ms"] = int((time.time() - _start_time) * 1000)
+            _set_timing_headers(request, resp, timings, _cache_hit)
+            _log_telemetry(
+                tenant_id=tenant_id,
+                query_text=msg,
+                normalized_text=normalized_msg,
+                intent_count=int(resp.headers.get("X-Intent-Count", "1")),
+                debug_branch="off_topic_general",
+                faq_hit=False,
+                top_faq_id=None,
+                retrieval_score=None,
+                rewrite_triggered=resp.headers.get("X-Rewrite-Triggered", "false") == "true",
+                latency_ms=timings["total_ms"],
+                retrieval_path="fallback",
+                answer_given=payload["replyText"],
+            )
+            return payload
+    except Exception:
+        pass  # fail open — let general path handle it
+
     resp.headers["X-Response-Time"] = f"{time.monotonic() - _start_time:.3f}s"
     resp.headers["X-Retrieval-Path"] = "fallback"
     return _respond_general("general_ok", "general_fallback")

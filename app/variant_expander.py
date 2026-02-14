@@ -186,6 +186,16 @@ For each FAQ question, generate 10-15 variants covering:
 
 3. TYPOS AND SLANG: Common misspellings, text-speak, Australian slang
    "How much does it cost?" → "how much is it", "hw much", "is it free", "cost?", "price?"
+   CRITICAL: You MUST include at least 3 variants with textspeak spelling:
+   - "what" → "wat", "wats", "wut"
+   - "you" → "u", "ya"
+   - "your" → "ur"
+   - "how much" → "hw much", "how much"
+   - "does" → "dos", "duz"
+   - "the" → "da", "tha"
+   - "included" → "includd", "included"
+   Example textspeak variants for "What is included?": ["wats included", "wat do u get", "wuts in it"]
+   For cost/price questions also include: "is it free", "free?", "how much", "cost?"
 
 4. DIFFERENT ANGLE: Same intent, different framing
    "How do I apply?" → "how do i sign up", "where do i register", "application process", "how to join"
