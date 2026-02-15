@@ -373,9 +373,37 @@
         <div class="page" id="tenantsPage">
             <div class="businesses-header">
                 <h2>Businesses</h2>
-                <button class="btn-primary" id="showNewBusinessButton">+ New Business</button>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <button class="btn-secondary" id="showLeadsButton">Contact form leads</button>
+                    <button class="btn-primary" id="showNewBusinessButton">+ New Business</button>
+                </div>
             </div>
             <div class="business-cards" id="businessCards"></div>
+        </div>
+
+        <!-- Contact form submissions (Leads) -->
+        <div class="page" id="leadsPage">
+            <a href="#" class="back-link" id="backFromLeadsLink">← Back to Businesses</a>
+            <div class="businesses-header" style="margin-top:16px;">
+                <h2>Contact form submissions</h2>
+            </div>
+            <p style="color:#6b7280;font-size:14px;margin-bottom:16px;">Most recent first. From the landing page contact form.</p>
+            <div style="overflow-x:auto;">
+                <table class="leads-table" id="contactSubmissionsTable" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:#f9fafb;text-align:left;">
+                            <th style="padding:10px;border:1px solid #e5e7eb;">Name</th>
+                            <th style="padding:10px;border:1px solid #e5e7eb;">Business</th>
+                            <th style="padding:10px;border:1px solid #e5e7eb;">Email</th>
+                            <th style="padding:10px;border:1px solid #e5e7eb;">Phone</th>
+                            <th style="padding:10px;border:1px solid #e5e7eb;">Type</th>
+                            <th style="padding:10px;border:1px solid #e5e7eb;">Message</th>
+                            <th style="padding:10px;border:1px solid #e5e7eb;">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contactSubmissionsBody"></tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Tenant detail (View / Edit FAQs) -->

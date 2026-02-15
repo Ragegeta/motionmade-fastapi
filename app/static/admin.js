@@ -118,6 +118,31 @@ async function loadTenants() {
     }
 }
 
+async function loadContactSubmissions() {
+    try {
+        const res = await fetch(API_BASE + '/admin/api/contact-submissions', { headers: getHeaders() });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const list = await res.json();
+        const tbody = document.getElementById('contactSubmissionsBody');
+        if (!tbody) return;
+        tbody.innerHTML = (list || []).map(s => {
+            const submitted = (s.submitted || '').replace('T', ' ').substring(0, 19);
+            return '<tr>' +
+                '<td style="padding:10px;border:1px solid #e5e7eb;">' + escapeHtml(s.name || '') + '</td>' +
+                '<td style="padding:10px;border:1px solid #e5e7eb;">' + escapeHtml(s.business || '') + '</td>' +
+                '<td style="padding:10px;border:1px solid #e5e7eb;"><a href="mailto:' + escapeHtml(s.email || '') + '">' + escapeHtml(s.email || '') + '</a></td>' +
+                '<td style="padding:10px;border:1px solid #e5e7eb;">' + escapeHtml(s.phone || '') + '</td>' +
+                '<td style="padding:10px;border:1px solid #e5e7eb;">' + escapeHtml(s.type || '') + '</td>' +
+                '<td style="padding:10px;border:1px solid #e5e7eb;max-width:280px;">' + escapeHtml(s.message || '') + '</td>' +
+                '<td style="padding:10px;border:1px solid #e5e7eb;">' + escapeHtml(submitted) + '</td>' +
+                '</tr>';
+        }).join('') || '<tr><td colspan="7" style="padding:16px;color:#6b7280;">No submissions yet.</td></tr>';
+        showPage('leadsPage');
+    } catch (e) {
+        alert('Failed to load contact submissions: ' + e.message);
+    }
+}
+
 async function deleteTenant(tenantId) {
     if (!confirm('Delete this business and all its data? This cannot be undone.')) return;
     try {
@@ -950,6 +975,8 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('adminToken').addEventListener('keydown', function (e) { if (e.key === 'Enter') login(); });
     document.getElementById('backToListLink').addEventListener('click', function (e) { e.preventDefault(); loadTenants(); });
     document.getElementById('showNewBusinessButton').addEventListener('click', showWizard);
+    document.getElementById('showLeadsButton').addEventListener('click', loadContactSubmissions);
+    document.getElementById('backFromLeadsLink').addEventListener('click', function (e) { e.preventDefault(); loadTenants(); });
     document.getElementById('wizBusinessName').addEventListener('input', updateWizardWidgetIdPreview);
     document.getElementById('backFromWizardLink').addEventListener('click', function (e) { e.preventDefault(); loadTenants(); });
     document.getElementById('wizStep1Next').addEventListener('click', wizardStep1Next);

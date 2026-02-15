@@ -441,6 +441,68 @@ BEGIN
 EXCEPTION
   WHEN duplicate_column THEN NULL;
 END $$;
+
+CREATE TABLE IF NOT EXISTS demos (
+  slug TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL UNIQUE REFERENCES tenants(id) ON DELETE CASCADE,
+  business_name TEXT NOT NULL,
+  business_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS demos_tenant_id_idx ON demos(tenant_id);
+
+CREATE TABLE IF NOT EXISTS outreach_log (
+  id BIGSERIAL PRIMARY KEY,
+  to_email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  body TEXT NOT NULL,
+  sent_at TIMESTAMPTZ DEFAULT NOW(),
+  status TEXT NOT NULL DEFAULT 'sent',
+  lead_name TEXT
+);
+CREATE INDEX IF NOT EXISTS outreach_log_sent_at_idx ON outreach_log(sent_at DESC);
+
+CREATE TABLE IF NOT EXISTS leads (
+  id BIGSERIAL PRIMARY KEY,
+  trade_type TEXT NOT NULL,
+  suburb TEXT NOT NULL,
+  business_name TEXT,
+  website TEXT,
+  email TEXT,
+  status TEXT NOT NULL DEFAULT 'new',
+  audit_score INTEGER,
+  audit_details JSONB,
+  preview_url TEXT,
+  preview_demo_id TEXT,
+  email_subject TEXT,
+  email_body TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS leads_status_idx ON leads(status);
+CREATE INDEX IF NOT EXISTS leads_trade_suburb_idx ON leads(trade_type, suburb);
+CREATE INDEX IF NOT EXISTS leads_created_idx ON leads(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS autopilot_log (
+  id BIGSERIAL PRIMARY KEY,
+  phase TEXT NOT NULL,
+  message TEXT NOT NULL,
+  detail JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS autopilot_log_created_idx ON autopilot_log(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS contact_submissions (
+  id SERIAL PRIMARY KEY,
+  name TEXT,
+  business TEXT,
+  email TEXT,
+  phone TEXT,
+  business_type TEXT,
+  message TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS contact_submissions_created_idx ON contact_submissions(created_at DESC);
 """
 
 
@@ -1224,14 +1286,37 @@ def get_suggested_questions(tenant_id: str):
 async def contact_form(request: Request):
     """Receive contact form submissions from the landing page."""
     data = await request.json()
+
+    # Log clearly
     print(f"\n{'='*50}")
-    print(f"[NEW LEAD] {data.get('name', 'Unknown')}")
+    print(f"🔔 NEW LEAD")
+    print(f"  Name: {data.get('name', '')}")
     print(f"  Business: {data.get('business', '')}")
     print(f"  Email: {data.get('email', '')}")
     print(f"  Phone: {data.get('phone', '')}")
     print(f"  Type: {data.get('type', '')}")
-    print(f"  Questions: {data.get('message', '')}")
+    print(f"  Message: {data.get('message', '')}")
     print(f"{'='*50}\n")
+
+    # Store in database
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                """INSERT INTO contact_submissions (name, business, email, phone, business_type, message)
+                   VALUES (%s, %s, %s, %s, %s, %s)""",
+                (
+                    data.get("name"),
+                    data.get("business"),
+                    data.get("email"),
+                    data.get("phone"),
+                    data.get("type"),
+                    data.get("message"),
+                ),
+            )
+            conn.commit()
+    except Exception as e:
+        print(f"[CONTACT] DB error: {e}")
+
     return {"ok": True}
 
 
@@ -3117,27 +3202,26 @@ class GenerateFaqsFromUrlBody(BaseModel):
     business_name: str = ""
 
 
-@app.post("/admin/api/generate-faqs-from-url")
-def admin_generate_faqs_from_url(
-    body: GenerateFaqsFromUrlBody,
-    authorization: str = Header(default=""),
-):
-    """Fetch a website, extract text, and use GPT to suggest 8-12 FAQs. ADMIN_TOKEN protected."""
-    _check_admin_auth(authorization)
-    url = (body.url or "").strip()
+def _generate_faqs_from_url(
+    url: str,
+    business_name: str,
+    business_type: str = "other",
+) -> List[dict]:
+    """Scrape URL, extract text, use LLM to suggest 8-12 FAQs. Returns list of {question, answer}. Raises HTTPException on failure."""
+    url = (url or "").strip()
     if not url:
         raise HTTPException(status_code=400, detail="url required")
     if not url.startswith("http://") and not url.startswith("https://"):
         url = "https://" + url
-    business_type = (body.business_type or "other").strip() or "other"
-    business_name = (body.business_name or "").strip() or "this business"
+    business_type = (business_type or "other").strip() or "other"
+    business_name = (business_name or "").strip() or "this business"
     try:
         import requests as req_lib
         resp = req_lib.get(url, timeout=10, headers={"User-Agent": "MotionMade FAQ Builder"})
         resp.raise_for_status()
         html_content = resp.text
-    except Exception as e:
-        return {"error": "Couldn't access that website. Check the URL and try again."}
+    except Exception:
+        raise HTTPException(status_code=400, detail="Couldn't access that website. Check the URL and try again.")
     try:
         from bs4 import BeautifulSoup
         soup = BeautifulSoup(html_content, "html.parser")
@@ -3146,7 +3230,7 @@ def admin_generate_faqs_from_url(
         text = soup.get_text(separator=" ", strip=True)
         website_text = (text or "")[:4000]
     except Exception:
-        return {"error": "Couldn't extract text from that website. Try again."}
+        raise HTTPException(status_code=400, detail="Couldn't extract text from that website. Try again.")
     system_prompt = f'''You are a FAQ generator for small service businesses.
 Given website content from a {business_type} business called "{business_name}",
 generate 8-12 frequently asked questions that customers would ask.
@@ -3172,9 +3256,8 @@ No other text, no markdown, no explanation.'''
             model="gpt-4o-mini",
         )
     except Exception:
-        return {"error": "Couldn't generate FAQs from that site. Try adding some manually."}
+        raise HTTPException(status_code=500, detail="Couldn't generate FAQs from that site. Try adding some manually.")
     raw = (raw or "").strip()
-    # Strip markdown code fence if present
     if raw.startswith("```"):
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
         raw = re.sub(r"\s*```$", "", raw)
@@ -3196,9 +3279,9 @@ No other text, no markdown, no explanation.'''
                 raw2 = re.sub(r"\s*```$", "", raw2)
             suggested = json.loads(raw2)
         except (json.JSONDecodeError, Exception):
-            return {"error": "Couldn't generate FAQs from that site. Try adding some manually."}
+            raise HTTPException(status_code=500, detail="Couldn't generate FAQs from that site. Try adding some manually.")
     if not isinstance(suggested, list):
-        return {"error": "Couldn't generate FAQs from that site. Try adding some manually."}
+        raise HTTPException(status_code=500, detail="Couldn't generate FAQs from that site. Try adding some manually.")
     faqs = []
     for item in suggested[:20]:
         if isinstance(item, dict) and item.get("question"):
@@ -3206,12 +3289,851 @@ No other text, no markdown, no explanation.'''
                 "question": str(item.get("question", "")).strip(),
                 "answer": str(item.get("answer", "")).strip() or "",
             })
+    return faqs
+
+
+@app.post("/admin/api/generate-faqs-from-url")
+def admin_generate_faqs_from_url(
+    body: GenerateFaqsFromUrlBody,
+    authorization: str = Header(default=""),
+):
+    """Fetch a website, extract text, and use GPT to suggest 8-12 FAQs. ADMIN_TOKEN protected."""
+    _check_admin_auth(authorization)
+    url = (body.url or "").strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="url required")
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = "https://" + url
+    business_type = (body.business_type or "other").strip() or "other"
+    business_name = (body.business_name or "").strip() or "this business"
+    try:
+        faqs = _generate_faqs_from_url(url, business_name, business_type)
+    except HTTPException as e:
+        return {"error": (e.detail if isinstance(e.detail, str) else str(e.detail))}
     return {
         "business_name": business_name,
         "url": url,
         "suggested_faqs": faqs,
         "source": "website_scrape",
     }
+
+
+# ---------- Demo widget: generate + public preview (no auth) ----------
+DEMO_EXPIRY_DAYS = 14
+
+
+class DemoGenerateBody(BaseModel):
+    business_url: str
+    business_name: str
+
+
+@app.post("/api/demo/generate")
+def demo_generate(body: DemoGenerateBody):
+    """Generate a demo widget for a business: scrape URL, create FAQs, store under a short ID, return preview URL. Public (no auth)."""
+    import secrets
+    import requests as req_lib
+
+    url = (body.business_url or "").strip()
+    business_name = (body.business_name or "").strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="business_url required")
+    if not business_name:
+        raise HTTPException(status_code=400, detail="business_name required")
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = "https://" + url
+
+    faqs = _generate_faqs_from_url(url, business_name, business_type="other")
+    if not faqs:
+        raise HTTPException(status_code=400, detail="No FAQs could be generated from that URL.")
+
+    short_id = secrets.token_urlsafe(6)  # 8 chars url-safe
+    tenant_id = "demo_" + short_id
+
+    with get_conn() as conn:
+        conn.execute(
+            """INSERT INTO tenants (id, name, business_type, contact_phone)
+               VALUES (%s, %s, %s, %s)
+               ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name""",
+            (tenant_id, business_name, "other", None),
+        )
+        conn.commit()
+
+    _stage_faqs_internal(tenant_id, faqs)
+
+    base_url = os.getenv("PUBLIC_BASE_URL") or (
+        "http://127.0.0.1:8000" if not os.getenv("RENDER") else "https://motionmade-fastapi.onrender.com"
+    )
+    try:
+        promo = req_lib.post(
+            f"{base_url}/admin/api/tenant/{tenant_id}/promote",
+            headers={"Authorization": f"Bearer {settings.ADMIN_TOKEN}"},
+            timeout=180,
+        )
+        promo.raise_for_status()
+    except Exception as e:
+        with get_conn() as conn:
+            conn.execute("DELETE FROM tenants WHERE id = %s", (tenant_id,))
+            conn.commit()
+        raise HTTPException(status_code=500, detail=f"Demo created but promotion failed: {str(e)}")
+
+    with get_conn() as conn:
+        conn.execute(
+            """INSERT INTO demos (slug, tenant_id, business_name, business_url) VALUES (%s, %s, %s, %s)""",
+            (short_id, tenant_id, business_name, url),
+        )
+        conn.commit()
+
+    preview_url = f"{base_url}/demo/{short_id}"
+    return {"demo_id": short_id, "preview_url": preview_url, "faq_count": len(faqs)}
+
+
+@app.get("/demo/{slug}", response_class=HTMLResponse)
+def demo_preview_page(slug: str):
+    """Public preview page: show business name, embedded widget (demo FAQs), and CTA. Expired demos show a friendly message."""
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT slug, tenant_id, business_name, business_url, created_at FROM demos WHERE slug = %s",
+            (slug.strip(),),
+        ).fetchone()
+
+    if not row:
+        return _render_demo_expired_html()
+
+    _, tenant_id, business_name, business_url, created_at = row
+    if created_at:
+        from datetime import timezone
+        now = datetime.now(timezone.utc)
+        created_utc = created_at if created_at.tzinfo else created_at.replace(tzinfo=timezone.utc)
+        if (now - created_utc).days >= DEMO_EXPIRY_DAYS:
+            return _render_demo_expired_html()
+
+    base_url = os.getenv("PUBLIC_BASE_URL") or (
+        "http://127.0.0.1:8000" if not os.getenv("RENDER") else "https://motionmade-fastapi.onrender.com"
+    )
+    html_path = Path(__file__).resolve().parent / "templates" / "demo.html"
+    if not html_path.exists():
+        return HTMLResponse(content="<h1>Demo template not found</h1>", status_code=500)
+    html = html_path.read_text(encoding="utf-8")
+    html = html.replace("__BUSINESS_NAME__", _escape_html(business_name or "This business"))
+    html = html.replace("__TENANT_ID__", _escape_html(tenant_id))
+    html = html.replace("__BASE_URL__", _escape_html(base_url.rstrip("/")))
+    return HTMLResponse(content=html)
+
+
+def _escape_html(s: str) -> str:
+    return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+
+def _render_demo_expired_html() -> HTMLResponse:
+    html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo expired – MotionMade</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'DM Sans', sans-serif; background: #f0f3f8; color: #0b1222; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+        .card { background: #fff; border-radius: 12px; padding: 48px; max-width: 420px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        h1 { font-size: 22px; font-weight: 600; margin-bottom: 12px; }
+        p { color: #6b7a94; font-size: 16px; line-height: 1.5; margin-bottom: 24px; }
+        a { color: #2563eb; text-decoration: none; font-weight: 500; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>This demo has expired</h1>
+        <p>Demo previews are available for 14 days. Want a live widget for your business?</p>
+        <a href="https://motionmade.com.au">Get started at motionmade.com.au</a>
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
+
+
+# ---------- Outreach: SendGrid + rate limits (admin-only) ----------
+OUTREACH_RATE_LIMIT_PER_HOUR = 20
+OUTREACH_RATE_LIMIT_PER_DAY = 50
+
+
+class OutreachSendBody(BaseModel):
+    to_email: str
+    subject: str
+    body: str
+    from_name: str = "Abbed"
+    reply_to: str = "abbed@motionmadebne.com.au"
+    lead_name: Optional[str] = None
+
+
+@app.post("/api/outreach/send")
+def outreach_send(
+    body: OutreachSendBody,
+    authorization: str = Header(default=""),
+):
+    """Send a single plain-text email via SendGrid. Logged in outreach_log. Rate limited: 20/hour, 50/day. Admin-only."""
+    _check_admin_auth(authorization)
+
+    to_email = (body.to_email or "").strip()
+    subject = (body.subject or "").strip()
+    body_text = (body.body or "").strip()
+    if not to_email:
+        raise HTTPException(status_code=400, detail="to_email required")
+    if not subject:
+        raise HTTPException(status_code=400, detail="subject required")
+
+    with get_conn() as conn:
+        hour_ago = conn.execute(
+            "SELECT COUNT(*) FROM outreach_log WHERE sent_at > now() - interval '1 hour'"
+        ).fetchone()[0]
+        day_ago = conn.execute(
+            "SELECT COUNT(*) FROM outreach_log WHERE sent_at > now() - interval '24 hours'"
+        ).fetchone()[0]
+    if hour_ago >= OUTREACH_RATE_LIMIT_PER_HOUR:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded: max {OUTREACH_RATE_LIMIT_PER_HOUR} emails per hour. Try again later.",
+        )
+    if day_ago >= OUTREACH_RATE_LIMIT_PER_DAY:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded: max {OUTREACH_RATE_LIMIT_PER_DAY} emails per day. Try again tomorrow.",
+        )
+
+    from_email = os.getenv("OUTREACH_FROM_EMAIL", "").strip()
+    api_key = os.getenv("SENDGRID_API_KEY", "").strip()
+    if not from_email or not api_key:
+        raise HTTPException(
+            status_code=500,
+            detail="Outreach not configured: set OUTREACH_FROM_EMAIL and SENDGRID_API_KEY.",
+        )
+
+    status = "failed"
+    try:
+        from sendgrid import SendGridAPIClient
+        from sendgrid.helpers.mail import Mail, Email, To, Content, ReplyTo
+
+        message = Mail(
+            from_email=Email(from_email, (body.from_name or "Abbed").strip()),
+            to_emails=To(to_email),
+            subject=subject,
+            plain_text_content=Content("text/plain", body_text),
+        )
+        reply_to_addr = (body.reply_to or "").strip()
+        if reply_to_addr:
+            message.reply_to = ReplyTo(reply_to_addr)
+        sg = SendGridAPIClient(api_key)
+        sg.send(message)
+        status = "sent"
+    except Exception as e:
+        with get_conn() as conn:
+            conn.execute(
+                """INSERT INTO outreach_log (to_email, subject, body, status, lead_name)
+                   VALUES (%s, %s, %s, %s, %s)""",
+                (to_email, subject, body_text, "failed", (body.lead_name or "").strip() or None),
+            )
+            conn.commit()
+        raise HTTPException(status_code=500, detail=f"SendGrid error: {str(e)}")
+
+    with get_conn() as conn:
+        conn.execute(
+            """INSERT INTO outreach_log (to_email, subject, body, status, lead_name)
+               VALUES (%s, %s, %s, %s, %s)""",
+            (to_email, subject, body_text, status, (body.lead_name or "").strip() or None),
+        )
+        conn.commit()
+
+    return {"ok": True, "status": status, "to_email": to_email}
+
+
+@app.get("/admin/api/contact-submissions")
+def admin_contact_submissions(authorization: str = Header(default="")):
+    """View all contact form submissions from the landing page. Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT id, name, business, email, phone, business_type, message, created_at
+               FROM contact_submissions ORDER BY created_at DESC LIMIT 50"""
+        ).fetchall()
+    return [
+        {
+            "id": r[0],
+            "name": r[1],
+            "business": r[2],
+            "email": r[3],
+            "phone": r[4],
+            "type": r[5],
+            "message": r[6],
+            "submitted": r[7].isoformat() if r[7] else None,
+        }
+        for r in rows
+    ]
+
+
+# ---------- Leads engine (admin-only internal tool) ----------
+LEADS_STATUSES = ["new", "audited", "previewed", "ready", "emailed", "replied", "converted", "skip"]
+BRISBANE_SUBURBS = [
+    "Acacia Ridge", "Albion", "Alderley", "Annerley", "Ascot", "Ashgrove", "Aspley", "Auchenflower",
+    "Bald Hills", "Balmoral", "Banyo", "Bardon", "Belmont", "Boondall", "Bowen Hills", "Bracken Ridge",
+    "Bridgeman Downs", "Brighton", "Brisbane City", "Bulimba", "Calamvale", "Camp Hill", "Cannon Hill",
+    "Carina", "Carindale", "Carole Park", "Chandler", "Chapel Hill", "Chelmer", "Chermside", "Chermside West",
+    "Clayfield", "Coorparoo", "Corinda", "Deagon", "Durack", "Eagle Farm", "East Brisbane", "Ellen Grove",
+    "Enoggera", "Everton Park", "Fairfield", "Ferny Grove", "Ferny Hills", "Fig Tree Pocket", "Fortitude Valley",
+    "Gaythorne", "Geebung", "Gordon Park", "Graceville", "Grange", "Greenslopes", "Gumdale", "Hamilton",
+    "Hawthorne", "Heathwood", "Holland Park", "Holland Park West", "Inala", "Indooroopilly", "Jamboree Heights",
+    "Jindalee", "Kalinga", "Kangaroo Point", "Kedron", "Kelvin Grove", "Kenmore", "Kenmore Hills", "Keperra",
+    "Kuraby", "Lutwyche", "Lytton", "Macgregor", "McDowall", "Manly", "Manly West", "Mansfield", "Middle Park",
+    "Milton", "Mitchelton", "Moggill", "Mount Gravatt", "Mount Ommaney", "Murarrie", "Nathan", "New Farm",
+    "Newmarket", "Norman Park", "Northgate", "Nudgee", "Nundah", "Oxley", "Paddington", "Pallara",
+    "Parkinson", "Petrie Terrace", "Pinjarra Hills", "Pullenvale", "Ransome", "Red Hill", "Richlands",
+    "Rochedale", "Rocklea", "Runcorn", "Salisbury", "Sandgate", "Seven Hills", "Sherwood", "Shorncliffe",
+    "Sinnamon Park", "South Brisbane", "Spring Hill", "St Lucia", "Stafford", "Stafford Heights", "Stones Corner",
+    "Stretton", "Sumner", "Sunnybank", "Sunnybank Hills", "Taigum", "Taringa", "Tarragindi", "Teneriffe",
+    "The Gap", "Toowong", "Upper Mount Gravatt", "Virginia", "Wavell Heights", "West End", "Wilston",
+    "Windsor", "Wishart", "Woolloongabba", "Wooloowin", "Wynnum", "Wynnum West", "Yeronga", "Zillmere",
+]
+
+
+def _autopilot_log(phase: str, message: str, detail: Optional[dict] = None) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO autopilot_log (phase, message, detail) VALUES (%s, %s, %s)",
+            (phase, message, json.dumps(detail) if detail else None),
+        )
+        conn.commit()
+
+
+@app.get("/leads", response_class=HTMLResponse)
+def leads_ui():
+    """Serve leads engine UI. Auth is via admin token in the page (same as /admin)."""
+    html_path = Path(__file__).resolve().parent / "templates" / "leads.html"
+    if not html_path.exists():
+        return HTMLResponse(content="<h1>Leads page not found</h1>", status_code=404)
+    html = html_path.read_text(encoding="utf-8")
+    return HTMLResponse(content=html)
+
+
+@app.get("/api/leads")
+def api_leads_list(
+    trade_type: Optional[str] = None,
+    suburb: Optional[str] = None,
+    status: Optional[str] = None,
+    authorization: str = Header(default=""),
+):
+    """List leads with optional filters. Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        q = "SELECT id, trade_type, suburb, business_name, website, email, status, audit_score, audit_details, preview_url, preview_demo_id, email_subject, email_body, created_at, updated_at FROM leads WHERE 1=1"
+        params: list = []
+        if trade_type:
+            q += " AND trade_type = %s"
+            params.append(trade_type)
+        if suburb:
+            q += " AND suburb = %s"
+            params.append(suburb)
+        if status:
+            q += " AND status = %s"
+            params.append(status)
+        q += " ORDER BY created_at DESC"
+        rows = conn.execute(q, tuple(params)).fetchall()
+    leads = []
+    for r in rows:
+        leads.append({
+            "id": r[0],
+            "trade_type": r[1],
+            "suburb": r[2],
+            "business_name": r[3],
+            "website": r[4],
+            "email": r[5],
+            "status": r[6],
+            "audit_score": r[7],
+            "audit_details": r[8],
+            "preview_url": r[9],
+            "preview_demo_id": r[10],
+            "email_subject": r[11],
+            "email_body": r[12],
+            "created_at": r[13].isoformat() if r[13] else None,
+            "updated_at": r[14].isoformat() if r[14] else None,
+        })
+    return {"leads": leads}
+
+
+@app.get("/api/leads/{lead_id}")
+def api_lead_get(
+    lead_id: int,
+    authorization: str = Header(default=""),
+):
+    """Get a single lead by id. Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id, trade_type, suburb, business_name, website, email, status, audit_score, audit_details, preview_url, preview_demo_id, email_subject, email_body, created_at, updated_at FROM leads WHERE id = %s",
+            (lead_id,),
+        ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return {
+        "id": row[0], "trade_type": row[1], "suburb": row[2], "business_name": row[3], "website": row[4],
+        "email": row[5], "status": row[6], "audit_score": row[7], "audit_details": row[8], "preview_url": row[9],
+        "preview_demo_id": row[10], "email_subject": row[11], "email_body": row[12],
+        "created_at": row[13].isoformat() if row[13] else None, "updated_at": row[14].isoformat() if row[14] else None,
+    }
+
+
+@app.patch("/api/leads/{lead_id}")
+def api_leads_update(
+    lead_id: int,
+    body: dict,
+    authorization: str = Header(default=""),
+):
+    """Update a lead (status, email, etc.). Admin-only."""
+    _check_admin_auth(authorization)
+    allowed = {"status", "email", "email_subject", "email_body", "business_name", "website", "audit_score", "audit_details", "preview_url", "preview_demo_id"}
+    updates = {k: v for k, v in (body or {}).items() if k in allowed}
+    if not updates:
+        return {"ok": True}
+    sets = ", ".join(f"{k} = %s" for k in updates)
+    values = list(updates.values()) + [lead_id]
+    with get_conn() as conn:
+        conn.execute(f"UPDATE leads SET {sets}, updated_at = now() WHERE id = %s", tuple(values))
+        conn.commit()
+    return {"ok": True}
+
+
+@app.get("/api/leads/suburbs")
+def api_leads_suburbs(authorization: str = Header(default="")):
+    """Return list of Brisbane suburbs for selector. Admin-only."""
+    _check_admin_auth(authorization)
+    return {"suburbs": BRISBANE_SUBURBS}
+
+
+@app.get("/api/leads/autopilot/log")
+def api_autopilot_log(
+    since_id: Optional[int] = None,
+    limit: int = 100,
+    authorization: str = Header(default=""),
+):
+    """Return recent autopilot log entries for live log. Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        if since_id:
+            rows = conn.execute(
+                "SELECT id, phase, message, detail, created_at FROM autopilot_log WHERE id > %s ORDER BY id ASC LIMIT %s",
+                (since_id, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT id, phase, message, detail, created_at FROM autopilot_log ORDER BY id DESC LIMIT %s",
+                (limit,),
+            ).fetchall()
+            rows = list(reversed(rows))
+    entries = [{"id": r[0], "phase": r[1], "message": r[2], "detail": r[3], "created_at": r[4].isoformat() if r[4] else None} for r in rows]
+    return {"log": entries}
+
+
+class AutopilotDiscoveryBody(BaseModel):
+    trade_type: str
+    suburb: str
+    target_count: int = 20
+
+
+@app.post("/api/leads/autopilot/discovery")
+def api_autopilot_discovery(
+    body: AutopilotDiscoveryBody,
+    authorization: str = Header(default=""),
+):
+    """Run discovery: use Anthropic with web search to find local businesses. Batch 3 queries, insert new leads. Admin-only."""
+    _check_admin_auth(authorization)
+    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not set")
+
+    trade = (body.trade_type or "").strip() or "plumber"
+    suburb = (body.suburb or "").strip() or "Brisbane"
+    target = max(10, min(50, body.target_count or 20))
+
+    _autopilot_log("discovery", f"Starting discovery: {trade} in {suburb}, target {target}")
+
+    import anthropic
+    client = anthropic.Anthropic(api_key=api_key)
+
+    # Build 3 search queries per batch
+    queries = [
+        f"{trade} {suburb} Brisbane business contact",
+        f"best {trade} companies {suburb} Queensland",
+        f"{trade} services {suburb} phone email",
+    ]
+    prompt = f"""Use web search to find real local businesses in {suburb}, Brisbane area. Trade type: {trade}.
+Run exactly 3 web searches (one for each of these intents): (1) "{queries[0]}", (2) "{queries[1]}", (3) "{queries[2]}".
+From the search results, extract a list of local businesses. For each business provide:
+- business_name (string)
+- website (URL if found, else null)
+- email (email if found, else null)
+
+Return a JSON array of objects with keys: business_name, website, email. Include up to {min(target, 30)} businesses. No other text, no markdown, only the JSON array."""
+
+    try:
+        resp = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=4096,
+            tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 5}],
+            messages=[{"role": "user", "content": prompt}],
+        )
+    except Exception as e:
+        _autopilot_log("discovery", f"Anthropic error: {str(e)}", {"error": str(e)})
+        raise HTTPException(status_code=500, detail=f"Discovery failed: {str(e)}")
+
+    text = ""
+    for block in resp.content:
+        if hasattr(block, "text") and block.text:
+            text += block.text
+    text = (text or "").strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text)
+        text = re.sub(r"\s*```$", "", text)
+    try:
+        businesses = json.loads(text)
+    except json.JSONDecodeError:
+        _autopilot_log("discovery", "Could not parse Claude response as JSON", {"raw": text[:500]})
+        raise HTTPException(status_code=500, detail="Discovery returned invalid JSON")
+
+    if not isinstance(businesses, list):
+        businesses = []
+
+    inserted = 0
+    with get_conn() as conn:
+        for b in businesses[:target]:
+            name = (b.get("business_name") or "").strip()
+            if not name:
+                continue
+            website = (b.get("website") or "").strip() or None
+            email = (b.get("email") or "").strip() or None
+            if not website and not email:
+                continue
+            conn.execute(
+                """INSERT INTO leads (trade_type, suburb, business_name, website, email, status)
+                   VALUES (%s, %s, %s, %s, %s, 'new')""",
+                (trade, suburb, name, website, email),
+            )
+            conn.commit()
+            inserted += 1
+
+    _autopilot_log("discovery", f"Inserted {inserted} new leads", {"count": inserted})
+    return {"ok": True, "inserted": inserted, "total_found": len(businesses)}
+
+
+# Leads table has no unique constraint; we avoid duplicate by checking (trade_type, suburb, business_name) if needed later.
+
+
+class AutopilotAuditBody(BaseModel):
+    lead_ids: Optional[List[int]] = None  # None = all with status new
+
+
+@app.post("/api/leads/autopilot/audit")
+def api_autopilot_audit(
+    body: AutopilotAuditBody,
+    authorization: str = Header(default=""),
+):
+    """Audit leads: fetch website, use Anthropic to score 1-10 and check for chat/FAQ/after-hours. Admin-only."""
+    _check_admin_auth(authorization)
+    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not set")
+
+    with get_conn() as conn:
+        if body.lead_ids:
+            placeholders = ",".join(["%s"] * len(body.lead_ids))
+            rows = conn.execute(
+                f"SELECT id, business_name, website FROM leads WHERE id IN ({placeholders})",
+                tuple(body.lead_ids),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT id, business_name, website FROM leads WHERE status = 'new' AND website IS NOT NULL AND website != ''"
+            ).fetchall()
+
+    import anthropic
+    client = anthropic.Anthropic(api_key=api_key)
+    audited = 0
+    for row in rows:
+        lead_id, name, website = row[0], row[1], row[2]
+        if not website or not website.startswith("http"):
+            website = "https://" + (website or "")
+        _autopilot_log("audit", f"Auditing {name}", {"lead_id": lead_id})
+        try:
+            import requests as req_lib
+            r = req_lib.get(website, timeout=10, headers={"User-Agent": "MotionMade Lead Audit"})
+            r.raise_for_status()
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(r.text, "html.parser")
+            for tag in soup(["script", "style", "nav", "footer"]):
+                tag.decompose()
+            text = (soup.get_text(separator=" ", strip=True) or "")[:6000]
+        except Exception as e:
+            _autopilot_log("audit", f"Could not fetch {website}: {e}", {"lead_id": lead_id})
+            detail = {"error": str(e), "score": 0}
+            with get_conn() as conn2:
+                conn2.execute(
+                    "UPDATE leads SET status = 'audited', audit_score = 0, audit_details = %s, updated_at = now() WHERE id = %s",
+                    (json.dumps(detail), lead_id),
+                )
+                conn2.commit()
+            audited += 1
+            continue
+
+        prompt = f"""Analyze this business website content and score how much they need an AI FAQ/chat widget (MotionMade). Business: {name}. Website: {website}.
+
+Consider: Do they already have a chat widget? Do they have a detailed FAQ page? Do they offer after-hours support? Is the site professional and likely to care about lead conversion?
+
+Return a JSON object with:
+- "score": number 1-10 (10 = high need: no chat, no FAQ, would benefit a lot)
+- "has_chat_widget": boolean
+- "has_faq_page": boolean
+- "after_hours_support": boolean or null
+- "notes": short string
+
+Only return the JSON object, no other text."""
+
+        try:
+            resp = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=1024,
+                messages=[{"role": "user", "content": f"Website text:\n{text}\n\n{prompt}"}],
+            )
+            text_out = ""
+            for block in resp.content:
+                if hasattr(block, "text") and block.text:
+                    text_out += block.text
+            text_out = (text_out or "").strip()
+            if text_out.startswith("```"):
+                text_out = re.sub(r"^```(?:json)?\s*", "", text_out)
+                text_out = re.sub(r"\s*```$", "", text_out)
+            detail = json.loads(text_out)
+            score = int(detail.get("score", 5))
+            if score < 1 or score > 10:
+                score = 5
+        except Exception as e:
+            detail = {"error": str(e), "score": 5}
+            score = 5
+
+        with get_conn() as conn2:
+            conn2.execute(
+                "UPDATE leads SET status = 'audited', audit_score = %s, audit_details = %s, updated_at = now() WHERE id = %s",
+                (score, json.dumps(detail) if isinstance(detail, dict) else "{}", lead_id),
+            )
+            conn2.commit()
+        audited += 1
+
+    _autopilot_log("audit", f"Audited {audited} leads", {"count": audited})
+    return {"ok": True, "audited": audited}
+
+
+@app.post("/api/leads/autopilot/preview")
+def api_autopilot_preview(
+    body: Optional[dict] = None,
+    authorization: str = Header(default=""),
+):
+    """Generate demo previews for all leads that have a website (status audited or new). No threshold. Admin-only."""
+    _check_admin_auth(authorization)
+    base_url = os.getenv("PUBLIC_BASE_URL") or "https://motionmade-fastapi.onrender.com"
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT id, business_name, website FROM leads
+               WHERE (website IS NOT NULL AND website != '') AND (preview_url IS NULL OR preview_url = '')
+               ORDER BY id"""
+        ).fetchall()
+
+    generated = 0
+    for row in rows:
+        lead_id, name, website = row[0], row[1], row[2]
+        if not website:
+            continue
+        _autopilot_log("preview", f"Generating demo for {name}", {"lead_id": lead_id})
+        try:
+            import requests as req_lib
+            r = req_lib.post(
+                f"{base_url}/api/demo/generate",
+                json={"business_url": website, "business_name": name or "Business"},
+                headers={"Content-Type": "application/json"},
+                timeout=120,
+            )
+            r.raise_for_status()
+            data = r.json()
+            demo_id = data.get("demo_id")
+            preview_url = data.get("preview_url", "")
+            with get_conn() as conn2:
+                conn2.execute(
+                    "UPDATE leads SET preview_url = %s, preview_demo_id = %s, status = 'previewed', updated_at = now() WHERE id = %s",
+                    (preview_url, demo_id, lead_id),
+                )
+                conn2.commit()
+            generated += 1
+        except Exception as e:
+            _autopilot_log("preview", f"Failed {name}: {str(e)}", {"lead_id": lead_id, "error": str(e)})
+
+    _autopilot_log("preview", f"Generated {generated} previews", {"count": generated})
+    return {"ok": True, "generated": generated}
+
+
+@app.post("/api/leads/autopilot/email-writing")
+def api_autopilot_email_writing(
+    body: Optional[dict] = None,
+    authorization: str = Header(default=""),
+):
+    """Use Anthropic to write personalised cold emails for each lead. If preview_url set, use it as hook. Admin-only."""
+    _check_admin_auth(authorization)
+    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not set")
+
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT id, business_name, email, preview_url, suburb FROM leads
+               WHERE status IN ('audited', 'previewed') AND email IS NOT NULL AND email != ''
+               ORDER BY id"""
+        ).fetchall()
+
+    import anthropic
+    client = anthropic.Anthropic(api_key=api_key)
+    written = 0
+    for row in rows:
+        lead_id, name, email, preview_url, suburb = row[0], row[1], row[2], row[3], row[4]
+        _autopilot_log("email", f"Writing email for {name}", {"lead_id": lead_id})
+
+        prompt = f"""Write a short, casual, personalised cold email to this business lead.
+
+Business: {name}. Suburb: {suburb or 'Brisbane'}. Their email: {email}.
+
+Context: You are Abbed, founder of MotionMade, Brisbane-based. MotionMade is an AI FAQ/chat widget for tradie and service business websites — it answers customer questions 24/7. You are offering a free 1-week trial.
+
+Requirements:
+- Keep it short (3-5 sentences max). Casual, friendly, Australian tone.
+- If we have a preview URL for them, use it as the main hook: e.g. "I built a quick demo of what MotionMade could do for [Business] — you can try it here: [URL]. No signup, just click and ask a question."
+- If no preview URL, lead with the value prop (instant answers, free trial).
+- End with a soft CTA (reply if interested, or try the demo).
+- Return ONLY the email body (plain text), no subject line in the body. Then on the next line write "---SUBJECT---" and then the subject line (short, personalised)."""
+
+        if preview_url:
+            prompt += f"\n\nPreview URL for this lead: {preview_url}"
+
+        try:
+            resp = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=1024,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            text_out = ""
+            for block in resp.content:
+                if hasattr(block, "text") and block.text:
+                    text_out += block.text
+            text_out = (text_out or "").strip()
+            if "---SUBJECT---" in text_out:
+                body_text, subject = text_out.split("---SUBJECT---", 1)
+                body_text = body_text.strip()
+                subject = subject.strip()
+            else:
+                subject = f"Quick demo for {name} – MotionMade"
+                body_text = text_out
+            with get_conn() as conn2:
+                conn2.execute(
+                    "UPDATE leads SET email_subject = %s, email_body = %s, status = 'ready', updated_at = now() WHERE id = %s",
+                    (subject, body_text, lead_id),
+                )
+                conn2.commit()
+            written += 1
+        except Exception as e:
+            _autopilot_log("email", f"Failed {name}: {str(e)}", {"lead_id": lead_id, "error": str(e)})
+
+    _autopilot_log("email", f"Wrote {written} emails", {"count": written})
+    return {"ok": True, "written": written}
+
+
+@app.post("/api/leads/send-all-ready")
+def api_leads_send_all_ready(
+    authorization: str = Header(default=""),
+):
+    """Send all emails with status 'ready'. 30 second delay between each. Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT id, business_name, email, email_subject, email_body FROM leads WHERE status = 'ready' AND email IS NOT NULL AND email != ''"
+        ).fetchall()
+
+    base_url = os.getenv("PUBLIC_BASE_URL") or "https://motionmade-fastapi.onrender.com"
+    if not base_url.startswith("http"):
+        base_url = "https://" + base_url
+    auth_header = f"Bearer {settings.ADMIN_TOKEN}"
+    sent = 0
+    for i, row in enumerate(rows):
+        lead_id, name, email, subj, body = row[0], row[1], row[2], row[3], row[4]
+        if i > 0:
+            time.sleep(30)
+        try:
+            import requests as req_lib
+            r = req_lib.post(
+                f"{base_url}/api/outreach/send",
+                json={
+                    "to_email": email,
+                    "subject": subj or f"MotionMade demo for {name}",
+                    "body": body or "",
+                    "from_name": "Abbed",
+                    "reply_to": "abbed@motionmadebne.com.au",
+                    "lead_name": name,
+                },
+                headers={"Authorization": auth_header, "Content-Type": "application/json"},
+                timeout=30,
+            )
+            r.raise_for_status()
+            with get_conn() as conn2:
+                conn2.execute("UPDATE leads SET status = 'emailed', updated_at = now() WHERE id = %s", (lead_id,))
+                conn2.commit()
+            sent += 1
+            _autopilot_log("send", f"Sent to {name}", {"lead_id": lead_id})
+        except Exception as e:
+            _autopilot_log("send", f"Failed to send to {name}: {str(e)}", {"lead_id": lead_id, "error": str(e)})
+
+    return {"ok": True, "sent": sent, "total_ready": len(rows)}
+
+
+@app.get("/api/leads/export")
+def api_leads_export(
+    trade_type: Optional[str] = None,
+    suburb: Optional[str] = None,
+    authorization: str = Header(default=""),
+):
+    """CSV export of all leads with all data. Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        q = "SELECT id, trade_type, suburb, business_name, website, email, status, audit_score, audit_details, preview_url, preview_demo_id, email_subject, email_body, created_at FROM leads WHERE 1=1"
+        params: list = []
+        if trade_type:
+            q += " AND trade_type = %s"
+            params.append(trade_type)
+        if suburb:
+            q += " AND suburb = %s"
+            params.append(suburb)
+        q += " ORDER BY created_at DESC"
+        rows = conn.execute(q, tuple(params)).fetchall()
+
+    import io
+    import csv
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["id", "trade_type", "suburb", "business_name", "website", "email", "status", "audit_score", "audit_details", "preview_url", "preview_demo_id", "email_subject", "email_body", "created_at"])
+    for r in rows:
+        writer.writerow([
+            r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7],
+            json.dumps(r[8]) if r[8] else "",
+            r[9], r[10], (r[11] or "").replace("\r", "").replace("\n", " "), (r[12] or "").replace("\r", " ").replace("\n", " "), r[13].isoformat() if r[13] else "",
+        ])
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=leads_export.csv"},
+    )
 
 
 # Owner FAQ write endpoints removed — quality controlled by admin only
