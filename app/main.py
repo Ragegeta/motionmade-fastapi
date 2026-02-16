@@ -3719,6 +3719,19 @@ def api_leads_suburbs(
     return {"suburbs": CITY_SUBURBS.get(key, BRISBANE_SUBURBS)}
 
 
+@app.get("/api/leads/daily-sent-count")
+def api_leads_daily_sent_count(authorization: str = Header(default="")):
+    """Count leads marked as emailed today (AEST). Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        row = conn.execute(
+            """SELECT COUNT(*) FROM leads
+               WHERE status = 'emailed'
+               AND (updated_at AT TIME ZONE 'Australia/Brisbane')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Australia/Brisbane')::date"""
+        ).fetchone()
+    return {"count": row[0] if row else 0}
+
+
 @app.get("/api/leads/autopilot/log")
 def api_autopilot_log(
     since_id: Optional[int] = None,
