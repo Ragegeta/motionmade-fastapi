@@ -27,10 +27,17 @@
         .progress-msg { font-size: 14px; color: #6b7280; margin-left: 12px; }
         .progress-msg.active { color: #2563EB; font-weight: 500; }
 
+        .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; color: #6b7280; }
+        .log-header a { color: #2563EB; cursor: pointer; text-decoration: none; }
+        .log-header a:hover { text-decoration: underline; }
         .log-panel { background: #1f2937; color: #e5e7eb; border-radius: 8px; padding: 14px 16px; font-family: ui-monospace, monospace; font-size: 12px; max-height: 180px; overflow-y: auto; margin-bottom: 20px; }
         .log-panel .log-entry { margin-bottom: 4px; }
         .log-panel .log-phase { color: #93c5fd; }
         .log-panel .log-time { color: #9ca3af; margin-right: 8px; font-size: 11px; }
+        .run-summary { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; color: #065f46; }
+        .no-email-section { margin-top: 16px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; }
+        .no-email-section summary { padding: 10px 14px; cursor: pointer; font-size: 13px; color: #6b7280; }
+        .expand-content .value.email-body { min-height: 80px; }
 
         .pipeline-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
         .pipeline-top h2 { font-size: 18px; font-weight: 600; }
@@ -123,7 +130,9 @@
                 </div>
             </div>
 
+            <div class="log-header"><span>Live log</span><a id="clearLog" href="#">Clear</a></div>
             <div class="log-panel" id="logPanel"></div>
+            <div id="runSummary" class="run-summary hidden"></div>
 
             <div class="pipeline-top">
                 <h2>Pipeline</h2>
@@ -150,6 +159,12 @@
                     </thead>
                     <tbody id="leadsBody"></tbody>
                 </table>
+            </div>
+            <div id="noEmailSection" class="no-email-section hidden">
+                <details>
+                    <summary id="noEmailSummary">No email found (0)</summary>
+                    <table class="leads-table" style="margin-top:0;"><thead><tr><th>Name</th><th>Website</th><th>Status</th></tr></thead><tbody id="noEmailBody"></tbody></table>
+                </details>
             </div>
 
             <div class="footer-actions">
@@ -265,13 +280,21 @@
         }
 
         function renderLeads(leads) {
+            const withEmail = leads.filter(function(l) { return (l.email || '').trim().length > 0; });
+            const noEmail = leads.filter(function(l) { return !(l.email || '').trim().length; });
             const tbody = document.getElementById('leadsBody');
-            if (!leads.length) {
+            const container = tbody.closest('.leads-table-wrap');
+            if (!withEmail.length && !noEmail.length) {
                 tbody.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:#6b7280;">No leads. Click Find Leads & Write Emails to start.</td></tr>';
+                var noSection = document.getElementById('noEmailSection');
+                if (noSection) noSection.classList.add('hidden');
                 return;
             }
-            let html = '';
-            leads.forEach(lead => {
+            if (!withEmail.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:#6b7280;">No leads with email yet. Run Find Leads & Write Emails or check No email found below.</td></tr>';
+            } else {
+            var html = '';
+            withEmail.forEach(lead => {
                 const statusClass = 'status-' + (lead.status || 'new');
                 const emailSubject = (lead.status === 'ready' || lead.status === 'emailed') && lead.email_subject
                     ? '<span class="email-subject" title="' + escapeHtml(lead.email_subject) + '">' + escapeHtml(lead.email_subject) + '</span>'
@@ -292,6 +315,7 @@
                     '<td class="send-cell">' + copyCell + '</td>' +
                     '</tr>';
                 html += '<tr class="expand-row expand-' + lead.id + '" style="display:none;"><td colspan="7"><div class="expand-content">' +
+                    '<div class="label">Email preview</div>' +
                     '<div class="label">Subject</div><div class="value">' + escapeHtml(lead.email_subject || '') + '</div>' +
                     '<div class="label">Body</div><div class="value email-body">' + escapeHtml(lead.email_body || '') + '</div>' +
                     '<div class="label">Preview</div><div class="value links">' + (lead.preview_url ? '<a href="' + escapeHtml(lead.preview_url) + '" target="_blank" rel="noopener">' + escapeHtml(lead.preview_url) + '</a>' : '–') + '</div>' +
@@ -300,6 +324,18 @@
                     '</div></td></tr>';
             });
             tbody.innerHTML = html;
+            }
+
+            var noSection = document.getElementById('noEmailSection');
+            var noSummary = document.getElementById('noEmailSummary');
+            var noBody = document.getElementById('noEmailBody');
+            if (noSection && noSummary && noBody) {
+                noSummary.textContent = 'No email found (' + noEmail.length + ')';
+                noBody.innerHTML = noEmail.length ? noEmail.map(function(l) {
+                    return '<tr><td>' + escapeHtml(l.business_name || '') + '</td><td>' + (l.website ? '<a href="' + escapeHtml(l.website) + '" target="_blank" rel="noopener">' + escapeHtml(String(l.website).replace(/^https?:\/\//,'').substring(0,40)) + '</a>' : '–') + '</td><td><span class="status status-' + (l.status || 'new') + '">' + (l.status || 'new') + '</span></td></tr>';
+                }).join('') : '<tr><td colspan="3" style="padding:12px;color:#6b7280;">None</td></tr>';
+                if (noEmail.length) noSection.classList.remove('hidden'); else noSection.classList.add('hidden');
+            }
 
             tbody.querySelectorAll('.main-row').forEach(row => {
                 row.onclick = function(e) {
@@ -337,42 +373,63 @@
             { key: 'email', label: 'Writing emails...' }
         ];
 
+        document.getElementById('clearLog').onclick = function(e) {
+            e.preventDefault();
+            document.getElementById('logPanel').innerHTML = '';
+        };
+
         document.getElementById('runAll').onclick = async function() {
             const btn = this;
             const progressEl = document.getElementById('progressMsg');
+            const summaryEl = document.getElementById('runSummary');
             btn.disabled = true;
+            if (summaryEl) summaryEl.classList.add('hidden');
             progressEl.classList.add('active');
             const trade = document.getElementById('tradeType').value.trim() || 'plumber';
             const suburb = document.getElementById('suburb').value || 'Brisbane City';
             const target = Math.min(50, Math.max(5, parseInt(document.getElementById('targetCount').value, 10) || 20));
+            var discoveryResp = {}, auditResp = {}, emailResp = {};
 
-            for (let i = 0; i < STEPS.length; i++) {
+            for (var i = 0; i < STEPS.length; i++) {
                 progressEl.textContent = 'Step ' + (i + 1) + '/3: ' + STEPS[i].label;
                 try {
                     if (STEPS[i].key === 'discovery') {
-                        const r = await fetch(API_BASE + '/api/leads/autopilot/discovery', {
+                        var r = await fetch(API_BASE + '/api/leads/autopilot/discovery', {
                             method: 'POST', headers: getHeaders(),
                             body: JSON.stringify({ trade_type: trade, suburb: suburb, target_count: target })
                         });
-                        if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || 'Discovery failed'); }
+                        discoveryResp = await r.json().catch(function() { return {}; });
+                        if (!r.ok) throw new Error(discoveryResp.detail || 'Discovery failed');
                     } else if (STEPS[i].key === 'audit') {
-                        const r = await fetch(API_BASE + '/api/leads/autopilot/audit', { method: 'POST', headers: getHeaders(), body: JSON.stringify({}) });
-                        if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || 'Audit failed'); }
+                        r = await fetch(API_BASE + '/api/leads/autopilot/audit', { method: 'POST', headers: getHeaders(), body: JSON.stringify({}) });
+                        auditResp = await r.json().catch(function() { return {}; });
+                        if (!r.ok) throw new Error(auditResp.detail || 'Audit failed');
                     } else {
-                        const r = await fetch(API_BASE + '/api/leads/autopilot/email-writing', { method: 'POST', headers: getHeaders(), body: JSON.stringify({}) });
-                        if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || 'Email writing failed'); }
+                        r = await fetch(API_BASE + '/api/leads/autopilot/email-writing', { method: 'POST', headers: getHeaders(), body: JSON.stringify({}) });
+                        emailResp = await r.json().catch(function() { return {}; });
+                        if (!r.ok) throw new Error(emailResp.detail || 'Email writing failed');
                     }
                     await loadLeads();
                 } catch (e) {
-                    const msg = (e && e.message) ? e.message : 'Step failed';
+                    var msg = (e && e.message) ? e.message : 'Step failed';
                     progressEl.textContent = 'Step ' + (i + 1) + '/3 failed: ' + msg + '. Continuing…';
-                    await new Promise(r => setTimeout(r, 2000));
+                    await new Promise(function(res) { setTimeout(res, 2000); });
                 }
             }
             progressEl.textContent = '';
             progressEl.classList.remove('active');
             btn.disabled = false;
             await loadLeads();
+
+            if (summaryEl) {
+                var inserted = discoveryResp.inserted != null ? discoveryResp.inserted : 0;
+                var totalFound = discoveryResp.total_found != null ? discoveryResp.total_found : inserted;
+                var audited = auditResp.audited != null ? auditResp.audited : 0;
+                var written = emailResp.written != null ? emailResp.written : 0;
+                var readyNow = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; }).length;
+                summaryEl.textContent = 'Found ' + totalFound + ' businesses (' + inserted + ' new). ' + audited + ' audited. ' + written + ' emails written — ' + readyNow + ' ready to send.';
+                summaryEl.classList.remove('hidden');
+            }
         };
 
         document.getElementById('copyAllEmails').onclick = function() {

@@ -3913,7 +3913,7 @@ def api_autopilot_audit(
     body: AutopilotAuditBody,
     authorization: str = Header(default=""),
 ):
-    """Audit leads: fetch website, use Anthropic to score 1-10 and check for chat/FAQ/after-hours. Admin-only."""
+    """Audit leads: fetch website, use Anthropic to score 1-10 and check for chat/FAQ/after-hours. Only processes status='new' (never re-audits ready/emailed). Admin-only."""
     _check_admin_auth(authorization)
     try:
         api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
@@ -4098,7 +4098,7 @@ def api_autopilot_email_writing(
     body: Optional[dict] = None,
     authorization: str = Header(default=""),
 ):
-    """Use Anthropic to write personalised cold emails for each lead. If preview_url set, use it as hook. Admin-only."""
+    """Use Anthropic to write personalised cold emails for each lead. Only processes audited/previewed (never re-writes ready/emailed). Admin-only."""
     _check_admin_auth(authorization)
     try:
         api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
@@ -4107,7 +4107,7 @@ def api_autopilot_email_writing(
 
         with get_conn() as conn:
             rows = conn.execute(
-                """SELECT id, business_name, email, preview_url, suburb FROM leads
+                """SELECT id, business_name, email, preview_url, suburb, audit_details FROM leads
                    WHERE status IN ('audited', 'previewed') AND email IS NOT NULL AND email != ''
                    ORDER BY id"""
             ).fetchall()
@@ -4115,25 +4115,37 @@ def api_autopilot_email_writing(
         import anthropic
         client = anthropic.Anthropic(api_key=api_key)
         written = 0
+        used_subjects: list[str] = []
         for row in rows:
             lead_id, name, email, preview_url, suburb = row[0], row[1], row[2], row[3], row[4]
+            audit_details = row[5] if len(row) > 5 else None
+            if isinstance(audit_details, dict):
+                audit_summary = ", ".join(f"{k}: {v}" for k, v in audit_details.items() if v is not None and k != "error")
+            else:
+                audit_summary = str(audit_details) if audit_details else ""
             _autopilot_log("email", f"Writing email for {name}", {"lead_id": lead_id})
 
-            prompt = f"""Write a short, casual, personalised cold email to this business lead.
+            used_subjects_instruction = ""
+            if used_subjects:
+                used_subjects_instruction = f'\n\nSubject lines already used in this batch (use a DIFFERENT style and phrasing — do not repeat):\n' + "\n".join(f"- {s}" for s in used_subjects[-15:])
+
+            prompt = f"""Write a short, personal cold email to this business lead. Sound like a real person writing to another local business — no marketing speak, no SaaS jargon.
 
 Business: {name}. Suburb: {suburb or 'Brisbane'}. Their email: {email}.
-
-Context: You are Abbed, founder of MotionMade, Brisbane-based. MotionMade is an AI FAQ/chat widget for tradie and service business websites — it answers customer questions 24/7. You are offering a free 1-week trial.
-
+"""
+            if audit_summary:
+                prompt += f"\nWhat we know about their website (reference something specific in your email, e.g. no after-hours support, no chat widget, or their reviews): {audit_summary}\n"
+            prompt += f"""
 Requirements:
-- Keep it short (3-5 sentences max). Casual, friendly, Australian tone.
-- If we have a preview URL for them, use it as the main hook: e.g. "I built a quick demo of what MotionMade could do for [Business] — you can try it here: [URL]. No signup, just click and ask a question."
-- If no preview URL, lead with the value prop (instant answers, free trial).
-- End with a soft CTA (reply if interested, or try the demo).
-- Return ONLY the email body (plain text), no subject line in the body. Then on the next line write "---SUBJECT---" and then the subject line (short, personalised)."""
-
+- Under 5 sentences. Casual, friendly, Australian tone.
+- Subject line: vary the style — do not use "Quick demo for [Business]" or any template that looks like the others. Never use the word "demo" in the subject (it looks like spam). Reference something specific from their site or audit if you can (e.g. "noticed you don't have after-hours support", "saw your 4.8 star reviews").
+- In the body, mention MotionMade only briefly (AI that answers customer questions on their site, free trial). No hype.
+- Sign off as just "Abbed" — not "Abbed, founder of MotionMade".
+- Return ONLY the email body (plain text). Then on the next line write "---SUBJECT---" and then the subject line.
+"""
             if preview_url:
-                prompt += f"\n\nPreview URL for this lead: {preview_url}"
+                prompt += f"\nOptional: they have a preview link you can mention (no signup): {preview_url}"
+            prompt += used_subjects_instruction
 
             try:
                 resp = client.messages.create(
@@ -4151,8 +4163,9 @@ Requirements:
                     body_text = body_text.strip()
                     subject = subject.strip()
                 else:
-                    subject = f"Quick demo for {name} – MotionMade"
+                    subject = f"Quick question – {name}"
                     body_text = text_out
+                used_subjects.append(subject)
                 with get_conn() as conn2:
                     conn2.execute(
                         "UPDATE leads SET email_subject = %s, email_body = %s, status = 'ready', updated_at = now() WHERE id = %s",
