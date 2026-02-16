@@ -459,8 +459,11 @@
             { key: 'email', label: 'Writing emails...' }
         ];
 
-        document.getElementById('clearLog').onclick = function(e) {
+        document.getElementById('clearLog').onclick = async function(e) {
             e.preventDefault();
+            try {
+                await fetch(API_BASE + '/api/leads/autopilot/clear-log', { method: 'POST', headers: getHeaders() });
+            } catch (err) {}
             document.getElementById('logPanel').innerHTML = '';
         };
 

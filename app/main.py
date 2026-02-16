@@ -3671,9 +3671,10 @@ def api_leads_list(
         if trade_type:
             q += " AND trade_type = %s"
             params.append(trade_type)
-        if suburb:
+        suburb_val = (suburb or "").strip()
+        if suburb_val and suburb_val.lower() != "all":
             q += " AND suburb = %s"
-            params.append(suburb)
+            params.append(suburb_val)
         if status:
             q += " AND status = %s"
             params.append(status)
@@ -3754,6 +3755,16 @@ def api_autopilot_log(
             rows = list(reversed(rows))
     entries = [{"id": r[0], "phase": r[1], "message": r[2], "detail": r[3], "created_at": r[4].isoformat() if r[4] else None} for r in rows]
     return {"log": entries}
+
+
+@app.post("/api/leads/autopilot/clear-log")
+def api_leads_autopilot_clear_log(authorization: str = Header(default="")):
+    """Delete all autopilot log entries. Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        conn.execute("DELETE FROM autopilot_log")
+        conn.commit()
+    return {"ok": True}
 
 
 @app.get("/api/leads/export")
@@ -3889,6 +3900,9 @@ def api_autopilot_discovery(
         suburb_area = f" in {suburb}" if suburb else f" in {city} area"
         target = max(10, min(50, body.target_count or 20))
 
+        with get_conn() as conn_log:
+            conn_log.execute("DELETE FROM autopilot_log")
+            conn_log.commit()
         _autopilot_log("discovery", f"Starting discovery: {trade}{suburb_area}, target {target}")
 
         import anthropic
@@ -3981,7 +3995,7 @@ Return a JSON array of objects with keys: business_name, website, email. Include
                 conn.execute(
                     """INSERT INTO leads (trade_type, suburb, business_name, website, email, status)
                        VALUES (%s, %s, %s, %s, %s, 'new')""",
-                    (trade, suburb or None, name, website, email),
+                    (trade, (suburb or "").strip() or city or "Brisbane", name, website, email),
                 )
                 conn.commit()
                 inserted += 1
