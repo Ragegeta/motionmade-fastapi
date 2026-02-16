@@ -5,6 +5,7 @@ import re
 import os
 import time
 import hashlib
+import traceback
 from pathlib import Path
 from typing import List, Optional, Set
 from datetime import datetime, timedelta
@@ -2015,6 +2016,53 @@ def debug_env_check():
     }
 
 
+@app.post("/api/debug/test-anthropic")
+def debug_test_anthropic():
+    """Minimal Anthropic API call (no web search). Verifies key, package, and billing."""
+    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        return {"ok": False, "error": "ANTHROPIC_API_KEY not set"}
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        resp = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=64,
+            messages=[{"role": "user", "content": "Reply with exactly: Hello, the API is working."}],
+        )
+        text = ""
+        for block in resp.content:
+            if hasattr(block, "text") and block.text:
+                text += block.text
+        return {"ok": True, "response": (text or "").strip()}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "traceback": traceback.format_exc()}
+
+
+@app.post("/api/debug/test-search")
+def debug_test_search():
+    """Anthropic API call WITH web_search tool — one plumber in Brisbane. Same flow as discovery."""
+    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        return {"ok": False, "error": "ANTHROPIC_API_KEY not set"}
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        resp = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1024,
+            tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 2}],
+            messages=[{"role": "user", "content": "Use web search to find one plumber business in Brisbane, Australia. Return a JSON object with: business_name, website (or null), email (or null). Only the JSON, no other text."}],
+        )
+        text = ""
+        for block in resp.content:
+            if hasattr(block, "text") and block.text:
+                text += block.text
+        return {"ok": True, "response": (text or "").strip()}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "traceback": traceback.format_exc()}
+
+
 def _get_git_sha_from_file() -> str:
     """Read git SHA from build-time generated file."""
     try:
@@ -3795,28 +3843,27 @@ def api_autopilot_discovery(
 ):
     """Run discovery: use Anthropic with web search to find local businesses. Batch 3 queries, insert new leads. Admin-only."""
     _check_admin_auth(authorization)
-    # Set ANTHROPIC_API_KEY in Render environment variables (exact name).
-    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
-    print(f"ANTHROPIC_API_KEY present: {bool(api_key)}, length: {len(api_key)}")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not set")
+    try:
+        api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+        print(f"ANTHROPIC_API_KEY present: {bool(api_key)}, length: {len(api_key)}")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not set")
 
-    trade = (body.trade_type or "").strip() or "plumber"
-    suburb = (body.suburb or "").strip() or "Brisbane"
-    target = max(10, min(50, body.target_count or 20))
+        trade = (body.trade_type or "").strip() or "plumber"
+        suburb = (body.suburb or "").strip() or "Brisbane"
+        target = max(10, min(50, body.target_count or 20))
 
-    _autopilot_log("discovery", f"Starting discovery: {trade} in {suburb}, target {target}")
+        _autopilot_log("discovery", f"Starting discovery: {trade} in {suburb}, target {target}")
 
-    import anthropic
-    client = anthropic.Anthropic(api_key=api_key)
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
 
-    # Build 3 search queries per batch
-    queries = [
-        f"{trade} {suburb} Brisbane business contact",
-        f"best {trade} companies {suburb} Queensland",
-        f"{trade} services {suburb} phone email",
-    ]
-    prompt = f"""Use web search to find real local businesses in {suburb}, Brisbane area. Trade type: {trade}.
+        queries = [
+            f"{trade} {suburb} Brisbane business contact",
+            f"best {trade} companies {suburb} Queensland",
+            f"{trade} services {suburb} phone email",
+        ]
+        prompt = f"""Use web search to find real local businesses in {suburb}, Brisbane area. Trade type: {trade}.
 Run exactly 3 web searches (one for each of these intents): (1) "{queries[0]}", (2) "{queries[1]}", (3) "{queries[2]}".
 From the search results, extract a list of local businesses. For each business provide:
 - business_name (string)
@@ -3825,54 +3872,57 @@ From the search results, extract a list of local businesses. For each business p
 
 Return a JSON array of objects with keys: business_name, website, email. Include up to {min(target, 30)} businesses. No other text, no markdown, only the JSON array."""
 
-    try:
         resp = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=4096,
             tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 5}],
             messages=[{"role": "user", "content": prompt}],
         )
+
+        text = ""
+        for block in resp.content:
+            if hasattr(block, "text") and block.text:
+                text += block.text
+        text = (text or "").strip()
+        if text.startswith("```"):
+            text = re.sub(r"^```(?:json)?\s*", "", text)
+            text = re.sub(r"\s*```$", "", text)
+        try:
+            businesses = json.loads(text)
+        except json.JSONDecodeError:
+            _autopilot_log("discovery", "Could not parse Claude response as JSON", {"raw": text[:500]})
+            raise HTTPException(status_code=500, detail="Discovery returned invalid JSON")
+
+        if not isinstance(businesses, list):
+            businesses = []
+
+        inserted = 0
+        with get_conn() as conn:
+            for b in businesses[:target]:
+                name = (b.get("business_name") or "").strip()
+                if not name:
+                    continue
+                website = (b.get("website") or "").strip() or None
+                email = (b.get("email") or "").strip() or None
+                if not website and not email:
+                    continue
+                conn.execute(
+                    """INSERT INTO leads (trade_type, suburb, business_name, website, email, status)
+                       VALUES (%s, %s, %s, %s, %s, 'new')""",
+                    (trade, suburb, name, website, email),
+                )
+                conn.commit()
+                inserted += 1
+
+        _autopilot_log("discovery", f"Inserted {inserted} new leads", {"count": inserted})
+        return {"ok": True, "inserted": inserted, "total_found": len(businesses)}
+    except HTTPException:
+        raise
     except Exception as e:
-        _autopilot_log("discovery", f"Anthropic error: {str(e)}", {"error": str(e)})
-        raise HTTPException(status_code=500, detail=f"Discovery failed: {str(e)}")
-
-    text = ""
-    for block in resp.content:
-        if hasattr(block, "text") and block.text:
-            text += block.text
-    text = (text or "").strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*", "", text)
-        text = re.sub(r"\s*```$", "", text)
-    try:
-        businesses = json.loads(text)
-    except json.JSONDecodeError:
-        _autopilot_log("discovery", "Could not parse Claude response as JSON", {"raw": text[:500]})
-        raise HTTPException(status_code=500, detail="Discovery returned invalid JSON")
-
-    if not isinstance(businesses, list):
-        businesses = []
-
-    inserted = 0
-    with get_conn() as conn:
-        for b in businesses[:target]:
-            name = (b.get("business_name") or "").strip()
-            if not name:
-                continue
-            website = (b.get("website") or "").strip() or None
-            email = (b.get("email") or "").strip() or None
-            if not website and not email:
-                continue
-            conn.execute(
-                """INSERT INTO leads (trade_type, suburb, business_name, website, email, status)
-                   VALUES (%s, %s, %s, %s, %s, 'new')""",
-                (trade, suburb, name, website, email),
-            )
-            conn.commit()
-            inserted += 1
-
-    _autopilot_log("discovery", f"Inserted {inserted} new leads", {"count": inserted})
-    return {"ok": True, "inserted": inserted, "total_found": len(businesses)}
+        tb = traceback.format_exc()
+        print(f"[DISCOVERY] {tb}")
+        _autopilot_log("discovery", str(e), {"traceback": tb})
+        raise HTTPException(status_code=500, detail=f"Discovery failed:\n{tb}")
 
 
 # Leads table has no unique constraint; we avoid duplicate by checking (trade_type, suburb, business_name) if needed later.
@@ -3889,52 +3939,53 @@ def api_autopilot_audit(
 ):
     """Audit leads: fetch website, use Anthropic to score 1-10 and check for chat/FAQ/after-hours. Admin-only."""
     _check_admin_auth(authorization)
-    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
-    if not api_key:
-        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not set")
+    try:
+        api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+        if not api_key:
+            raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not set")
 
-    with get_conn() as conn:
-        if body.lead_ids:
-            placeholders = ",".join(["%s"] * len(body.lead_ids))
-            rows = conn.execute(
-                f"SELECT id, business_name, website FROM leads WHERE id IN ({placeholders})",
-                tuple(body.lead_ids),
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT id, business_name, website FROM leads WHERE status = 'new' AND website IS NOT NULL AND website != ''"
-            ).fetchall()
+        with get_conn() as conn:
+            if body.lead_ids:
+                placeholders = ",".join(["%s"] * len(body.lead_ids))
+                rows = conn.execute(
+                    f"SELECT id, business_name, website FROM leads WHERE id IN ({placeholders})",
+                    tuple(body.lead_ids),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT id, business_name, website FROM leads WHERE status = 'new' AND website IS NOT NULL AND website != ''"
+                ).fetchall()
 
-    import anthropic
-    client = anthropic.Anthropic(api_key=api_key)
-    audited = 0
-    for row in rows:
-        lead_id, name, website = row[0], row[1], row[2]
-        if not website or not website.startswith("http"):
-            website = "https://" + (website or "")
-        _autopilot_log("audit", f"Auditing {name}", {"lead_id": lead_id})
-        try:
-            import requests as req_lib
-            r = req_lib.get(website, timeout=10, headers={"User-Agent": "MotionMade Lead Audit"})
-            r.raise_for_status()
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(r.text, "html.parser")
-            for tag in soup(["script", "style", "nav", "footer"]):
-                tag.decompose()
-            text = (soup.get_text(separator=" ", strip=True) or "")[:6000]
-        except Exception as e:
-            _autopilot_log("audit", f"Could not fetch {website}: {e}", {"lead_id": lead_id})
-            detail = {"error": str(e), "score": 0}
-            with get_conn() as conn2:
-                conn2.execute(
-                    "UPDATE leads SET status = 'audited', audit_score = 0, audit_details = %s, updated_at = now() WHERE id = %s",
-                    (json.dumps(detail), lead_id),
-                )
-                conn2.commit()
-            audited += 1
-            continue
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        audited = 0
+        for row in rows:
+            lead_id, name, website = row[0], row[1], row[2]
+            if not website or not website.startswith("http"):
+                website = "https://" + (website or "")
+            _autopilot_log("audit", f"Auditing {name}", {"lead_id": lead_id})
+            try:
+                import requests as req_lib
+                r = req_lib.get(website, timeout=10, headers={"User-Agent": "MotionMade Lead Audit"})
+                r.raise_for_status()
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(r.text, "html.parser")
+                for tag in soup(["script", "style", "nav", "footer"]):
+                    tag.decompose()
+                text = (soup.get_text(separator=" ", strip=True) or "")[:6000]
+            except Exception as e:
+                _autopilot_log("audit", f"Could not fetch {website}: {e}", {"lead_id": lead_id})
+                detail = {"error": str(e), "score": 0}
+                with get_conn() as conn2:
+                    conn2.execute(
+                        "UPDATE leads SET status = 'audited', audit_score = 0, audit_details = %s, updated_at = now() WHERE id = %s",
+                        (json.dumps(detail), lead_id),
+                    )
+                    conn2.commit()
+                audited += 1
+                continue
 
-        prompt = f"""Analyze this business website content and score how much they need an AI FAQ/chat widget (MotionMade). Business: {name}. Website: {website}.
+            prompt = f"""Analyze this business website content and score how much they need an AI FAQ/chat widget (MotionMade). Business: {name}. Website: {website}.
 
 Consider: Do they already have a chat widget? Do they have a detailed FAQ page? Do they offer after-hours support? Is the site professional and likely to care about lead conversion?
 
@@ -3947,38 +3998,45 @@ Return a JSON object with:
 
 Only return the JSON object, no other text."""
 
-        try:
-            resp = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=1024,
-                messages=[{"role": "user", "content": f"Website text:\n{text}\n\n{prompt}"}],
-            )
-            text_out = ""
-            for block in resp.content:
-                if hasattr(block, "text") and block.text:
-                    text_out += block.text
-            text_out = (text_out or "").strip()
-            if text_out.startswith("```"):
-                text_out = re.sub(r"^```(?:json)?\s*", "", text_out)
-                text_out = re.sub(r"\s*```$", "", text_out)
-            detail = json.loads(text_out)
-            score = int(detail.get("score", 5))
-            if score < 1 or score > 10:
+            try:
+                resp = client.messages.create(
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=1024,
+                    messages=[{"role": "user", "content": f"Website text:\n{text}\n\n{prompt}"}],
+                )
+                text_out = ""
+                for block in resp.content:
+                    if hasattr(block, "text") and block.text:
+                        text_out += block.text
+                text_out = (text_out or "").strip()
+                if text_out.startswith("```"):
+                    text_out = re.sub(r"^```(?:json)?\s*", "", text_out)
+                    text_out = re.sub(r"\s*```$", "", text_out)
+                detail = json.loads(text_out)
+                score = int(detail.get("score", 5))
+                if score < 1 or score > 10:
+                    score = 5
+            except Exception as e:
+                detail = {"error": str(e), "score": 5}
                 score = 5
-        except Exception as e:
-            detail = {"error": str(e), "score": 5}
-            score = 5
 
-        with get_conn() as conn2:
-            conn2.execute(
-                "UPDATE leads SET status = 'audited', audit_score = %s, audit_details = %s, updated_at = now() WHERE id = %s",
-                (score, json.dumps(detail) if isinstance(detail, dict) else "{}", lead_id),
-            )
-            conn2.commit()
-        audited += 1
+            with get_conn() as conn2:
+                conn2.execute(
+                    "UPDATE leads SET status = 'audited', audit_score = %s, audit_details = %s, updated_at = now() WHERE id = %s",
+                    (score, json.dumps(detail) if isinstance(detail, dict) else "{}", lead_id),
+                )
+                conn2.commit()
+            audited += 1
 
-    _autopilot_log("audit", f"Audited {audited} leads", {"count": audited})
-    return {"ok": True, "audited": audited}
+        _autopilot_log("audit", f"Audited {audited} leads", {"count": audited})
+        return {"ok": True, "audited": audited}
+    except HTTPException:
+        raise
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(f"[AUDIT] {tb}")
+        _autopilot_log("audit", str(e), {"traceback": tb})
+        raise HTTPException(status_code=500, detail=f"Audit failed:\n{tb}")
 
 
 @app.post("/api/leads/autopilot/preview")
@@ -3988,44 +4046,52 @@ def api_autopilot_preview(
 ):
     """Generate demo previews for all leads that have a website (status audited or new). No threshold. Admin-only."""
     _check_admin_auth(authorization)
-    base_url = os.getenv("PUBLIC_BASE_URL") or "https://motionmade-fastapi.onrender.com"
-    with get_conn() as conn:
-        rows = conn.execute(
-            """SELECT id, business_name, website FROM leads
-               WHERE (website IS NOT NULL AND website != '') AND (preview_url IS NULL OR preview_url = '')
-               ORDER BY id"""
-        ).fetchall()
+    try:
+        base_url = os.getenv("PUBLIC_BASE_URL") or "https://motionmade-fastapi.onrender.com"
+        with get_conn() as conn:
+            rows = conn.execute(
+                """SELECT id, business_name, website FROM leads
+                   WHERE (website IS NOT NULL AND website != '') AND (preview_url IS NULL OR preview_url = '')
+                   ORDER BY id"""
+            ).fetchall()
 
-    generated = 0
-    for row in rows:
-        lead_id, name, website = row[0], row[1], row[2]
-        if not website:
-            continue
-        _autopilot_log("preview", f"Generating demo for {name}", {"lead_id": lead_id})
-        try:
-            import requests as req_lib
-            r = req_lib.post(
-                f"{base_url}/api/demo/generate",
-                json={"business_url": website, "business_name": name or "Business"},
-                headers={"Content-Type": "application/json"},
-                timeout=120,
-            )
-            r.raise_for_status()
-            data = r.json()
-            demo_id = data.get("demo_id")
-            preview_url = data.get("preview_url", "")
-            with get_conn() as conn2:
-                conn2.execute(
-                    "UPDATE leads SET preview_url = %s, preview_demo_id = %s, status = 'previewed', updated_at = now() WHERE id = %s",
-                    (preview_url, demo_id, lead_id),
+        generated = 0
+        for row in rows:
+            lead_id, name, website = row[0], row[1], row[2]
+            if not website:
+                continue
+            _autopilot_log("preview", f"Generating demo for {name}", {"lead_id": lead_id})
+            try:
+                import requests as req_lib
+                r = req_lib.post(
+                    f"{base_url}/api/demo/generate",
+                    json={"business_url": website, "business_name": name or "Business"},
+                    headers={"Content-Type": "application/json"},
+                    timeout=120,
                 )
-                conn2.commit()
-            generated += 1
-        except Exception as e:
-            _autopilot_log("preview", f"Failed {name}: {str(e)}", {"lead_id": lead_id, "error": str(e)})
+                r.raise_for_status()
+                data = r.json()
+                demo_id = data.get("demo_id")
+                preview_url = data.get("preview_url", "")
+                with get_conn() as conn2:
+                    conn2.execute(
+                        "UPDATE leads SET preview_url = %s, preview_demo_id = %s, status = 'previewed', updated_at = now() WHERE id = %s",
+                        (preview_url, demo_id, lead_id),
+                    )
+                    conn2.commit()
+                generated += 1
+            except Exception as e:
+                _autopilot_log("preview", f"Failed {name}: {str(e)}", {"lead_id": lead_id, "error": str(e)})
 
-    _autopilot_log("preview", f"Generated {generated} previews", {"count": generated})
-    return {"ok": True, "generated": generated}
+        _autopilot_log("preview", f"Generated {generated} previews", {"count": generated})
+        return {"ok": True, "generated": generated}
+    except HTTPException:
+        raise
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(f"[PREVIEW] {tb}")
+        _autopilot_log("preview", str(e), {"traceback": tb})
+        raise HTTPException(status_code=500, detail=f"Preview failed:\n{tb}")
 
 
 @app.post("/api/leads/autopilot/email-writing")
@@ -4035,25 +4101,26 @@ def api_autopilot_email_writing(
 ):
     """Use Anthropic to write personalised cold emails for each lead. If preview_url set, use it as hook. Admin-only."""
     _check_admin_auth(authorization)
-    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
-    if not api_key:
-        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not set")
+    try:
+        api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+        if not api_key:
+            raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not set")
 
-    with get_conn() as conn:
-        rows = conn.execute(
-            """SELECT id, business_name, email, preview_url, suburb FROM leads
-               WHERE status IN ('audited', 'previewed') AND email IS NOT NULL AND email != ''
-               ORDER BY id"""
-        ).fetchall()
+        with get_conn() as conn:
+            rows = conn.execute(
+                """SELECT id, business_name, email, preview_url, suburb FROM leads
+                   WHERE status IN ('audited', 'previewed') AND email IS NOT NULL AND email != ''
+                   ORDER BY id"""
+            ).fetchall()
 
-    import anthropic
-    client = anthropic.Anthropic(api_key=api_key)
-    written = 0
-    for row in rows:
-        lead_id, name, email, preview_url, suburb = row[0], row[1], row[2], row[3], row[4]
-        _autopilot_log("email", f"Writing email for {name}", {"lead_id": lead_id})
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        written = 0
+        for row in rows:
+            lead_id, name, email, preview_url, suburb = row[0], row[1], row[2], row[3], row[4]
+            _autopilot_log("email", f"Writing email for {name}", {"lead_id": lead_id})
 
-        prompt = f"""Write a short, casual, personalised cold email to this business lead.
+            prompt = f"""Write a short, casual, personalised cold email to this business lead.
 
 Business: {name}. Suburb: {suburb or 'Brisbane'}. Their email: {email}.
 
@@ -4066,39 +4133,46 @@ Requirements:
 - End with a soft CTA (reply if interested, or try the demo).
 - Return ONLY the email body (plain text), no subject line in the body. Then on the next line write "---SUBJECT---" and then the subject line (short, personalised)."""
 
-        if preview_url:
-            prompt += f"\n\nPreview URL for this lead: {preview_url}"
+            if preview_url:
+                prompt += f"\n\nPreview URL for this lead: {preview_url}"
 
-        try:
-            resp = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=1024,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            text_out = ""
-            for block in resp.content:
-                if hasattr(block, "text") and block.text:
-                    text_out += block.text
-            text_out = (text_out or "").strip()
-            if "---SUBJECT---" in text_out:
-                body_text, subject = text_out.split("---SUBJECT---", 1)
-                body_text = body_text.strip()
-                subject = subject.strip()
-            else:
-                subject = f"Quick demo for {name} – MotionMade"
-                body_text = text_out
-            with get_conn() as conn2:
-                conn2.execute(
-                    "UPDATE leads SET email_subject = %s, email_body = %s, status = 'ready', updated_at = now() WHERE id = %s",
-                    (subject, body_text, lead_id),
+            try:
+                resp = client.messages.create(
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=1024,
+                    messages=[{"role": "user", "content": prompt}],
                 )
-                conn2.commit()
-            written += 1
-        except Exception as e:
-            _autopilot_log("email", f"Failed {name}: {str(e)}", {"lead_id": lead_id, "error": str(e)})
+                text_out = ""
+                for block in resp.content:
+                    if hasattr(block, "text") and block.text:
+                        text_out += block.text
+                text_out = (text_out or "").strip()
+                if "---SUBJECT---" in text_out:
+                    body_text, subject = text_out.split("---SUBJECT---", 1)
+                    body_text = body_text.strip()
+                    subject = subject.strip()
+                else:
+                    subject = f"Quick demo for {name} – MotionMade"
+                    body_text = text_out
+                with get_conn() as conn2:
+                    conn2.execute(
+                        "UPDATE leads SET email_subject = %s, email_body = %s, status = 'ready', updated_at = now() WHERE id = %s",
+                        (subject, body_text, lead_id),
+                    )
+                    conn2.commit()
+                written += 1
+            except Exception as e:
+                _autopilot_log("email", f"Failed {name}: {str(e)}", {"lead_id": lead_id, "error": str(e)})
 
-    _autopilot_log("email", f"Wrote {written} emails", {"count": written})
-    return {"ok": True, "written": written}
+        _autopilot_log("email", f"Wrote {written} emails", {"count": written})
+        return {"ok": True, "written": written}
+    except HTTPException:
+        raise
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(f"[EMAIL-WRITING] {tb}")
+        _autopilot_log("email", str(e), {"traceback": tb})
+        raise HTTPException(status_code=500, detail=f"Email writing failed:\n{tb}")
 
 
 @app.post("/api/leads/send-all-ready")
