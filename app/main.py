@@ -3646,6 +3646,30 @@ def _autopilot_log(phase: str, message: str, detail: Optional[dict] = None) -> N
         conn.commit()
 
 
+def _anthropic_retry(phase: str, fn, max_retries: int = 3):
+    """Run an Anthropic API call with retry on 429. Up to max_retries retries (4 attempts total)."""
+    last_err = None
+    for attempt in range(max_retries + 1):
+        try:
+            return fn()
+        except Exception as e:
+            last_err = e
+            is_429 = getattr(e, "status_code", None) == 429
+            if not is_429:
+                try:
+                    import anthropic
+                    is_429 = isinstance(e, getattr(anthropic, "RateLimitError", type(None)))
+                except Exception:
+                    pass
+            if is_429 and attempt < max_retries:
+                _autopilot_log(phase, "Rate limited. Waiting 60 seconds...", {})
+                time.sleep(60)
+                continue
+            raise
+    if last_err is not None:
+        raise last_err
+
+
 @app.get("/leads", response_class=HTMLResponse)
 def leads_ui():
     """Serve leads engine UI. Auth is via admin token in the page (same as /admin)."""
@@ -3928,12 +3952,12 @@ From the search results, extract a list of local businesses. For each business p
 
 Return a JSON array of objects with keys: business_name, website, email. Include up to {min(target, 30)} businesses. No other text, no markdown, only the JSON array."""
 
-        resp = client.messages.create(
+        resp = _anthropic_retry("discovery", lambda: client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=4096,
             tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 5}],
             messages=[{"role": "user", "content": prompt}],
-        )
+        ))
 
         text = ""
         for block in resp.content:
@@ -4102,7 +4126,9 @@ def api_autopilot_audit(
             return deduped[:12]
 
         audited = 0
-        for row in rows:
+        for i, row in enumerate(rows):
+            if i > 0:
+                time.sleep(3)
             lead_id, name, website, existing_email = row[0], row[1], row[2], (row[3] if len(row) > 3 else None)
             suburb_lead = (row[4] if len(row) > 4 else None) or "Brisbane"
             if not website or not website.startswith("http"):
@@ -4135,12 +4161,12 @@ def api_autopilot_audit(
                 if not found_email and not (existing_email or "").strip():
                     _autopilot_log("audit", f"No email on site for {name}, trying web search", {"lead_id": lead_id})
                     try:
-                        search_resp = client.messages.create(
+                        search_resp = _anthropic_retry("audit", lambda: client.messages.create(
                             model="claude-sonnet-4-20250514",
                             max_tokens=512,
                             tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 2}],
                             messages=[{"role": "user", "content": f'Search for the contact email address of this business: "{name}" in {suburb_lead}, Australia. Try queries like "[business name] [suburb] email" or "site:yellowpages.com.au [business name]". Return a JSON object with one key "email" (the email string if found, or null). Only the JSON, no other text.'}],
-                        )
+                        ))
                         search_text = ""
                         for block in search_resp.content:
                             if hasattr(block, "text") and block.text:
@@ -4191,11 +4217,11 @@ Return a JSON object with:
 Only return the JSON object, no other text."""
 
             try:
-                resp = client.messages.create(
+                resp = _anthropic_retry("audit", lambda: client.messages.create(
                     model="claude-sonnet-4-20250514",
                     max_tokens=1024,
                     messages=[{"role": "user", "content": f"Website text:\n{text}\n\n{prompt}"}],
-                )
+                ))
                 text_out = ""
                 for block in resp.content:
                     if hasattr(block, "text") and block.text:
@@ -4301,7 +4327,9 @@ def api_autopilot_email_writing(
         client = anthropic.Anthropic(api_key=api_key)
         written = 0
         used_subjects: list[str] = []
-        for row in rows:
+        for i, row in enumerate(rows):
+            if i > 0:
+                time.sleep(3)
             lead_id, name, email, preview_url, suburb = row[0], row[1], row[2], row[3], row[4]
             audit_details = row[5] if len(row) > 5 else None
             trade_type = (row[6] if len(row) > 6 else None) or ""
@@ -4345,11 +4373,11 @@ Return ONLY the email body (plain text). Then on the next line write "---SUBJECT
             prompt += used_subjects_instruction
 
             try:
-                resp = client.messages.create(
+                resp = _anthropic_retry("email", lambda: client.messages.create(
                     model="claude-sonnet-4-20250514",
                     max_tokens=1024,
                     messages=[{"role": "user", "content": prompt}],
-                )
+                ))
                 text_out = ""
                 for block in resp.content:
                     if hasattr(block, "text") and block.text:
