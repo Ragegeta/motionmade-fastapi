@@ -3778,6 +3778,28 @@ def api_leads_update(
     return {"ok": True}
 
 
+@app.post("/api/leads/mark-ready-as-emailed")
+def api_leads_mark_ready_as_emailed(
+    trade_type: Optional[str] = None,
+    suburb: Optional[str] = None,
+    authorization: str = Header(default=""),
+):
+    """Set all leads with status 'ready' to 'emailed'. Optional trade_type/suburb filter. Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        q = "UPDATE leads SET status = 'emailed', updated_at = now() WHERE status = 'ready'"
+        params: list = []
+        if trade_type:
+            q += " AND trade_type = %s"
+            params.append(trade_type)
+        if suburb:
+            q += " AND suburb = %s"
+            params.append(suburb)
+        conn.execute(q, tuple(params))
+        conn.commit()
+    return {"ok": True}
+
+
 class AutopilotDiscoveryBody(BaseModel):
     trade_type: str
     suburb: str

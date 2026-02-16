@@ -77,6 +77,19 @@
         .footer-actions { text-align: center; padding: 20px 0; }
         .footer-actions .btn-export { padding: 8px 16px; font-size: 13px; border-radius: 8px; cursor: pointer; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
         .footer-actions .btn-export:hover { background: #e5e7eb; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-box { background: #fff; border-radius: 12px; max-width: 560px; width: 90%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .modal-header { padding: 16px 20px; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 16px; }
+        .modal-body { padding: 20px; overflow-y: auto; font-size: 14px; line-height: 1.6; color: #374151; }
+        .modal-body ol { margin: 0 0 14px 0; padding-left: 20px; }
+        .modal-body li { margin-bottom: 6px; }
+        .modal-body pre { background: #1f2937; color: #e5e7eb; padding: 14px; border-radius: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 12px 0; text-align: left; }
+        .modal-footer { padding: 14px 20px; border-top: 1px solid #e5e7eb; display: flex; gap: 10px; justify-content: flex-end; }
+        .btn-copy-script { padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; background: #2563EB; color: white; border: none; }
+        .btn-copy-script:hover { background: #1d4ed8; }
+        .btn-modal-close { padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+        .btn-modal-close:hover { background: #e5e7eb; }
     </style>
 </head>
 <body>
@@ -117,6 +130,8 @@
                 <div class="send-all-wrap">
                     <span id="copyAllProgress" class="send-progress hidden"></span>
                     <button type="button" id="copyAllEmails" class="btn-send-all hidden">Copy All Emails (<span id="readyCount">0</span> ready)</button>
+                    <button type="button" id="sendViaGmail" class="btn-send-all hidden" style="background:#ea4335;">Send All via Gmail (<span id="readyCountGmail">0</span> ready)</button>
+                    <button type="button" id="markAllEmailed" class="btn-refresh hidden">Mark All as Emailed</button>
                     <button type="button" id="refreshLeads" class="btn-refresh">Refresh</button>
                 </div>
             </div>
@@ -143,9 +158,30 @@
         </div>
     </div>
 
+    <div id="gmailModal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-header">Send via Gmail – Google Apps Script</div>
+            <div class="modal-body">
+                <p style="margin-bottom:12px;">Your CSV has been downloaded. To send emails from Gmail:</p>
+                <ol>
+                    <li>Open the downloaded file in Google Sheets (File → Import → Upload, or paste into a new sheet).</li>
+                    <li>Go to <strong>Extensions → Apps Script</strong>.</li>
+                    <li>Paste the script below and click <strong>Run</strong> (authorize Gmail when prompted).</li>
+                </ol>
+                <pre id="gmailScriptCode"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="copyScriptBtn" class="btn-copy-script">Copy Script</button>
+                <button type="button" id="closeGmailModal" class="btn-modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = window.location.origin;
         let adminToken = '';
+
+        const GMAIL_APPS_SCRIPT = 'function sendEmails() {\n  var sheet = SpreadsheetApp.getActiveSheet();\n  var data = sheet.getDataRange().getValues();\n  var headers = data[0];\n  var emailCol = headers.indexOf("Email Address");\n  var subjectCol = headers.indexOf("Email Subject");\n  var bodyCol = headers.indexOf("Email Body");\n  var sent = 0;\n  for (var i = 1; i < data.length; i++) {\n    var email = data[i][emailCol];\n    var subject = data[i][subjectCol];\n    var body = data[i][bodyCol];\n    if (email && subject && body) {\n      try {\n        GmailApp.sendEmail(email, subject, body, {\n          name: "Abbed",\n          replyTo: "abbed@motionmadebne.com.au"\n        });\n        sheet.getRange(i + 1, headers.length + 1).setValue("SENT");\n        sent++;\n        Utilities.sleep(30000);\n      } catch (e) {\n        sheet.getRange(i + 1, headers.length + 1).setValue("FAILED: " + e.message);\n      }\n    }\n  }\n  SpreadsheetApp.getUi().alert("Done! Sent " + sent + " emails.");\n}';
 
         function getHeaders() {
             return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken };
@@ -214,14 +250,18 @@
 
         function updateSendAllButton() {
             const ready = leadsCache.filter(l => l.status === 'ready' && l.email);
-            const btn = document.getElementById('copyAllEmails');
+            const n = ready.length;
             const countEl = document.getElementById('readyCount');
-            if (!countEl) return;
-            countEl.textContent = ready.length;
-            if (btn) {
-                if (ready.length > 0) btn.classList.remove('hidden');
-                else btn.classList.add('hidden');
-            }
+            const countGmail = document.getElementById('readyCountGmail');
+            if (countEl) countEl.textContent = n;
+            if (countGmail) countGmail.textContent = n;
+            ['copyAllEmails', 'sendViaGmail', 'markAllEmailed'].forEach(function(id) {
+                const b = document.getElementById(id);
+                if (b) {
+                    if (n > 0) b.classList.remove('hidden');
+                    else b.classList.add('hidden');
+                }
+            });
         }
 
         function renderLeads(leads) {
@@ -349,6 +389,55 @@
                     setTimeout(function() { progressEl.textContent = ''; progressEl.classList.add('hidden'); }, 3000);
                 }
             }).catch(() => {});
+        };
+
+        function csvEscape(s) {
+            if (s == null) return '""';
+            var t = String(s).replace(/"/g, '""');
+            if (/[",\r\n]/.test(t)) return '"' + t + '"';
+            return t;
+        }
+        document.getElementById('sendViaGmail').onclick = function() {
+            const ready = leadsCache.filter(l => l.status === 'ready' && l.email);
+            if (!ready.length) return;
+            var rows = [['Business Name', 'Email Address', 'Email Subject', 'Email Body']];
+            ready.forEach(function(l) {
+                rows.push([l.business_name || '', l.email || '', l.email_subject || '', l.email_body || '']);
+            });
+            var csv = rows.map(function(row) {
+                return row.map(csvEscape).join(',');
+            }).join('\r\n');
+            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'leads_gmail.csv';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            URL.revokeObjectURL(a.href);
+            a.remove();
+            var pre = document.getElementById('gmailScriptCode');
+            if (pre) pre.textContent = GMAIL_APPS_SCRIPT;
+            document.getElementById('gmailModal').classList.remove('hidden');
+        };
+        document.getElementById('copyScriptBtn').onclick = function() {
+            navigator.clipboard.writeText(GMAIL_APPS_SCRIPT).then(function() {
+                this.textContent = 'Copied ✓';
+            }.bind(this)).catch(function() {});
+        };
+        document.getElementById('closeGmailModal').onclick = function() {
+            document.getElementById('gmailModal').classList.add('hidden');
+        };
+
+        document.getElementById('markAllEmailed').onclick = async function() {
+            var trade = document.getElementById('tradeType').value.trim();
+            var suburb = document.getElementById('suburb').value;
+            var url = API_BASE + '/api/leads/mark-ready-as-emailed?';
+            if (trade) url += 'trade_type=' + encodeURIComponent(trade) + '&';
+            if (suburb) url += 'suburb=' + encodeURIComponent(suburb);
+            var r = await fetch(url, { method: 'POST', headers: getHeaders() });
+            if (!r.ok) return;
+            await loadLeads();
         };
 
         document.getElementById('exportCsv').onclick = async function() {
