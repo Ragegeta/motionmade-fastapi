@@ -4331,10 +4331,11 @@ Business: {name}. Suburb: {suburb or 'Brisbane'}. Their email: {email}.
             prompt += """
 STRICT RULES:
 1. NEVER use hyphens or em dashes as punctuation. No "—" and no "-" between phrases. Use full stops or commas only. This is a dead giveaway of AI text.
-2. Subject line: curiosity driven and specific. NEVER generic like "Quick question about your website" or "Quick demo for [Business]". Use patterns like: "saw your [suburb] site last night" / "this is costing you jobs, [first name or business]" / "your competitor down the road just added this" / "what happens when someone visits your site at 11pm?" / "you're losing bond clean leads after hours" / "had an idea for [Business Name]". Make them curious enough to open. Feel like a message from a real person, not a company.
-3. Body: sound like a text message from a mate, not a sales pitch. Short sentences. No fancy words. No marketing language. No "leverage", "streamline", "solution", "empower" or any corporate buzzwords. Write like a 27 year old Brisbane bloke would actually write an email.
-4. Every email must be different. Vary the opening, the angle, the structure. Some start with a question, some with an observation, some are only 3 sentences. Never repeat the same pattern twice in this batch.
-5. Sign off as just "Abbed". No title, no company name, no footer.
+2. Subject line: be direct about the product, not clickbait. The subject must clearly communicate that this is an AI tool that helps them convert more leads. Examples: "AI that books jobs for your cleaning business while you sleep" / "an AI front desk for [Business Name]" / "AI that answers your customers' questions 24/7" / "stop losing after hours leads, [Business Name]" / "AI tool built for Brisbane bond cleaners". Still vary them, but be upfront that it's AI and that it helps convert leads. No tricks or misleading subjects.
+3. Body: sound like a text message from a mate, not a sales pitch. Short sentences. No fancy words. No marketing language. No "leverage", "streamline", "solution", "empower" or any corporate buzzwords. Write like a 27 year old Brisbane bloke would actually write an email. Make it clear this isn't a generic chatbot: mention that the AI answers based on the business's own FAQs and info (e.g. "it learns your pricing, your services, your areas, and answers customers based on your actual business info" or "it answers based on your own FAQs, not generic responses"). This is a key differentiator.
+4. Always include the link https://motionmadebne.com.au in the email body. Add a line near the end like "Check it out here: https://motionmadebne.com.au" or weave it naturally into the CTA. Use the full URL so it's clickable.
+5. Every email must be different. Vary the opening, the angle, the structure. Some start with a question, some with an observation, some are only 3 sentences. Never repeat the same pattern twice in this batch.
+6. Sign off as just "Abbed". No title, no company name, no footer.
 
 Return ONLY the email body (plain text). Then on the next line write "---SUBJECT---" and then the subject line.
 """
