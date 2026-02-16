@@ -21,6 +21,10 @@
         .control-group label { font-size: 11px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.02em; }
         .control-group input, .control-group select { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; min-width: 120px; font-size: 15px; }
         .control-group input[type="number"] { width: 80px; }
+        .trade-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-trade { padding: 10px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; background: #f3f4f6; color: #374151; border: 2px solid #e5e7eb; font-weight: 500; }
+        .btn-trade:hover { background: #e5e7eb; }
+        .btn-trade.selected { background: #2563EB; color: white; border-color: #2563EB; }
         .btn-run { padding: 14px 28px; border-radius: 10px; font-weight: 600; font-size: 16px; cursor: pointer; border: none; background: #2563EB; color: white; }
         .btn-run:hover:not(:disabled) { background: #1d4ed8; }
         .btn-run:disabled { opacity: 0.7; cursor: not-allowed; }
@@ -117,12 +121,16 @@
         <div id="mainContent" class="hidden">
             <div class="controls">
                 <div class="control-group">
-                    <label>Trade type</label>
-                    <input type="text" id="tradeType" placeholder="e.g. plumber" value="plumber" />
+                    <label>Trade</label>
+                    <div class="trade-buttons">
+                        <button type="button" class="btn-trade selected" data-trade="Bond Cleaning">Bond Cleaning</button>
+                        <button type="button" class="btn-trade" data-trade="House Cleaning">House Cleaning</button>
+                        <button type="button" class="btn-trade" data-trade="Plumber">Plumber</button>
+                    </div>
                 </div>
                 <div class="control-group">
                     <label>Brisbane suburb</label>
-                    <select id="suburb"><option value="">Loading...</option></select>
+                    <select id="suburb"><option value="">All</option></select>
                 </div>
                 <div class="control-group">
                     <label>Target leads</label>
@@ -179,6 +187,18 @@
             return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken };
         }
 
+        function getSelectedTrade() {
+            var sel = document.querySelector('.btn-trade.selected');
+            return (sel && sel.getAttribute('data-trade')) || 'Plumber';
+        }
+
+        document.querySelectorAll('.btn-trade').forEach(function(btn) {
+            btn.onclick = function() {
+                document.querySelectorAll('.btn-trade').forEach(function(b) { b.classList.remove('selected'); });
+                this.classList.add('selected');
+            };
+        });
+
         function escapeHtml(s) {
             if (s == null) return '';
             const div = document.createElement('div');
@@ -220,9 +240,9 @@
 
         let leadsCache = [];
         async function loadLeads() {
-            const trade = document.getElementById('tradeType').value.trim();
-            const suburb = document.getElementById('suburb').value;
-            let url = API_BASE + '/api/leads?';
+            var trade = getSelectedTrade();
+            var suburb = document.getElementById('suburb').value;
+            var url = API_BASE + '/api/leads?';
             if (trade) url += 'trade_type=' + encodeURIComponent(trade) + '&';
             if (suburb) url += 'suburb=' + encodeURIComponent(suburb) + '&';
             const r = await fetch(url, { headers: getHeaders() });
@@ -359,8 +379,8 @@
             btn.disabled = true;
             if (summaryEl) summaryEl.classList.add('hidden');
             progressEl.classList.add('active');
-            const trade = document.getElementById('tradeType').value.trim() || 'plumber';
-            const suburb = document.getElementById('suburb').value || 'Brisbane City';
+            var trade = getSelectedTrade();
+            var suburb = document.getElementById('suburb').value;
             const target = Math.min(50, Math.max(5, parseInt(document.getElementById('targetCount').value, 10) || 20));
             var discoveryResp = {}, auditResp = {}, emailResp = {};
 
@@ -437,9 +457,9 @@
         };
 
         document.getElementById('exportCsv').onclick = async function() {
-            const trade = document.getElementById('tradeType').value.trim();
-            const suburb = document.getElementById('suburb').value;
-            let url = API_BASE + '/api/leads/export?';
+            var trade = getSelectedTrade();
+            var suburb = document.getElementById('suburb').value;
+            var url = API_BASE + '/api/leads/export?';
             if (trade) url += 'trade_type=' + encodeURIComponent(trade) + '&';
             if (suburb) url += 'suburb=' + encodeURIComponent(suburb);
             const r = await fetch(url, { headers: getHeaders() });

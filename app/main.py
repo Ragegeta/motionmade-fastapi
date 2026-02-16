@@ -3819,22 +3819,28 @@ def api_autopilot_discovery(
         if not api_key:
             raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not set")
 
-        trade = (body.trade_type or "").strip() or "plumber"
-        suburb = (body.suburb or "").strip() or "Brisbane"
+        trade = (body.trade_type or "").strip() or "Plumber"
+        suburb = (body.suburb or "").strip() or ""
+        suburb_area = f" in {suburb}" if suburb else " in Brisbane area"
         target = max(10, min(50, body.target_count or 20))
 
-        _autopilot_log("discovery", f"Starting discovery: {trade} in {suburb}, target {target}")
+        _autopilot_log("discovery", f"Starting discovery: {trade}{suburb_area}, target {target}")
 
         import anthropic
         client = anthropic.Anthropic(api_key=api_key)
 
-        queries = [
-            f"{trade} {suburb} Brisbane business contact",
-            f"best {trade} companies {suburb} Queensland",
-            f"{trade} services {suburb} phone email",
-        ]
-        prompt = f"""Use web search to find real local businesses in {suburb}, Brisbane area. Trade type: {trade}.
-Run exactly 3 web searches (one for each of these intents): (1) "{queries[0]}", (2) "{queries[1]}", (3) "{queries[2]}".
+        trade_lower = trade.lower()
+        if "bond" in trade_lower:
+            search_terms = ["bond cleaning", "end of lease cleaning", "vacate cleaning"]
+        elif "house" in trade_lower or "home" in trade_lower or "domestic" in trade_lower:
+            search_terms = ["house cleaning", "home cleaning", "domestic cleaning"]
+        else:
+            search_terms = ["plumber", "plumbing services", "emergency plumber"]
+
+        queries = [f"{term} {suburb} Brisbane" if suburb else f"{term} Brisbane Queensland" for term in search_terms]
+        queries_display = ", ".join(f'"{q}"' for q in queries)
+        prompt = f"""Use web search to find real local businesses in Brisbane area. Trade: {trade}.
+Run exactly 3 web searches using these search terms (one search per term): {queries_display}.
 From the search results, extract a list of local businesses. For each business provide:
 - business_name (string)
 - website (URL if found, else null)
@@ -3885,7 +3891,7 @@ Return a JSON array of objects with keys: business_name, website, email. Include
                 conn.execute(
                     """INSERT INTO leads (trade_type, suburb, business_name, website, email, status)
                        VALUES (%s, %s, %s, %s, %s, 'new')""",
-                    (trade, suburb, name, website, email),
+                    (trade, suburb or None, name, website, email),
                 )
                 conn.commit()
                 inserted += 1
@@ -4180,7 +4186,7 @@ def api_autopilot_email_writing(
 
         with get_conn() as conn:
             rows = conn.execute(
-                """SELECT id, business_name, email, preview_url, suburb, audit_details FROM leads
+                """SELECT id, business_name, email, preview_url, suburb, audit_details, trade_type FROM leads
                    WHERE status IN ('audited', 'previewed') AND email IS NOT NULL AND email != ''
                    ORDER BY id"""
             ).fetchall()
@@ -4192,6 +4198,7 @@ def api_autopilot_email_writing(
         for row in rows:
             lead_id, name, email, preview_url, suburb = row[0], row[1], row[2], row[3], row[4]
             audit_details = row[5] if len(row) > 5 else None
+            trade_type = (row[6] if len(row) > 6 else None) or ""
             if isinstance(audit_details, dict):
                 audit_summary = ", ".join(f"{k}: {v}" for k, v in audit_details.items() if v is not None and k != "error")
             else:
@@ -4202,18 +4209,35 @@ def api_autopilot_email_writing(
             if used_subjects:
                 used_subjects_instruction = f'\n\nSubject lines already used in this batch (use a DIFFERENT style and phrasing — do not repeat):\n' + "\n".join(f"- {s}" for s in used_subjects[-15:])
 
-            prompt = f"""Write a short, personal cold email to this business lead. Sound like a real person writing to another local business — no marketing speak, no SaaS jargon.
+            trade_lower = (trade_type or "").lower()
+            if "bond" in trade_lower:
+                trade_angle = """This lead is a BOND CLEANING business. Use this angle in the email:
+- Their customers always ask the same questions: how much for a 3 bedroom, do you do carpets, do you guarantee the bond back, what's included.
+- Your angle: "Your customers are googling these questions at 9pm when they're about to move out — if your site can't answer them instantly, they call someone else." Bond cleaning is time-sensitive (end of lease deadlines) so instant answers = more bookings.
+- Mention MotionMade briefly: AI on their site that answers these questions 24/7, free trial. No generic "your website doesn't have a chat" — focus on the bond-cleaning pain."""
+            elif "house" in trade_lower or "home" in trade_lower or "domestic" in trade_lower:
+                trade_angle = """This lead is a HOUSE CLEANING business. Use this angle in the email:
+- Their customers want to know: pricing, frequency options, what products you use, whether you're insured.
+- Your angle: "Most people compare 3-4 cleaners before booking — the one that answers their questions fastest wins." House cleaning is repeat business, so one lost lead = months of lost income.
+- Mention MotionMade briefly: AI that answers these questions on their site so they don't lose leads to slower competitors, free trial. No generic chat widget pitch — focus on the comparison-shopping pain."""
+            else:
+                trade_angle = """This lead is a PLUMBER. Use this angle in the email:
+- Their customers ask: emergency calls, "do you service my area", pricing for common jobs, availability.
+- Your angle: "When someone's got a burst pipe at 11pm they're not going to wait for you to call back tomorrow — if your website can tell them you service their area and give a rough price, they'll book you on the spot." Plumbers lose emergency jobs to whoever answers first.
+- Mention MotionMade briefly: AI that can answer area + rough pricing on their site 24/7, free trial. No generic pitch — focus on the emergency / after-hours pain."""
+            prompt = f"""Write a short, personal cold email to this business lead. Sound like a real person — no marketing speak, no SaaS jargon.
 
 Business: {name}. Suburb: {suburb or 'Brisbane'}. Their email: {email}.
+
+{trade_angle}
 """
             if audit_summary:
-                prompt += f"\nWhat we know about their website (reference something specific in your email, e.g. no after-hours support, no chat widget, or their reviews): {audit_summary}\n"
+                prompt += f"\nWhat we know about their website (reference something specific if you can): {audit_summary}\n"
             prompt += f"""
 Requirements:
 - Under 5 sentences. Casual, friendly, Australian tone.
-- Subject line: vary the style — do not use "Quick demo for [Business]" or any template that looks like the others. Never use the word "demo" in the subject (it looks like spam). Reference something specific from their site or audit if you can (e.g. "noticed you don't have after-hours support", "saw your 4.8 star reviews").
-- In the body, mention MotionMade only briefly (AI that answers customer questions on their site, free trial). No hype.
-- Sign off as just "Abbed" — not "Abbed, founder of MotionMade".
+- Subject line: vary the style — never use the same format as another email. Never use "demo" in the subject. Reference something specific from their site or the trade angle if you can.
+- Sign off as just "Abbed".
 - Return ONLY the email body (plain text). Then on the next line write "---SUBJECT---" and then the subject line.
 """
             if preview_url:
