@@ -3924,19 +3924,20 @@ def api_autopilot_audit(
             if body.lead_ids:
                 placeholders = ",".join(["%s"] * len(body.lead_ids))
                 rows = conn.execute(
-                    f"SELECT id, business_name, website, email FROM leads WHERE id IN ({placeholders})",
+                    f"SELECT id, business_name, website, email, suburb FROM leads WHERE id IN ({placeholders})",
                     tuple(body.lead_ids),
                 ).fetchall()
             else:
                 rows = conn.execute(
-                    "SELECT id, business_name, website, email FROM leads WHERE status = 'new' AND website IS NOT NULL AND website != ''"
+                    "SELECT id, business_name, website, email, suburb FROM leads WHERE status = 'new' AND website IS NOT NULL AND website != ''"
                 ).fetchall()
 
         import anthropic
+        from urllib.parse import urljoin, urlparse
         client = anthropic.Anthropic(api_key=api_key)
         _email_re = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
-        def _extract_emails_from_page(soup, raw_html: str) -> Optional[str]:
+        def _collect_emails_from_page(soup, raw_html: str) -> list[str]:
             candidates: list[str] = []
             for a in soup.find_all("a", href=True):
                 h = (a.get("href") or "").strip()
@@ -3946,30 +3947,102 @@ def api_autopilot_audit(
                         candidates.append(addr)
             for m in _email_re.finditer(raw_html):
                 candidates.append(m.group(0))
-            seen = set()
-            unique = []
+            seen: set[str] = set()
+            unique: list[str] = []
             for c in candidates:
                 c = c.lower().strip()
                 if c in seen or len(c) > 120:
                     continue
                 seen.add(c)
                 unique.append(c)
-            preferred = [u for u in unique if any(u.startswith(p) for p in ("info@", "contact@", "hello@", "admin@", "enquiry@", "enquiries@"))]
-            return (preferred[0] if preferred else unique[0]) if unique else None
+            return unique
+
+        def _pick_best_email(emails: list[str]) -> Optional[str]:
+            if not emails:
+                return None
+            preferred = [u for u in emails if any(u.startswith(p) for p in ("info@", "contact@", "hello@", "admin@", "enquiry@", "enquiries@"))]
+            return preferred[0] if preferred else emails[0]
+
+        def _urls_to_scrape(soup, base_url: str) -> list[str]:
+            parsed = urlparse(base_url)
+            base = f"{parsed.scheme}://{parsed.netloc}"
+            paths = ["/contact", "/contact-us", "/about", "/about-us", "/get-a-quote", "/enquire"]
+            urls = []
+            for p in paths:
+                urls.append(urljoin(base, p))
+            for a in soup.find_all("a", href=True):
+                h = (a.get("href") or "").strip()
+                if not h or h.startswith("#") or h.startswith("mailto:") or h.startswith("tel:"):
+                    continue
+                full = urljoin(base_url, h)
+                if urlparse(full).netloc != parsed.netloc:
+                    continue
+                low = full.lower()
+                if any(x in low for x in ("contact", "about", "quote", "enquir")):
+                    urls.append(full)
+            seen_urls: set[str] = set()
+            deduped = []
+            for u in urls:
+                u = u.split("#")[0].rstrip("/") or u
+                if u not in seen_urls:
+                    seen_urls.add(u)
+                    deduped.append(u)
+            return deduped[:12]
 
         audited = 0
         for row in rows:
             lead_id, name, website, existing_email = row[0], row[1], row[2], (row[3] if len(row) > 3 else None)
+            suburb_lead = (row[4] if len(row) > 4 else None) or "Brisbane"
             if not website or not website.startswith("http"):
                 website = "https://" + (website or "")
             _autopilot_log("audit", f"Auditing {name}", {"lead_id": lead_id})
             try:
                 import requests as req_lib
-                r = req_lib.get(website, timeout=10, headers={"User-Agent": "MotionMade Lead Audit"})
+                req_lib_session = req_lib.Session()
+                req_lib_session.headers.update({"User-Agent": "MotionMade Lead Audit"})
+                r = req_lib_session.get(website, timeout=12)
                 r.raise_for_status()
                 from bs4 import BeautifulSoup
                 soup = BeautifulSoup(r.text, "html.parser")
-                found_email = _extract_emails_from_page(soup, r.text)
+                all_emails: list[str] = []
+                emails_home = _collect_emails_from_page(soup, r.text)
+                all_emails.extend(emails_home)
+                extra_urls = _urls_to_scrape(soup, website)
+                for u in extra_urls:
+                    if u == website.rstrip("/") or u == website:
+                        continue
+                    try:
+                        r2 = req_lib_session.get(u, timeout=8)
+                        if r2.status_code != 200:
+                            continue
+                        soup2 = BeautifulSoup(r2.text, "html.parser")
+                        all_emails.extend(_collect_emails_from_page(soup2, r2.text))
+                    except Exception:
+                        continue
+                found_email = _pick_best_email(all_emails)
+                if not found_email and not (existing_email or "").strip():
+                    _autopilot_log("audit", f"No email on site for {name}, trying web search", {"lead_id": lead_id})
+                    try:
+                        search_resp = client.messages.create(
+                            model="claude-sonnet-4-20250514",
+                            max_tokens=512,
+                            tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 2}],
+                            messages=[{"role": "user", "content": f'Search for the contact email address of this business: "{name}" in {suburb_lead}, Australia. Try queries like "[business name] [suburb] email" or "site:yellowpages.com.au [business name]". Return a JSON object with one key "email" (the email string if found, or null). Only the JSON, no other text.'}],
+                        )
+                        search_text = ""
+                        for block in search_resp.content:
+                            if hasattr(block, "text") and block.text:
+                                search_text += block.text
+                        search_text = (search_text or "").strip()
+                        if search_text.startswith("```"):
+                            search_text = re.sub(r"^```(?:json)?\s*", "", search_text)
+                            search_text = re.sub(r"\s*```$", "", search_text)
+                        search_data = json.loads(search_text)
+                        found_email = (search_data.get("email") or "").strip() or None
+                        if found_email and "@" in found_email:
+                            found_email = found_email.lower()
+                    except Exception as search_err:
+                        _autopilot_log("audit", f"Web search for email failed: {search_err}", {"lead_id": lead_id})
                 if found_email and not (existing_email or "").strip():
                     with get_conn() as conn_email:
                         conn_email.execute(
