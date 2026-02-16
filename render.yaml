@@ -1,12 +1,12 @@
 # Render Blueprint / build config
-# Ensures build uses root requirements.txt (includes anthropic>=0.39.0, sendgrid, etc.)
+# Ensures build uses root requirements.txt (openai, sendgrid, etc.)
 #
 # If your service was created manually, set Build Command in Dashboard to:
-#   pip install -r requirements.txt && pip install anthropic sendgrid && pip list | grep -i anthropic
-# Or use: bash build.sh (build.sh also runs pip install anthropic sendgrid).
+#   pip install -r requirements.txt && pip install sendgrid
+# Or use: bash build.sh
 
 services:
   - type: web
     name: motionmade-fastapi
-    buildCommand: pip install -r requirements.txt && pip install anthropic sendgrid && pip list | grep -i anthropic
+    buildCommand: pip install -r requirements.txt && pip install sendgrid
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT

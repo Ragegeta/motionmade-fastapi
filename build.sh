@@ -1,7 +1,7 @@
 #!/bin/bash
 # Build script for Render
 # Captures git SHA and writes to .build-info.py
-# Install from repo root so requirements.txt (with anthropic) is used.
+# Install from repo root so requirements.txt is used.
 
 set -e
 
@@ -28,10 +28,7 @@ echo "Installing from: $ROOT/requirements.txt"
 
 # Install dependencies from repo root
 pip install -r "$ROOT/requirements.txt"
-# Guarantee anthropic and sendgrid (in case requirements.txt was not picked up)
-pip install anthropic sendgrid
-
-echo "--- pip list | grep -i anthropic ---"
-pip list | grep -i anthropic || true
+# Guarantee sendgrid (in case requirements.txt was not picked up)
+pip install sendgrid
 
 
