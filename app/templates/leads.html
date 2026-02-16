@@ -129,7 +129,6 @@
                             <th>Email</th>
                             <th>Status</th>
                             <th>Score</th>
-                            <th>Preview</th>
                             <th>Subject</th>
                             <th></th>
                         </tr>
@@ -221,13 +220,12 @@
         function renderLeads(leads) {
             const tbody = document.getElementById('leadsBody');
             if (!leads.length) {
-                tbody.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center;color:#6b7280;">No leads. Click Find Leads & Write Emails to start.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:#6b7280;">No leads. Click Find Leads & Write Emails to start.</td></tr>';
                 return;
             }
             let html = '';
             leads.forEach(lead => {
                 const statusClass = 'status-' + (lead.status || 'new');
-                const previewLink = lead.preview_url ? '<a href="' + escapeHtml(lead.preview_url) + '" target="_blank" rel="noopener">View</a>' : '–';
                 const emailSubject = (lead.status === 'ready' || lead.status === 'emailed') && lead.email_subject
                     ? '<span class="email-subject" title="' + escapeHtml(lead.email_subject) + '">' + escapeHtml(lead.email_subject) + '</span>'
                     : '–';
@@ -245,11 +243,10 @@
                     '<td>' + escapeHtml(lead.email || '') + '</td>' +
                     '<td><span class="status ' + statusClass + '">' + (lead.status || 'new') + '</span></td>' +
                     '<td>' + (lead.audit_score != null ? lead.audit_score : '–') + '</td>' +
-                    '<td>' + previewLink + '</td>' +
                     '<td class="email-subject-cell">' + emailSubject + '</td>' +
                     '<td class="send-cell">' + sendCell + '</td>' +
                     '</tr>';
-                html += '<tr class="expand-row expand-' + lead.id + '" style="display:none;"><td colspan="8"><div class="expand-content">' +
+                html += '<tr class="expand-row expand-' + lead.id + '" style="display:none;"><td colspan="7"><div class="expand-content">' +
                     '<div class="label">Subject</div><div class="value">' + escapeHtml(lead.email_subject || '') + '</div>' +
                     '<div class="label">Body</div><div class="value email-body">' + escapeHtml(lead.email_body || '') + '</div>' +
                     '<div class="label">Preview</div><div class="value links">' + (lead.preview_url ? '<a href="' + escapeHtml(lead.preview_url) + '" target="_blank" rel="noopener">' + escapeHtml(lead.preview_url) + '</a>' : '–') + '</div>' +
@@ -309,7 +306,6 @@
         const STEPS = [
             { key: 'discovery', label: 'Finding businesses...' },
             { key: 'audit', label: 'Auditing websites...' },
-            { key: 'preview', label: 'Generating previews...' },
             { key: 'email', label: 'Writing emails...' }
         ];
 
@@ -323,7 +319,7 @@
             const target = Math.min(50, Math.max(5, parseInt(document.getElementById('targetCount').value, 10) || 20));
 
             for (let i = 0; i < STEPS.length; i++) {
-                progressEl.textContent = 'Step ' + (i + 1) + '/4: ' + STEPS[i].label;
+                progressEl.textContent = 'Step ' + (i + 1) + '/3: ' + STEPS[i].label;
                 try {
                     if (STEPS[i].key === 'discovery') {
                         const r = await fetch(API_BASE + '/api/leads/autopilot/discovery', {
@@ -334,9 +330,6 @@
                     } else if (STEPS[i].key === 'audit') {
                         const r = await fetch(API_BASE + '/api/leads/autopilot/audit', { method: 'POST', headers: getHeaders(), body: JSON.stringify({}) });
                         if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || 'Audit failed'); }
-                    } else if (STEPS[i].key === 'preview') {
-                        const r = await fetch(API_BASE + '/api/leads/autopilot/preview', { method: 'POST', headers: getHeaders(), body: JSON.stringify({}) });
-                        if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || 'Preview failed'); }
                     } else {
                         const r = await fetch(API_BASE + '/api/leads/autopilot/email-writing', { method: 'POST', headers: getHeaders(), body: JSON.stringify({}) });
                         if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || 'Email writing failed'); }
@@ -344,7 +337,7 @@
                     await loadLeads();
                 } catch (e) {
                     const msg = (e && e.message) ? e.message : 'Step failed';
-                    progressEl.textContent = 'Step ' + (i + 1) + '/4 failed: ' + msg + '. Continuing…';
+                    progressEl.textContent = 'Step ' + (i + 1) + '/3 failed: ' + msg + '. Continuing…';
                     await new Promise(r => setTimeout(r, 2000));
                 }
             }
