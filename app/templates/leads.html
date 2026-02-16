@@ -3,71 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MotionMade – Lead Engine</title>
+    <title>MotionMade – Leads</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9fafb; color: #111827; font-size: 16px; line-height: 1.5; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-        header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 20px; font-weight: 700; color: #2563EB; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+        header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 14px 24px; }
+        .logo { font-size: 18px; font-weight: 700; color: #2563EB; }
         .auth-section { background: #fff; padding: 24px; border-radius: 12px; margin-bottom: 24px; border: 1px solid #e5e7eb; }
-        .auth-section input { padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; width: 280px; margin-right: 10px; }
+        .auth-section input { padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; width: 260px; margin-right: 10px; }
         .auth-section button { padding: 10px 18px; background: #2563EB; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; }
-        .auth-section button:hover { background: #1d4ed8; }
-        .error { color: #dc2626; margin-top: 10px; }
-        .success { color: #059669; margin-top: 10px; }
+        .error { color: #dc2626; margin-top: 10px; font-size: 14px; }
+        .hidden { display: none !important; }
 
-        .controls { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
+        .controls { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
         .control-group { display: flex; flex-direction: column; gap: 4px; }
-        .control-group label { font-size: 12px; color: #6b7280; font-weight: 500; }
-        .control-group input, .control-group select { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; min-width: 140px; }
-        .btn { padding: 10px 18px; border-radius: 8px; font-weight: 500; cursor: pointer; font-size: 14px; border: none; }
-        .btn-primary { background: #2563EB; color: white; }
-        .btn-primary:hover { background: #1d4ed8; }
-        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
-        .btn-secondary:hover { background: #e5e7eb; }
-        .btn-success { background: #059669; color: white; }
-        .btn-success:hover { background: #047857; }
-        .btn-success:disabled { opacity: 0.6; cursor: not-allowed; }
+        .control-group label { font-size: 11px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.02em; }
+        .control-group input, .control-group select { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; min-width: 120px; font-size: 15px; }
+        .control-group input[type="number"] { width: 80px; }
+        .btn-run { padding: 14px 28px; border-radius: 10px; font-weight: 600; font-size: 16px; cursor: pointer; border: none; background: #2563EB; color: white; }
+        .btn-run:hover:not(:disabled) { background: #1d4ed8; }
+        .btn-run:disabled { opacity: 0.7; cursor: not-allowed; }
+        .progress-msg { font-size: 14px; color: #6b7280; margin-left: 12px; }
+        .progress-msg.active { color: #2563EB; font-weight: 500; }
 
-        .pipeline-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
-        .pipeline-header h2 { font-size: 20px; font-weight: 600; }
-        .log-panel { background: #1f2937; color: #e5e7eb; border-radius: 8px; padding: 16px; font-family: monospace; font-size: 13px; max-height: 220px; overflow-y: auto; margin-bottom: 24px; }
-        .log-panel .log-entry { margin-bottom: 6px; }
+        .log-panel { background: #1f2937; color: #e5e7eb; border-radius: 8px; padding: 14px 16px; font-family: ui-monospace, monospace; font-size: 12px; max-height: 180px; overflow-y: auto; margin-bottom: 20px; }
+        .log-panel .log-entry { margin-bottom: 4px; }
         .log-panel .log-phase { color: #93c5fd; }
-        .log-panel .log-time { color: #9ca3af; margin-right: 8px; }
+        .log-panel .log-time { color: #9ca3af; margin-right: 8px; font-size: 11px; }
 
-        .leads-table-wrap { overflow-x: auto; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; }
+        .pipeline-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+        .pipeline-top h2 { font-size: 18px; font-weight: 600; }
+        .send-all-wrap { display: flex; align-items: center; gap: 10px; }
+        .btn-send-all { padding: 10px 18px; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; border: none; background: #059669; color: white; }
+        .btn-send-all:hover:not(:disabled) { background: #047857; }
+        .btn-send-all:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-refresh { padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+        .btn-refresh:hover { background: #e5e7eb; }
+        .send-progress { font-size: 13px; color: #6b7280; }
+
+        .leads-table-wrap { overflow-x: auto; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 24px; }
         table.leads-table { width: 100%; border-collapse: collapse; }
-        .leads-table th, .leads-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-        .leads-table th { background: #f9fafb; font-weight: 600; font-size: 12px; text-transform: uppercase; color: #6b7280; }
-        .leads-table tr:hover { background: #f9fafb; }
-        .leads-table .status { font-size: 12px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
+        .leads-table th, .leads-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+        .leads-table th { background: #f9fafb; font-weight: 600; font-size: 11px; text-transform: uppercase; color: #6b7280; letter-spacing: 0.02em; }
+        .leads-table tbody tr.main-row { cursor: pointer; }
+        .leads-table tbody tr.main-row:hover { background: #f9fafb; }
+        .leads-table .status { font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 500; }
         .leads-table .status-new { background: #e0e7ff; color: #3730a3; }
         .leads-table .status-audited { background: #fef3c7; color: #92400e; }
         .leads-table .status-previewed { background: #d1fae5; color: #065f46; }
         .leads-table .status-ready { background: #dbeafe; color: #1d4ed8; }
         .leads-table .status-emailed { background: #e5e7eb; color: #374151; }
-        .leads-table .status-replied { background: #d1fae5; color: #065f46; }
-        .leads-table .status-converted { background: #059669; color: white; }
+        .leads-table .status-replied, .leads-table .status-converted { background: #d1fae5; color: #065f46; }
         .leads-table .status-skip { background: #f3f4f6; color: #6b7280; }
         .leads-table a { color: #2563EB; text-decoration: none; }
         .leads-table a:hover { text-decoration: underline; }
-        .leads-table .email-preview { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: #6b7280; }
+        .leads-table .email-subject { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: #374151; }
         .leads-table .send-cell { white-space: nowrap; }
-        .hidden { display: none !important; }
+        .leads-table .sent-tick { color: #059669; font-weight: 600; font-size: 13px; }
+        .btn-send { padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: none; background: #2563EB; color: white; }
+        .btn-send:hover { background: #1d4ed8; }
+        .btn-copy { padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; margin-right: 8px; }
+        .btn-copy:hover { background: #e5e7eb; }
+
+        .expand-row { background: #f9fafb; }
+        .expand-row td { padding: 16px 14px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+        .expand-content { max-width: 720px; }
+        .expand-content .label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px; }
+        .expand-content .value { font-size: 14px; color: #111827; white-space: pre-wrap; word-break: break-word; margin-bottom: 14px; }
+        .expand-content .value.email-body { background: #fff; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; }
+        .expand-content .links a { display: inline-block; margin-right: 12px; margin-bottom: 8px; }
+
+        .footer-actions { text-align: center; padding: 20px 0; }
+        .footer-actions .btn-export { padding: 8px 16px; font-size: 13px; border-radius: 8px; cursor: pointer; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+        .footer-actions .btn-export:hover { background: #e5e7eb; }
     </style>
 </head>
 <body>
     <header>
-        <span class="logo">MotionMade Lead Engine</span>
+        <span class="logo">MotionMade Leads</span>
     </header>
     <div class="container">
         <div class="auth-section" id="authSection">
-            <h2 style="margin-bottom: 12px;">Admin token</h2>
-            <input type="password" id="adminToken" placeholder="Enter admin token" />
-            <button id="loginBtn" class="btn btn-primary">Login</button>
+            <input type="password" id="adminToken" placeholder="Admin token" />
+            <button id="loginBtn" class="auth-section button" style="padding:10px 18px;background:#2563EB;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;">Login</button>
             <div id="authError" class="error"></div>
         </div>
 
@@ -83,27 +102,23 @@
                 </div>
                 <div class="control-group">
                     <label>Target leads</label>
-                    <select id="targetCount">
-                        <option value="10">10</option>
-                        <option value="20" selected>20</option>
-                        <option value="30">30</option>
-                        <option value="50">50</option>
-                    </select>
+                    <input type="number" id="targetCount" min="5" max="50" value="20" />
                 </div>
-                <button id="runDiscovery" class="btn btn-primary">1. Run Discovery</button>
-                <button id="runAudit" class="btn btn-primary">2. Run Audit</button>
-                <button id="runPreview" class="btn btn-primary">3. Generate Previews</button>
-                <button id="runEmailWriting" class="btn btn-primary">4. Write Emails</button>
-                <button id="sendAllReady" class="btn btn-success">Send All Ready</button>
-                <button id="exportCsv" class="btn btn-secondary">Export CSV</button>
+                <div style="display:flex;align-items:center;flex:1;min-width:200px;">
+                    <button type="button" id="runAll" class="btn-run">🚀 Find Leads & Write Emails</button>
+                    <span id="progressMsg" class="progress-msg"></span>
+                </div>
             </div>
 
-            <h3 style="margin-bottom: 8px;">Live log</h3>
             <div class="log-panel" id="logPanel"></div>
 
-            <div class="pipeline-header">
+            <div class="pipeline-top">
                 <h2>Pipeline</h2>
-                <button id="refreshLeads" class="btn btn-secondary">Refresh</button>
+                <div class="send-all-wrap">
+                    <span id="sendProgress" class="send-progress hidden"></span>
+                    <button type="button" id="sendAllReady" class="btn-send-all hidden">Send All (<span id="readyCount">0</span> ready)</button>
+                    <button type="button" id="refreshLeads" class="btn-refresh">Refresh</button>
+                </div>
             </div>
             <div class="leads-table-wrap">
                 <table class="leads-table" id="leadsTable">
@@ -115,12 +130,16 @@
                             <th>Status</th>
                             <th>Score</th>
                             <th>Preview</th>
-                            <th>Email</th>
-                            <th>Send</th>
+                            <th>Subject</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody id="leadsBody"></tbody>
                 </table>
+            </div>
+
+            <div class="footer-actions">
+                <button type="button" id="exportCsv" class="btn-export">Export CSV</button>
             </div>
         </div>
     </div>
@@ -133,18 +152,21 @@
             return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken };
         }
 
-        function showAuthError(msg) {
-            document.getElementById('authError').textContent = msg || '';
+        function escapeHtml(s) {
+            if (s == null) return '';
+            const div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
         }
 
         document.getElementById('loginBtn').onclick = async function() {
             const token = document.getElementById('adminToken').value.trim();
-            if (!token) { showAuthError('Token required'); return; }
+            if (!token) { document.getElementById('authError').textContent = 'Token required'; return; }
             adminToken = token;
-            showAuthError('');
+            document.getElementById('authError').textContent = '';
             try {
                 const r = await fetch(API_BASE + '/api/leads', { headers: getHeaders() });
-                if (r.status === 401) { showAuthError('Invalid token'); return; }
+                if (r.status === 401) { document.getElementById('authError').textContent = 'Invalid token'; return; }
                 if (!r.ok) throw new Error('HTTP ' + r.status);
                 document.getElementById('authSection').classList.add('hidden');
                 document.getElementById('mainContent').classList.remove('hidden');
@@ -152,7 +174,7 @@
                 loadLeads();
                 startLogPolling();
             } catch (e) {
-                showAuthError(e.message || 'Login failed');
+                document.getElementById('authError').textContent = e.message || 'Login failed';
             }
         };
 
@@ -168,13 +190,8 @@
                 sel.innerHTML = fallback;
             }
         }
-        function escapeHtml(s) {
-            if (s == null) return '';
-            const div = document.createElement('div');
-            div.textContent = s;
-            return div.innerHTML;
-        }
 
+        let leadsCache = [];
         async function loadLeads() {
             const trade = document.getElementById('tradeType').value.trim();
             const suburb = document.getElementById('suburb').value;
@@ -184,31 +201,91 @@
             const r = await fetch(url, { headers: getHeaders() });
             if (!r.ok) return;
             const data = await r.json();
+            leadsCache = data.leads || [];
+            renderLeads(leadsCache);
+            updateSendAllButton();
+        }
+
+        function updateSendAllButton() {
+            const ready = leadsCache.filter(l => l.status === 'ready' && l.email);
+            const btn = document.getElementById('sendAllReady');
+            const countEl = document.getElementById('readyCount');
+            countEl.textContent = ready.length;
+            if (ready.length > 0) {
+                btn.classList.remove('hidden');
+            } else {
+                btn.classList.add('hidden');
+            }
+        }
+
+        function renderLeads(leads) {
             const tbody = document.getElementById('leadsBody');
-            tbody.innerHTML = (data.leads || []).map(lead => {
+            if (!leads.length) {
+                tbody.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center;color:#6b7280;">No leads. Click Find Leads & Write Emails to start.</td></tr>';
+                return;
+            }
+            let html = '';
+            leads.forEach(lead => {
                 const statusClass = 'status-' + (lead.status || 'new');
-                const previewLink = lead.preview_url ? '<a href="' + lead.preview_url + '" target="_blank" rel="noopener">View</a>' : '–';
-                const emailPreview = (lead.email_subject || '').substring(0, 40) + (lead.email_subject && lead.email_subject.length > 40 ? '…' : '');
-                const sendBtn = (lead.status === 'ready' && lead.email) ? '<button class="btn btn-primary btn-send-one" data-id="' + lead.id + '">Send</button>' : '–';
-                return '<tr>' +
+                const previewLink = lead.preview_url ? '<a href="' + escapeHtml(lead.preview_url) + '" target="_blank" rel="noopener">View</a>' : '–';
+                const emailSubject = (lead.status === 'ready' || lead.status === 'emailed') && lead.email_subject
+                    ? '<span class="email-subject" title="' + escapeHtml(lead.email_subject) + '">' + escapeHtml(lead.email_subject) + '</span>'
+                    : '–';
+                const sendCell = lead.status === 'ready' && lead.email
+                    ? '<button type="button" class="btn-send btn-send-one" data-id="' + lead.id + '">Send</button>'
+                    : lead.status === 'emailed'
+                    ? '<span class="sent-tick">Sent ✓</span>'
+                    : '';
+                const auditDetails = lead.audit_details && typeof lead.audit_details === 'object'
+                    ? JSON.stringify(lead.audit_details, null, 2)
+                    : (lead.audit_details || '');
+                html += '<tr class="main-row" data-id="' + lead.id + '">' +
                     '<td>' + escapeHtml(lead.business_name || '') + '</td>' +
-                    '<td>' + (lead.website ? '<a href="' + escapeHtml(lead.website) + '" target="_blank" rel="noopener">' + escapeHtml(lead.website) + '</a>' : '–') + '</td>' +
+                    '<td>' + (lead.website ? '<a href="' + escapeHtml(lead.website) + '" target="_blank" rel="noopener">' + escapeHtml((lead.website || '').replace(/^https?:\/\//,'').substring(0,30)) + (lead.website && lead.website.length > 30 ? '…' : '') + '</a>' : '–') + '</td>' +
                     '<td>' + escapeHtml(lead.email || '') + '</td>' +
                     '<td><span class="status ' + statusClass + '">' + (lead.status || 'new') + '</span></td>' +
                     '<td>' + (lead.audit_score != null ? lead.audit_score : '–') + '</td>' +
                     '<td>' + previewLink + '</td>' +
-                    '<td class="email-preview" title="' + escapeHtml(lead.email_subject || '') + '">' + escapeHtml(emailPreview) + '</td>' +
-                    '<td class="send-cell">' + sendBtn + '</td>' +
+                    '<td class="email-subject-cell">' + emailSubject + '</td>' +
+                    '<td class="send-cell">' + sendCell + '</td>' +
                     '</tr>';
-            }).join('') || '<tr><td colspan="8">No leads yet. Run Discovery.</td></tr>';
+                html += '<tr class="expand-row expand-' + lead.id + '" style="display:none;"><td colspan="8"><div class="expand-content">' +
+                    '<div class="label">Subject</div><div class="value">' + escapeHtml(lead.email_subject || '') + '</div>' +
+                    '<div class="label">Body</div><div class="value email-body">' + escapeHtml(lead.email_body || '') + '</div>' +
+                    '<div class="label">Preview</div><div class="value links">' + (lead.preview_url ? '<a href="' + escapeHtml(lead.preview_url) + '" target="_blank" rel="noopener">' + escapeHtml(lead.preview_url) + '</a>' : '–') + '</div>' +
+                    '<div class="label">Audit details</div><div class="value">' + escapeHtml(auditDetails) + '</div>' +
+                    '<button type="button" class="btn-copy copy-email-btn" data-id="' + lead.id + '">Copy Email</button>' +
+                    '</div></td></tr>';
+            });
+            tbody.innerHTML = html;
 
+            tbody.querySelectorAll('.main-row').forEach(row => {
+                row.onclick = function(e) {
+                    if (e.target.closest('.btn-send-one') || e.target.closest('.btn-copy')) return;
+                    const id = this.getAttribute('data-id');
+                    const expand = tbody.querySelector('.expand-' + id);
+                    const visible = expand.style.display !== 'none';
+                    tbody.querySelectorAll('.expand-row').forEach(r => r.style.display = 'none');
+                    if (!visible) expand.style.display = 'table-row';
+                };
+            });
             tbody.querySelectorAll('.btn-send-one').forEach(btn => {
-                btn.onclick = async function() {
+                btn.onclick = async function(e) {
+                    e.stopPropagation();
                     const id = this.getAttribute('data-id');
                     const r = await fetch(API_BASE + '/api/leads/' + id, { headers: getHeaders() });
-                    if (!r.ok) { alert('Could not load lead'); return; }
+                    if (!r.ok) return;
                     const lead = await r.json();
-                    sendOne(lead.email, lead.email_subject || '', lead.email_body || '', lead.business_name, id);
+                    await sendOne(lead.email, lead.email_subject || '', lead.email_body || '', lead.business_name, id);
+                };
+            });
+            tbody.querySelectorAll('.copy-email-btn').forEach(btn => {
+                btn.onclick = function(e) {
+                    e.stopPropagation();
+                    const lead = leadsCache.find(l => String(l.id) === this.getAttribute('data-id'));
+                    if (!lead) return;
+                    const text = 'Subject: ' + (lead.email_subject || '') + '\n\n' + (lead.email_body || '');
+                    navigator.clipboard.writeText(text).then(() => { this.textContent = 'Copied'; }).catch(() => {});
                 };
             });
         }
@@ -223,50 +300,80 @@
                 const data = await r.json().catch(() => ({}));
                 if (!r.ok) throw new Error(data.detail || 'HTTP ' + r.status);
                 await fetch(API_BASE + '/api/leads/' + leadId, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify({ status: 'emailed' }) });
-                loadLeads();
+                await loadLeads();
             } catch (e) {
                 alert(e.message || 'Send failed');
             }
         }
 
-        async function runPhase(endpoint, body, btnId) {
-            const btn = document.getElementById(btnId);
+        const STEPS = [
+            { key: 'discovery', label: 'Finding businesses...' },
+            { key: 'audit', label: 'Auditing websites...' },
+            { key: 'preview', label: 'Generating previews...' },
+            { key: 'email', label: 'Writing emails...' }
+        ];
+
+        document.getElementById('runAll').onclick = async function() {
+            const btn = this;
+            const progressEl = document.getElementById('progressMsg');
             btn.disabled = true;
-            try {
-                const r = await fetch(API_BASE + endpoint, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body || {}) });
-                const data = await r.json().catch(() => ({}));
-                if (!r.ok) throw new Error(data.detail || 'HTTP ' + r.status);
-                loadLeads();
-            } catch (e) {
-                alert(e.message || 'Request failed');
-            } finally {
-                btn.disabled = false;
+            progressEl.classList.add('active');
+            const trade = document.getElementById('tradeType').value.trim() || 'plumber';
+            const suburb = document.getElementById('suburb').value || 'Brisbane City';
+            const target = Math.min(50, Math.max(5, parseInt(document.getElementById('targetCount').value, 10) || 20));
+
+            for (let i = 0; i < STEPS.length; i++) {
+                progressEl.textContent = 'Step ' + (i + 1) + '/4: ' + STEPS[i].label;
+                try {
+                    if (STEPS[i].key === 'discovery') {
+                        const r = await fetch(API_BASE + '/api/leads/autopilot/discovery', {
+                            method: 'POST', headers: getHeaders(),
+                            body: JSON.stringify({ trade_type: trade, suburb: suburb, target_count: target })
+                        });
+                        if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || 'Discovery failed'); }
+                    } else if (STEPS[i].key === 'audit') {
+                        const r = await fetch(API_BASE + '/api/leads/autopilot/audit', { method: 'POST', headers: getHeaders(), body: JSON.stringify({}) });
+                        if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || 'Audit failed'); }
+                    } else if (STEPS[i].key === 'preview') {
+                        const r = await fetch(API_BASE + '/api/leads/autopilot/preview', { method: 'POST', headers: getHeaders(), body: JSON.stringify({}) });
+                        if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || 'Preview failed'); }
+                    } else {
+                        const r = await fetch(API_BASE + '/api/leads/autopilot/email-writing', { method: 'POST', headers: getHeaders(), body: JSON.stringify({}) });
+                        if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || 'Email writing failed'); }
+                    }
+                    await loadLeads();
+                } catch (e) {
+                    const msg = (e && e.message) ? e.message : 'Step failed';
+                    progressEl.textContent = 'Step ' + (i + 1) + '/4 failed: ' + msg + '. Continuing…';
+                    await new Promise(r => setTimeout(r, 2000));
+                }
             }
-        }
-
-        document.getElementById('runDiscovery').onclick = () => runPhase('/api/leads/autopilot/discovery', {
-            trade_type: document.getElementById('tradeType').value.trim() || 'plumber',
-            suburb: document.getElementById('suburb').value || 'Brisbane City',
-            target_count: parseInt(document.getElementById('targetCount').value, 10) || 20
-        }, 'runDiscovery');
-
-        document.getElementById('runAudit').onclick = () => runPhase('/api/leads/autopilot/audit', {}, 'runAudit');
-        document.getElementById('runPreview').onclick = () => runPhase('/api/leads/autopilot/preview', {}, 'runPreview');
-        document.getElementById('runEmailWriting').onclick = () => runPhase('/api/leads/autopilot/email-writing', {}, 'runEmailWriting');
+            progressEl.textContent = '';
+            progressEl.classList.remove('active');
+            btn.disabled = false;
+            await loadLeads();
+        };
 
         document.getElementById('sendAllReady').onclick = async function() {
             const btn = this;
+            const progressEl = document.getElementById('sendProgress');
+            const ready = leadsCache.filter(l => l.status === 'ready' && l.email);
+            if (!ready.length) return;
             btn.disabled = true;
-            try {
-                const r = await fetch(API_BASE + '/api/leads/send-all-ready', { method: 'POST', headers: getHeaders() });
-                const data = await r.json().catch(() => ({}));
-                if (!r.ok) throw new Error(data.detail || 'HTTP ' + r.status);
-                loadLeads();
-            } catch (e) {
-                alert(e.message || 'Send failed');
-            } finally {
-                btn.disabled = false;
+            progressEl.classList.remove('hidden');
+            let sent = 0;
+            for (const lead of ready) {
+                progressEl.textContent = 'Sending ' + (sent + 1) + ' of ' + ready.length + '...';
+                try {
+                    await sendOne(lead.email, lead.email_subject || '', lead.email_body || '', lead.business_name, lead.id);
+                    sent++;
+                } catch (_) {}
+                if (sent < ready.length) await new Promise(r => setTimeout(r, 30000));
             }
+            progressEl.textContent = '';
+            progressEl.classList.add('hidden');
+            btn.disabled = false;
+            await loadLeads();
         };
 
         document.getElementById('exportCsv').onclick = async function() {
@@ -276,7 +383,7 @@
             if (trade) url += 'trade_type=' + encodeURIComponent(trade) + '&';
             if (suburb) url += 'suburb=' + encodeURIComponent(suburb);
             const r = await fetch(url, { headers: getHeaders() });
-            if (!r.ok) { alert('Export failed'); return; }
+            if (!r.ok) return;
             const blob = await r.blob();
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -288,12 +395,12 @@
             a.remove();
         };
 
-        document.getElementById('refreshLeads').onclick = loadLeads;
+        document.getElementById('refreshLeads').onclick = function() { loadLeads(); };
 
         let lastLogId = 0;
         async function pollLog() {
             try {
-                const r = await fetch(API_BASE + '/api/leads/autopilot/log?since_id=' + lastLogId + '&limit=50', { headers: getHeaders() });
+                const r = await fetch(API_BASE + '/api/leads/autopilot/log?since_id=' + lastLogId + '&limit=80', { headers: getHeaders() });
                 if (!r.ok) return;
                 const data = await r.json();
                 const log = data.log || [];
@@ -306,7 +413,7 @@
                     div.innerHTML = '<span class="log-time">' + time + '</span><span class="log-phase">[' + escapeHtml(entry.phase || '') + ']</span> ' + escapeHtml(entry.message || '');
                     panel.appendChild(div);
                 });
-                if (panel.children.length) panel.scrollTop = panel.scrollHeight;
+                panel.scrollTop = panel.scrollHeight;
             } catch (_) {}
         }
         function startLogPolling() {
