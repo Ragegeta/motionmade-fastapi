@@ -3407,26 +3407,24 @@ class DemoGenerateBody(BaseModel):
     business_name: str
 
 
-@app.post("/api/demo/generate")
-def demo_generate(body: DemoGenerateBody):
-    """Generate a demo widget for a business: scrape URL, create FAQs, store under a short ID, return preview URL. Public (no auth)."""
+def _create_demo_internal(business_name: str, business_url: str) -> dict:
+    """Create a demo widget: scrape URL, generate FAQs, create tenant, stage, promote in-process, store demo. Returns {demo_id, preview_url, faq_count}. Raises HTTPException on failure. Call this directly to avoid self-HTTP deadlock on single-worker."""
     import secrets
-    import requests as req_lib
 
-    url = (body.business_url or "").strip()
-    business_name = (body.business_name or "").strip()
+    url = (business_url or "").strip()
+    name = (business_name or "").strip()
     if not url:
         raise HTTPException(status_code=400, detail="business_url required")
-    if not business_name:
+    if not name:
         raise HTTPException(status_code=400, detail="business_name required")
     if not url.startswith("http://") and not url.startswith("https://"):
         url = "https://" + url
 
-    faqs = _generate_faqs_from_url(url, business_name, business_type="other")
+    faqs = _generate_faqs_from_url(url, name, business_type="other")
     if not faqs:
         raise HTTPException(status_code=400, detail="No FAQs could be generated from that URL.")
 
-    short_id = secrets.token_urlsafe(6)  # 8 chars url-safe
+    short_id = secrets.token_urlsafe(6)
     tenant_id = "demo_" + short_id
 
     with get_conn() as conn:
@@ -3434,22 +3432,15 @@ def demo_generate(body: DemoGenerateBody):
             """INSERT INTO tenants (id, name, business_type, contact_phone)
                VALUES (%s, %s, %s, %s)
                ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name""",
-            (tenant_id, business_name, "other", None),
+            (tenant_id, name, "other", None),
         )
         conn.commit()
 
     _stage_faqs_internal(tenant_id, faqs)
 
-    base_url = os.getenv("PUBLIC_BASE_URL") or (
-        "http://127.0.0.1:8000" if not os.getenv("RENDER") else "https://motionmade-fastapi.onrender.com"
-    )
+    # Promote in-process (no HTTP) to avoid deadlock on single-worker
     try:
-        promo = req_lib.post(
-            f"{base_url}/admin/api/tenant/{tenant_id}/promote",
-            headers={"Authorization": f"Bearer {settings.ADMIN_TOKEN}"},
-            timeout=180,
-        )
-        promo.raise_for_status()
+        promote_staged(tenant_id, Response(), f"Bearer {settings.ADMIN_TOKEN}")
     except Exception as e:
         with get_conn() as conn:
             conn.execute("DELETE FROM tenants WHERE id = %s", (tenant_id,))
@@ -3459,12 +3450,21 @@ def demo_generate(body: DemoGenerateBody):
     with get_conn() as conn:
         conn.execute(
             """INSERT INTO demos (slug, tenant_id, business_name, business_url) VALUES (%s, %s, %s, %s)""",
-            (short_id, tenant_id, business_name, url),
+            (short_id, tenant_id, name, url),
         )
         conn.commit()
 
+    base_url = os.getenv("PUBLIC_BASE_URL") or (
+        "http://127.0.0.1:8000" if not os.getenv("RENDER") else "https://motionmade-fastapi.onrender.com"
+    )
     preview_url = f"{base_url}/demo/{short_id}"
     return {"demo_id": short_id, "preview_url": preview_url, "faq_count": len(faqs)}
+
+
+@app.post("/api/demo/generate")
+def demo_generate(body: DemoGenerateBody):
+    """Generate a demo widget for a business. Public (no auth)."""
+    return _create_demo_internal(body.business_name, body.business_url)
 
 
 @app.get("/demo/{slug}", response_class=HTMLResponse)
@@ -4069,7 +4069,6 @@ def api_autopilot_preview(
     """Generate demo previews for all leads that have a website (status audited or new). No threshold. Admin-only."""
     _check_admin_auth(authorization)
     try:
-        base_url = os.getenv("PUBLIC_BASE_URL") or "https://motionmade-fastapi.onrender.com"
         with get_conn() as conn:
             rows = conn.execute(
                 """SELECT id, business_name, website FROM leads
@@ -4084,15 +4083,8 @@ def api_autopilot_preview(
                 continue
             _autopilot_log("preview", f"Generating demo for {name}", {"lead_id": lead_id})
             try:
-                import requests as req_lib
-                r = req_lib.post(
-                    f"{base_url}/api/demo/generate",
-                    json={"business_url": website, "business_name": name or "Business"},
-                    headers={"Content-Type": "application/json"},
-                    timeout=120,
-                )
-                r.raise_for_status()
-                data = r.json()
+                # Call in-process to avoid self-HTTP deadlock on single-worker
+                data = _create_demo_internal(name or "Business", website)
                 demo_id = data.get("demo_id")
                 preview_url = data.get("preview_url", "")
                 with get_conn() as conn2:
