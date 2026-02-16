@@ -3699,10 +3699,10 @@ def api_leads_export(
     suburb: Optional[str] = None,
     authorization: str = Header(default=""),
 ):
-    """CSV export of all leads with all data. Admin-only."""
+    """CSV export of ready leads only: Business Name, Email Address, Email Subject, Email Body, Website, Trade Type, Suburb, Audit Score. Admin-only."""
     _check_admin_auth(authorization)
     with get_conn() as conn:
-        q = "SELECT id, trade_type, suburb, business_name, website, email, status, audit_score, audit_details, preview_url, preview_demo_id, email_subject, email_body, created_at FROM leads WHERE 1=1"
+        q = "SELECT business_name, email, email_subject, email_body, website, trade_type, suburb, audit_score FROM leads WHERE status = 'ready'"
         params: list = []
         if trade_type:
             q += " AND trade_type = %s"
@@ -3710,19 +3710,24 @@ def api_leads_export(
         if suburb:
             q += " AND suburb = %s"
             params.append(suburb)
-        q += " ORDER BY created_at DESC"
+        q += " ORDER BY business_name"
         rows = conn.execute(q, tuple(params)).fetchall()
 
     import io
     import csv
     buf = io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow(["id", "trade_type", "suburb", "business_name", "website", "email", "status", "audit_score", "audit_details", "preview_url", "preview_demo_id", "email_subject", "email_body", "created_at"])
+    writer.writerow(["Business Name", "Email Address", "Email Subject", "Email Body", "Website", "Trade Type", "Suburb", "Audit Score"])
     for r in rows:
         writer.writerow([
-            r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7],
-            json.dumps(r[8]) if r[8] else "",
-            r[9], r[10], (r[11] or "").replace("\r", "").replace("\n", " "), (r[12] or "").replace("\r", " ").replace("\n", " "), r[13].isoformat() if r[13] else "",
+            r[0] or "",
+            r[1] or "",
+            (r[2] or "").replace("\r", "").replace("\n", " "),
+            (r[3] or "").replace("\r", " ").replace("\n", " "),
+            r[4] or "",
+            r[5] or "",
+            r[6] or "",
+            r[7] if r[7] is not None else "",
         ])
     return Response(
         content=buf.getvalue(),
@@ -3849,6 +3854,12 @@ Return a JSON array of objects with keys: business_name, website, email. Include
                 email = (b.get("email") or "").strip() or None
                 if not website and not email:
                     continue
+                existing = conn.execute(
+                    "SELECT 1 FROM leads WHERE LOWER(TRIM(business_name)) = LOWER(%s) LIMIT 1",
+                    (name,),
+                ).fetchone()
+                if existing:
+                    continue
                 conn.execute(
                     """INSERT INTO leads (trade_type, suburb, business_name, website, email, status)
                        VALUES (%s, %s, %s, %s, %s, 'new')""",
@@ -3891,19 +3902,42 @@ def api_autopilot_audit(
             if body.lead_ids:
                 placeholders = ",".join(["%s"] * len(body.lead_ids))
                 rows = conn.execute(
-                    f"SELECT id, business_name, website FROM leads WHERE id IN ({placeholders})",
+                    f"SELECT id, business_name, website, email FROM leads WHERE id IN ({placeholders})",
                     tuple(body.lead_ids),
                 ).fetchall()
             else:
                 rows = conn.execute(
-                    "SELECT id, business_name, website FROM leads WHERE status = 'new' AND website IS NOT NULL AND website != ''"
+                    "SELECT id, business_name, website, email FROM leads WHERE status = 'new' AND website IS NOT NULL AND website != ''"
                 ).fetchall()
 
         import anthropic
         client = anthropic.Anthropic(api_key=api_key)
+        _email_re = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+
+        def _extract_emails_from_page(soup, raw_html: str) -> Optional[str]:
+            candidates: list[str] = []
+            for a in soup.find_all("a", href=True):
+                h = (a.get("href") or "").strip()
+                if h.lower().startswith("mailto:"):
+                    addr = h[7:].split("?")[0].strip().strip("/")
+                    if addr and "@" in addr:
+                        candidates.append(addr)
+            for m in _email_re.finditer(raw_html):
+                candidates.append(m.group(0))
+            seen = set()
+            unique = []
+            for c in candidates:
+                c = c.lower().strip()
+                if c in seen or len(c) > 120:
+                    continue
+                seen.add(c)
+                unique.append(c)
+            preferred = [u for u in unique if any(u.startswith(p) for p in ("info@", "contact@", "hello@", "admin@", "enquiry@", "enquiries@"))]
+            return (preferred[0] if preferred else unique[0]) if unique else None
+
         audited = 0
         for row in rows:
-            lead_id, name, website = row[0], row[1], row[2]
+            lead_id, name, website, existing_email = row[0], row[1], row[2], (row[3] if len(row) > 3 else None)
             if not website or not website.startswith("http"):
                 website = "https://" + (website or "")
             _autopilot_log("audit", f"Auditing {name}", {"lead_id": lead_id})
@@ -3913,6 +3947,14 @@ def api_autopilot_audit(
                 r.raise_for_status()
                 from bs4 import BeautifulSoup
                 soup = BeautifulSoup(r.text, "html.parser")
+                found_email = _extract_emails_from_page(soup, r.text)
+                if found_email and not (existing_email or "").strip():
+                    with get_conn() as conn_email:
+                        conn_email.execute(
+                            "UPDATE leads SET email = %s, updated_at = now() WHERE id = %s",
+                            (found_email, lead_id),
+                        )
+                        conn_email.commit()
                 for tag in soup(["script", "style", "nav", "footer"]):
                     tag.decompose()
                 text = (soup.get_text(separator=" ", strip=True) or "")[:6000]

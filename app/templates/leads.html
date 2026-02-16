@@ -115,8 +115,8 @@
             <div class="pipeline-top">
                 <h2>Pipeline</h2>
                 <div class="send-all-wrap">
-                    <span id="sendProgress" class="send-progress hidden"></span>
-                    <button type="button" id="sendAllReady" class="btn-send-all hidden">Send All (<span id="readyCount">0</span> ready)</button>
+                    <span id="copyAllProgress" class="send-progress hidden"></span>
+                    <button type="button" id="copyAllEmails" class="btn-send-all hidden">Copy All Emails (<span id="readyCount">0</span> ready)</button>
                     <button type="button" id="refreshLeads" class="btn-refresh">Refresh</button>
                 </div>
             </div>
@@ -205,15 +205,22 @@
             updateSendAllButton();
         }
 
+        function copyFullEmail(lead) {
+            const to = (lead.email || '').trim();
+            const subj = (lead.email_subject || '').trim();
+            const body = (lead.email_body || '').trim();
+            return 'To: ' + to + '\nSubject: ' + subj + '\n\n' + body;
+        }
+
         function updateSendAllButton() {
             const ready = leadsCache.filter(l => l.status === 'ready' && l.email);
-            const btn = document.getElementById('sendAllReady');
+            const btn = document.getElementById('copyAllEmails');
             const countEl = document.getElementById('readyCount');
+            if (!countEl) return;
             countEl.textContent = ready.length;
-            if (ready.length > 0) {
-                btn.classList.remove('hidden');
-            } else {
-                btn.classList.add('hidden');
+            if (btn) {
+                if (ready.length > 0) btn.classList.remove('hidden');
+                else btn.classList.add('hidden');
             }
         }
 
@@ -229,10 +236,8 @@
                 const emailSubject = (lead.status === 'ready' || lead.status === 'emailed') && lead.email_subject
                     ? '<span class="email-subject" title="' + escapeHtml(lead.email_subject) + '">' + escapeHtml(lead.email_subject) + '</span>'
                     : '–';
-                const sendCell = lead.status === 'ready' && lead.email
-                    ? '<button type="button" class="btn-send btn-send-one" data-id="' + lead.id + '">Send</button>'
-                    : lead.status === 'emailed'
-                    ? '<span class="sent-tick">Sent ✓</span>'
+                const copyCell = lead.status === 'ready' && lead.email
+                    ? '<button type="button" class="btn-copy btn-copy-one" data-id="' + lead.id + '">Copy Email</button>'
                     : '';
                 const auditDetails = lead.audit_details && typeof lead.audit_details === 'object'
                     ? JSON.stringify(lead.audit_details, null, 2)
@@ -244,7 +249,7 @@
                     '<td><span class="status ' + statusClass + '">' + (lead.status || 'new') + '</span></td>' +
                     '<td>' + (lead.audit_score != null ? lead.audit_score : '–') + '</td>' +
                     '<td class="email-subject-cell">' + emailSubject + '</td>' +
-                    '<td class="send-cell">' + sendCell + '</td>' +
+                    '<td class="send-cell">' + copyCell + '</td>' +
                     '</tr>';
                 html += '<tr class="expand-row expand-' + lead.id + '" style="display:none;"><td colspan="7"><div class="expand-content">' +
                     '<div class="label">Subject</div><div class="value">' + escapeHtml(lead.email_subject || '') + '</div>' +
@@ -258,7 +263,7 @@
 
             tbody.querySelectorAll('.main-row').forEach(row => {
                 row.onclick = function(e) {
-                    if (e.target.closest('.btn-send-one') || e.target.closest('.btn-copy')) return;
+                    if (e.target.closest('.btn-copy-one') || e.target.closest('.copy-email-btn')) return;
                     const id = this.getAttribute('data-id');
                     const expand = tbody.querySelector('.expand-' + id);
                     const visible = expand.style.display !== 'none';
@@ -266,14 +271,13 @@
                     if (!visible) expand.style.display = 'table-row';
                 };
             });
-            tbody.querySelectorAll('.btn-send-one').forEach(btn => {
-                btn.onclick = async function(e) {
+            tbody.querySelectorAll('.btn-copy-one').forEach(btn => {
+                btn.onclick = function(e) {
                     e.stopPropagation();
-                    const id = this.getAttribute('data-id');
-                    const r = await fetch(API_BASE + '/api/leads/' + id, { headers: getHeaders() });
-                    if (!r.ok) return;
-                    const lead = await r.json();
-                    await sendOne(lead.email, lead.email_subject || '', lead.email_body || '', lead.business_name, id);
+                    const lead = leadsCache.find(l => String(l.id) === this.getAttribute('data-id'));
+                    if (!lead) return;
+                    const text = copyFullEmail(lead);
+                    navigator.clipboard.writeText(text).then(() => { this.textContent = 'Copied ✓'; }).catch(() => {});
                 };
             });
             tbody.querySelectorAll('.copy-email-btn').forEach(btn => {
@@ -281,26 +285,10 @@
                     e.stopPropagation();
                     const lead = leadsCache.find(l => String(l.id) === this.getAttribute('data-id'));
                     if (!lead) return;
-                    const text = 'Subject: ' + (lead.email_subject || '') + '\n\n' + (lead.email_body || '');
-                    navigator.clipboard.writeText(text).then(() => { this.textContent = 'Copied'; }).catch(() => {});
+                    const text = copyFullEmail(lead);
+                    navigator.clipboard.writeText(text).then(() => { this.textContent = 'Copied ✓'; }).catch(() => {});
                 };
             });
-        }
-
-        async function sendOne(email, subject, body, leadName, leadId) {
-            try {
-                const r = await fetch(API_BASE + '/api/outreach/send', {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify({ to_email: email, subject: subject, body: body, from_name: 'Abbed', reply_to: 'abbed@motionmadebne.com.au', lead_name: leadName })
-                });
-                const data = await r.json().catch(() => ({}));
-                if (!r.ok) throw new Error(data.detail || 'HTTP ' + r.status);
-                await fetch(API_BASE + '/api/leads/' + leadId, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify({ status: 'emailed' }) });
-                await loadLeads();
-            } catch (e) {
-                alert(e.message || 'Send failed');
-            }
         }
 
         const STEPS = [
@@ -347,26 +335,20 @@
             await loadLeads();
         };
 
-        document.getElementById('sendAllReady').onclick = async function() {
-            const btn = this;
-            const progressEl = document.getElementById('sendProgress');
+        document.getElementById('copyAllEmails').onclick = function() {
             const ready = leadsCache.filter(l => l.status === 'ready' && l.email);
             if (!ready.length) return;
-            btn.disabled = true;
-            progressEl.classList.remove('hidden');
-            let sent = 0;
-            for (const lead of ready) {
-                progressEl.textContent = 'Sending ' + (sent + 1) + ' of ' + ready.length + '...';
-                try {
-                    await sendOne(lead.email, lead.email_subject || '', lead.email_body || '', lead.business_name, lead.id);
-                    sent++;
-                } catch (_) {}
-                if (sent < ready.length) await new Promise(r => setTimeout(r, 30000));
-            }
-            progressEl.textContent = '';
-            progressEl.classList.add('hidden');
-            btn.disabled = false;
-            await loadLeads();
+            const block = ready.map(function(lead) {
+                return copyFullEmail(lead);
+            }).join('\n\n---\n\n');
+            navigator.clipboard.writeText(block).then(() => {
+                const progressEl = document.getElementById('copyAllProgress');
+                if (progressEl) {
+                    progressEl.textContent = 'Copied ' + ready.length + ' emails to clipboard ✓';
+                    progressEl.classList.remove('hidden');
+                    setTimeout(function() { progressEl.textContent = ''; progressEl.classList.add('hidden'); }, 3000);
+                }
+            }).catch(() => {});
         };
 
         document.getElementById('exportCsv').onclick = async function() {
