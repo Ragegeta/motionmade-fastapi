@@ -157,11 +157,22 @@
         };
 
         async function loadSuburbs() {
-            const r = await fetch(API_BASE + '/api/leads/suburbs', { headers: getHeaders() });
-            if (!r.ok) return;
-            const data = await r.json();
             const sel = document.getElementById('suburb');
-            sel.innerHTML = '<option value="">All</option>' + (data.suburbs || []).map(s => '<option value="' + s + '">' + s + '</option>').join('');
+            const fallback = '<option value="">All</option><option value="Brisbane City">Brisbane City</option>';
+            try {
+                const r = await fetch(API_BASE + '/api/leads/suburbs', { headers: getHeaders() });
+                if (!r.ok) { sel.innerHTML = fallback; return; }
+                const data = await r.json();
+                sel.innerHTML = '<option value="">All</option>' + (data.suburbs || []).map(s => '<option value="' + escapeHtml(s) + '">' + escapeHtml(s) + '</option>').join('');
+            } catch (e) {
+                sel.innerHTML = fallback;
+            }
+        }
+        function escapeHtml(s) {
+            if (s == null) return '';
+            const div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
         }
 
         async function loadLeads() {
@@ -200,13 +211,6 @@
                     sendOne(lead.email, lead.email_subject || '', lead.email_body || '', lead.business_name, id);
                 };
             });
-        }
-
-        function escapeHtml(s) {
-            if (s == null) return '';
-            const div = document.createElement('div');
-            div.textContent = s;
-            return div.innerHTML;
         }
 
         async function sendOne(email, subject, body, leadName, leadId) {

@@ -2005,6 +2005,16 @@ def health():
     }
 
 
+@app.get("/api/debug/env-check")
+def debug_env_check():
+    """Temporary: verify ANTHROPIC_API_KEY is available at runtime (e.g. on Render)."""
+    key_val = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    return {
+        "anthropic_key_set": bool(key_val),
+        "key_length": len(key_val),
+    }
+
+
 def _get_git_sha_from_file() -> str:
     """Read git SHA from build-time generated file."""
     try:
@@ -3661,6 +3671,75 @@ def api_leads_list(
     return {"leads": leads}
 
 
+@app.get("/api/leads/suburbs")
+def api_leads_suburbs(authorization: str = Header(default="")):
+    """Return list of Brisbane suburbs for selector. Admin-only."""
+    _check_admin_auth(authorization)
+    return {"suburbs": BRISBANE_SUBURBS}
+
+
+@app.get("/api/leads/autopilot/log")
+def api_autopilot_log(
+    since_id: Optional[int] = None,
+    limit: int = 100,
+    authorization: str = Header(default=""),
+):
+    """Return recent autopilot log entries for live log. Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        if since_id:
+            rows = conn.execute(
+                "SELECT id, phase, message, detail, created_at FROM autopilot_log WHERE id > %s ORDER BY id ASC LIMIT %s",
+                (since_id, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT id, phase, message, detail, created_at FROM autopilot_log ORDER BY id DESC LIMIT %s",
+                (limit,),
+            ).fetchall()
+            rows = list(reversed(rows))
+    entries = [{"id": r[0], "phase": r[1], "message": r[2], "detail": r[3], "created_at": r[4].isoformat() if r[4] else None} for r in rows]
+    return {"log": entries}
+
+
+@app.get("/api/leads/export")
+def api_leads_export(
+    trade_type: Optional[str] = None,
+    suburb: Optional[str] = None,
+    authorization: str = Header(default=""),
+):
+    """CSV export of all leads with all data. Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        q = "SELECT id, trade_type, suburb, business_name, website, email, status, audit_score, audit_details, preview_url, preview_demo_id, email_subject, email_body, created_at FROM leads WHERE 1=1"
+        params: list = []
+        if trade_type:
+            q += " AND trade_type = %s"
+            params.append(trade_type)
+        if suburb:
+            q += " AND suburb = %s"
+            params.append(suburb)
+        q += " ORDER BY created_at DESC"
+        rows = conn.execute(q, tuple(params)).fetchall()
+
+    import io
+    import csv
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["id", "trade_type", "suburb", "business_name", "website", "email", "status", "audit_score", "audit_details", "preview_url", "preview_demo_id", "email_subject", "email_body", "created_at"])
+    for r in rows:
+        writer.writerow([
+            r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7],
+            json.dumps(r[8]) if r[8] else "",
+            r[9], r[10], (r[11] or "").replace("\r", "").replace("\n", " "), (r[12] or "").replace("\r", " ").replace("\n", " "), r[13].isoformat() if r[13] else "",
+        ])
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=leads_export.csv"},
+    )
+
+
 @app.get("/api/leads/{lead_id}")
 def api_lead_get(
     lead_id: int,
@@ -3703,37 +3782,6 @@ def api_leads_update(
     return {"ok": True}
 
 
-@app.get("/api/leads/suburbs")
-def api_leads_suburbs(authorization: str = Header(default="")):
-    """Return list of Brisbane suburbs for selector. Admin-only."""
-    _check_admin_auth(authorization)
-    return {"suburbs": BRISBANE_SUBURBS}
-
-
-@app.get("/api/leads/autopilot/log")
-def api_autopilot_log(
-    since_id: Optional[int] = None,
-    limit: int = 100,
-    authorization: str = Header(default=""),
-):
-    """Return recent autopilot log entries for live log. Admin-only."""
-    _check_admin_auth(authorization)
-    with get_conn() as conn:
-        if since_id:
-            rows = conn.execute(
-                "SELECT id, phase, message, detail, created_at FROM autopilot_log WHERE id > %s ORDER BY id ASC LIMIT %s",
-                (since_id, limit),
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT id, phase, message, detail, created_at FROM autopilot_log ORDER BY id DESC LIMIT %s",
-                (limit,),
-            ).fetchall()
-            rows = list(reversed(rows))
-    entries = [{"id": r[0], "phase": r[1], "message": r[2], "detail": r[3], "created_at": r[4].isoformat() if r[4] else None} for r in rows]
-    return {"log": entries}
-
-
 class AutopilotDiscoveryBody(BaseModel):
     trade_type: str
     suburb: str
@@ -3747,7 +3795,9 @@ def api_autopilot_discovery(
 ):
     """Run discovery: use Anthropic with web search to find local businesses. Batch 3 queries, insert new leads. Admin-only."""
     _check_admin_auth(authorization)
+    # Set ANTHROPIC_API_KEY in Render environment variables (exact name).
     api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    print(f"ANTHROPIC_API_KEY present: {bool(api_key)}, length: {len(api_key)}")
     if not api_key:
         raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not set")
 
@@ -4096,44 +4146,6 @@ def api_leads_send_all_ready(
             _autopilot_log("send", f"Failed to send to {name}: {str(e)}", {"lead_id": lead_id, "error": str(e)})
 
     return {"ok": True, "sent": sent, "total_ready": len(rows)}
-
-
-@app.get("/api/leads/export")
-def api_leads_export(
-    trade_type: Optional[str] = None,
-    suburb: Optional[str] = None,
-    authorization: str = Header(default=""),
-):
-    """CSV export of all leads with all data. Admin-only."""
-    _check_admin_auth(authorization)
-    with get_conn() as conn:
-        q = "SELECT id, trade_type, suburb, business_name, website, email, status, audit_score, audit_details, preview_url, preview_demo_id, email_subject, email_body, created_at FROM leads WHERE 1=1"
-        params: list = []
-        if trade_type:
-            q += " AND trade_type = %s"
-            params.append(trade_type)
-        if suburb:
-            q += " AND suburb = %s"
-            params.append(suburb)
-        q += " ORDER BY created_at DESC"
-        rows = conn.execute(q, tuple(params)).fetchall()
-
-    import io
-    import csv
-    buf = io.StringIO()
-    writer = csv.writer(buf)
-    writer.writerow(["id", "trade_type", "suburb", "business_name", "website", "email", "status", "audit_score", "audit_details", "preview_url", "preview_demo_id", "email_subject", "email_body", "created_at"])
-    for r in rows:
-        writer.writerow([
-            r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7],
-            json.dumps(r[8]) if r[8] else "",
-            r[9], r[10], (r[11] or "").replace("\r", "").replace("\n", " "), (r[12] or "").replace("\r", " ").replace("\n", " "), r[13].isoformat() if r[13] else "",
-        ])
-    return Response(
-        content=buf.getvalue(),
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=leads_export.csv"},
-    )
 
 
 # Owner FAQ write endpoints removed — quality controlled by admin only
