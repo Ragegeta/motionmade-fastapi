@@ -4128,52 +4128,52 @@ def api_autopilot_audit(
                 try:
                     import requests as req_lib
                     req_lib_session = req_lib.Session()
-                req_lib_session.headers.update({"User-Agent": "MotionMade Lead Audit"})
-                r = req_lib_session.get(website, timeout=12)
-                r.raise_for_status()
-                from bs4 import BeautifulSoup
-                soup = BeautifulSoup(r.text, "html.parser")
-                all_emails: list[str] = []
-                emails_home = _collect_emails_from_page(soup, r.text)
-                all_emails.extend(emails_home)
-                extra_urls = _urls_to_scrape(soup, website)
-                for u in extra_urls:
-                    if u == website.rstrip("/") or u == website:
-                        continue
-                    try:
-                        r2 = req_lib_session.get(u, timeout=8)
-                        if r2.status_code != 200:
+                    req_lib_session.headers.update({"User-Agent": "MotionMade Lead Audit"})
+                    r = req_lib_session.get(website, timeout=12)
+                    r.raise_for_status()
+                    from bs4 import BeautifulSoup
+                    soup = BeautifulSoup(r.text, "html.parser")
+                    all_emails: list[str] = []
+                    emails_home = _collect_emails_from_page(soup, r.text)
+                    all_emails.extend(emails_home)
+                    extra_urls = _urls_to_scrape(soup, website)
+                    for u in extra_urls:
+                        if u == website.rstrip("/") or u == website:
                             continue
-                        soup2 = BeautifulSoup(r2.text, "html.parser")
-                        all_emails.extend(_collect_emails_from_page(soup2, r2.text))
-                    except Exception:
-                        continue
-                found_email = _pick_best_email(all_emails)
-                if not found_email and not (existing_email or "").strip():
-                    _autopilot_log("audit", f"No email on site for {name}", {"lead_id": lead_id})
-                if found_email and not (existing_email or "").strip():
-                    with get_conn() as conn_email:
-                        conn_email.execute(
-                            "UPDATE leads SET email = %s, updated_at = now() WHERE id = %s",
-                            (found_email, lead_id),
+                        try:
+                            r2 = req_lib_session.get(u, timeout=8)
+                            if r2.status_code != 200:
+                                continue
+                            soup2 = BeautifulSoup(r2.text, "html.parser")
+                            all_emails.extend(_collect_emails_from_page(soup2, r2.text))
+                        except Exception:
+                            continue
+                    found_email = _pick_best_email(all_emails)
+                    if not found_email and not (existing_email or "").strip():
+                        _autopilot_log("audit", f"No email on site for {name}", {"lead_id": lead_id})
+                    if found_email and not (existing_email or "").strip():
+                        with get_conn() as conn_email:
+                            conn_email.execute(
+                                "UPDATE leads SET email = %s, updated_at = now() WHERE id = %s",
+                                (found_email, lead_id),
+                            )
+                            conn_email.commit()
+                    for tag in soup(["script", "style", "nav", "footer"]):
+                        tag.decompose()
+                    text = (soup.get_text(separator=" ", strip=True) or "")[:6000]
+                except Exception as e:
+                    _autopilot_log("audit", f"Could not fetch {website}: {e}", {"lead_id": lead_id})
+                    detail = {"error": str(e), "score": 0}
+                    with get_conn() as conn2:
+                        conn2.execute(
+                            "UPDATE leads SET status = 'audited', audit_score = 0, audit_details = %s, updated_at = now() WHERE id = %s",
+                            (json.dumps(detail), lead_id),
                         )
-                        conn_email.commit()
-                for tag in soup(["script", "style", "nav", "footer"]):
-                    tag.decompose()
-                text = (soup.get_text(separator=" ", strip=True) or "")[:6000]
-            except Exception as e:
-                _autopilot_log("audit", f"Could not fetch {website}: {e}", {"lead_id": lead_id})
-                detail = {"error": str(e), "score": 0}
-                with get_conn() as conn2:
-                    conn2.execute(
-                        "UPDATE leads SET status = 'audited', audit_score = 0, audit_details = %s, updated_at = now() WHERE id = %s",
-                        (json.dumps(detail), lead_id),
-                    )
-                    conn2.commit()
-                audited += 1
-                continue
+                        conn2.commit()
+                    audited += 1
+                    continue
 
-            prompt = f"""Analyze this business website content and score how much they need an AI FAQ/chat widget (MotionMade). Business: {name}. Website: {website}.
+                prompt = f"""Analyze this business website content and score how much they need an AI FAQ/chat widget (MotionMade). Business: {name}. Website: {website}.
 
 Consider: Do they already have a chat widget? Do they have a detailed FAQ page? Do they offer after-hours support? Is the site professional and likely to care about lead conversion?
 
@@ -4186,31 +4186,31 @@ Return a JSON object with:
 
 Only return the JSON object, no other text."""
 
-            try:
-                resp = _llm_retry("audit", lambda: client.chat.completions.create(
-                    model="gpt-4o",
-                    max_tokens=1024,
-                    messages=[{"role": "user", "content": f"Website text:\n{text}\n\n{prompt}"}],
-                ))
-                text_out = (resp.choices[0].message.content or "").strip()
-                if text_out.startswith("```"):
-                    text_out = re.sub(r"^```(?:json)?\s*", "", text_out)
-                    text_out = re.sub(r"\s*```$", "", text_out)
-                detail = json.loads(text_out)
-                score = int(detail.get("score", 5))
-                if score < 1 or score > 10:
+                try:
+                    resp = _llm_retry("audit", lambda: client.chat.completions.create(
+                        model="gpt-4o",
+                        max_tokens=1024,
+                        messages=[{"role": "user", "content": f"Website text:\n{text}\n\n{prompt}"}],
+                    ))
+                    text_out = (resp.choices[0].message.content or "").strip()
+                    if text_out.startswith("```"):
+                        text_out = re.sub(r"^```(?:json)?\s*", "", text_out)
+                        text_out = re.sub(r"\s*```$", "", text_out)
+                    detail = json.loads(text_out)
+                    score = int(detail.get("score", 5))
+                    if score < 1 or score > 10:
+                        score = 5
+                except Exception as e:
+                    detail = {"error": str(e), "score": 5}
                     score = 5
-            except Exception as e:
-                detail = {"error": str(e), "score": 5}
-                score = 5
 
-            with get_conn() as conn2:
-                conn2.execute(
-                    "UPDATE leads SET status = 'audited', audit_score = %s, audit_details = %s, updated_at = now() WHERE id = %s",
-                    (score, json.dumps(detail) if isinstance(detail, dict) else "{}", lead_id),
-                )
-                conn2.commit()
-                audited += 1
+                with get_conn() as conn2:
+                    conn2.execute(
+                        "UPDATE leads SET status = 'audited', audit_score = %s, audit_details = %s, updated_at = now() WHERE id = %s",
+                        (score, json.dumps(detail) if isinstance(detail, dict) else "{}", lead_id),
+                    )
+                    conn2.commit()
+                    audited += 1
             except Exception as lead_err:
                 tb = traceback.format_exc()
                 _autopilot_log("audit", f"Skip lead {name} (id={lead_id}): {lead_err}", {"lead_id": lead_id, "error": str(lead_err), "traceback": tb})
