@@ -26,8 +26,10 @@ EOF
 echo "Build info: SHA=$GIT_SHA, Branch=$GIT_BRANCH"
 echo "Installing from: $ROOT/requirements.txt"
 
-# Install dependencies from repo root (must include anthropic>=0.39.0)
+# Install dependencies from repo root
 pip install -r "$ROOT/requirements.txt"
+# Guarantee anthropic and sendgrid (in case requirements.txt was not picked up)
+pip install anthropic sendgrid
 
 echo "--- pip list | grep -i anthropic ---"
 pip list | grep -i anthropic || true

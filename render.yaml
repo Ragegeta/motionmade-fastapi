@@ -1,14 +1,12 @@
 # Render Blueprint / build config
 # Ensures build uses root requirements.txt (includes anthropic>=0.39.0, sendgrid, etc.)
 #
-# If your service was created manually in the Dashboard:
-# - Root Directory: leave BLANK (use repo root)
-# - Build Command:  pip install -r requirements.txt
-#   (or: bash build.sh)
-# Then "Clear build cache & deploy" so anthropic gets installed.
+# If your service was created manually, set Build Command in Dashboard to:
+#   pip install -r requirements.txt && pip install anthropic sendgrid && pip list | grep -i anthropic
+# Or use: bash build.sh (build.sh also runs pip install anthropic sendgrid).
 
 services:
   - type: web
     name: motionmade-fastapi
-    buildCommand: pip install -r requirements.txt && pip list | grep -i anthropic || true
+    buildCommand: pip install -r requirements.txt && pip install anthropic sendgrid && pip list | grep -i anthropic
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
