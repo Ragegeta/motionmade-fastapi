@@ -3654,13 +3654,21 @@ def _anthropic_retry(phase: str, fn, max_retries: int = 3):
             return fn()
         except Exception as e:
             last_err = e
+            err_str = str(e).lower()
+            err_repr = repr(e)
             is_429 = getattr(e, "status_code", None) == 429
             if not is_429:
                 try:
                     import anthropic
-                    is_429 = isinstance(e, getattr(anthropic, "RateLimitError", type(None)))
+                    is_429 = (
+                        isinstance(e, getattr(anthropic, "RateLimitError", type(None)))
+                        or (isinstance(e, getattr(anthropic, "APIStatusError", type(None))) and getattr(e, "status_code", None) == 429)
+                    )
                 except Exception:
                     pass
+            if not is_429:
+                is_429 = "429" in err_repr or "429" in str(e) or "rate_limit" in err_str or "rate limit" in err_str
+            _autopilot_log(phase, f"Anthropic exception type: {type(e).__name__}", {"repr": err_repr[:500], "is_429": is_429})
             if is_429 and attempt < max_retries:
                 _autopilot_log(phase, "Rate limited. Waiting 60 seconds...", {})
                 time.sleep(60)
@@ -4128,15 +4136,16 @@ def api_autopilot_audit(
         audited = 0
         for i, row in enumerate(rows):
             if i > 0:
-                time.sleep(3)
+                time.sleep(5)
             lead_id, name, website, existing_email = row[0], row[1], row[2], (row[3] if len(row) > 3 else None)
             suburb_lead = (row[4] if len(row) > 4 else None) or "Brisbane"
             if not website or not website.startswith("http"):
                 website = "https://" + (website or "")
             _autopilot_log("audit", f"Auditing {name}", {"lead_id": lead_id})
             try:
-                import requests as req_lib
-                req_lib_session = req_lib.Session()
+                try:
+                    import requests as req_lib
+                    req_lib_session = req_lib.Session()
                 req_lib_session.headers.update({"User-Agent": "MotionMade Lead Audit"})
                 r = req_lib_session.get(website, timeout=12)
                 r.raise_for_status()
@@ -4244,7 +4253,11 @@ Only return the JSON object, no other text."""
                     (score, json.dumps(detail) if isinstance(detail, dict) else "{}", lead_id),
                 )
                 conn2.commit()
-            audited += 1
+                audited += 1
+            except Exception as lead_err:
+                tb = traceback.format_exc()
+                _autopilot_log("audit", f"Skip lead {name} (id={lead_id}): {lead_err}", {"lead_id": lead_id, "error": str(lead_err), "traceback": tb})
+                continue
 
         _autopilot_log("audit", f"Audited {audited} leads", {"count": audited})
         return {"ok": True, "audited": audited}
@@ -4329,7 +4342,7 @@ def api_autopilot_email_writing(
         used_subjects: list[str] = []
         for i, row in enumerate(rows):
             if i > 0:
-                time.sleep(3)
+                time.sleep(5)
             lead_id, name, email, preview_url, suburb = row[0], row[1], row[2], row[3], row[4]
             audit_details = row[5] if len(row) > 5 else None
             trade_type = (row[6] if len(row) > 6 else None) or ""
