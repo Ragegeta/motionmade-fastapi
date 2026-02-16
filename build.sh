@@ -1,8 +1,12 @@
 #!/bin/bash
 # Build script for Render
 # Captures git SHA and writes to .build-info.py
+# Install from repo root so requirements.txt (with anthropic) is used.
 
 set -e
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
 
 # Capture git info
 GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -20,8 +24,12 @@ GIT_BRANCH = "$GIT_BRANCH"
 EOF
 
 echo "Build info: SHA=$GIT_SHA, Branch=$GIT_BRANCH"
+echo "Installing from: $ROOT/requirements.txt"
 
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies from repo root (must include anthropic>=0.39.0)
+pip install -r "$ROOT/requirements.txt"
+
+echo "--- pip list | grep -i anthropic ---"
+pip list | grep -i anthropic || true
 
 

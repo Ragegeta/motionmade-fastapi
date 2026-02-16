@@ -2039,6 +2039,28 @@ def debug_test_anthropic():
         return {"ok": False, "error": str(e), "traceback": traceback.format_exc()}
 
 
+@app.get("/api/debug/pip-list")
+def debug_pip_list():
+    """Return pip list output to verify installed packages at runtime (e.g. anthropic)."""
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["pip", "list"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        full_list = (result.stdout or "") + (result.stderr or "")
+        # Check for anthropic in the output
+        has_anthropic = "anthropic" in full_list.lower()
+        return {
+            "pip_list": full_list[:3000] if full_list else "(empty)",
+            "anthropic_installed": has_anthropic,
+        }
+    except Exception as e:
+        return {"error": str(e), "traceback": traceback.format_exc()}
+
+
 @app.post("/api/debug/test-search")
 def debug_test_search():
     """Anthropic API call WITH web_search tool — one plumber in Brisbane. Same flow as discovery."""
