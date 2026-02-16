@@ -3596,6 +3596,45 @@ BRISBANE_SUBURBS = [
     "The Gap", "Toowong", "Upper Mount Gravatt", "Virginia", "Wavell Heights", "West End", "Wilston",
     "Windsor", "Wishart", "Woolloongabba", "Wooloowin", "Wynnum", "Wynnum West", "Yeronga", "Zillmere",
 ]
+GOLD_COAST_SUBURBS = [
+    "Broadbeach", "Burleigh Heads", "Coolangatta", "Currumbin", "Main Beach", "Mermaid Beach", "Nobby Beach",
+    "Palm Beach", "Surfers Paradise", "Southport", "Robina", "Varsity Lakes", "Carrara", "Coomera", "Helensvale",
+    "Hope Island", "Labrador", "Miami", "Ormeau", "Oxenford", "Pacific Pines", "Paradise Point", "Runaway Bay",
+    "Tallai", "Tugun", "Upper Coomera", "Worongary",
+]
+SUNSHINE_COAST_SUBURBS = [
+    "Alexandra Headland", "Buderim", "Caloundra", "Coolum Beach", "Kawana Waters", "Maroochydore", "Mooloolaba",
+    "Noosa Heads", "Noosaville", "Nambour", "Peregian Springs", "Sippy Downs", "Sunshine Beach", "Tewantin",
+    "Bli Bli", "Bokarina", "Eumundi", "Golden Beach", "Kings Beach", "Maleny", "Marcoola", "Mountain Creek",
+    "Palmwoods", "Pelican Waters", "Warana", "Wurtulla", "Yandina",
+]
+SYDNEY_SUBURBS = [
+    "Bondi", "Bondi Junction", "Chatswood", "Manly", "North Sydney", "Parramatta", "Surry Hills", "Sydney CBD",
+    "Darlinghurst", "Newtown", "Marrickville", "Randwick", "Coogee", "Bronte", "Paddington", "Mosman",
+    "Neutral Bay", "Cremorne", "Lane Cove", "Ryde", "Burwood", "Strathfield", "Ashfield", "Leichhardt",
+    "Balmain", "Drummoyne", "Five Dock", "Concord", "Hurstville", "Kogarah", "Rockdale", "Cronulla",
+]
+MELBOURNE_SUBURBS = [
+    "Carlton", "Collingwood", "Fitzroy", "Richmond", "South Yarra", "St Kilda", "Prahran", "Melbourne CBD",
+    "Brunswick", "Northcote", "Thornbury", "Preston", "Hawthorn", "Camberwell", "Kew", "Malvern",
+    "Brighton", "Elwood", "Port Melbourne", "South Melbourne", "Footscray", "Yarraville", "Williamstown",
+    "Box Hill", "Doncaster", "Templestowe", "Glen Waverley", "Clayton", "Bentleigh", "Caulfield", "Oakleigh",
+]
+PERTH_SUBURBS = [
+    "Northbridge", "Subiaco", "Leederville", "Mount Lawley", "East Perth", "West Perth", "Perth CBD",
+    "Fremantle", "South Perth", "Victoria Park", "Como", "Applecross", "Cottesloe", "Scarborough",
+    "Joondalup", "Hillarys", "Whitfords", "Sorrento", "Greenwood", "Kingsley", "Woodvale", "Currambine",
+    "Mandurah", "Rockingham", "Baldivis", "Canning Vale", "Willetton", "Thornlie", "Gosnells", "Armadale",
+]
+CITIES = ["Brisbane", "Gold Coast", "Sunshine Coast", "Sydney", "Melbourne", "Perth"]
+CITY_SUBURBS = {
+    "Brisbane": BRISBANE_SUBURBS,
+    "Gold Coast": GOLD_COAST_SUBURBS,
+    "Sunshine Coast": SUNSHINE_COAST_SUBURBS,
+    "Sydney": SYDNEY_SUBURBS,
+    "Melbourne": MELBOURNE_SUBURBS,
+    "Perth": PERTH_SUBURBS,
+}
 
 
 def _autopilot_log(phase: str, message: str, detail: Optional[dict] = None) -> None:
@@ -3662,11 +3701,22 @@ def api_leads_list(
     return {"leads": leads}
 
 
-@app.get("/api/leads/suburbs")
-def api_leads_suburbs(authorization: str = Header(default="")):
-    """Return list of Brisbane suburbs for selector. Admin-only."""
+@app.get("/api/leads/cities")
+def api_leads_cities(authorization: str = Header(default="")):
+    """Return list of cities for region selector. Admin-only."""
     _check_admin_auth(authorization)
-    return {"suburbs": BRISBANE_SUBURBS}
+    return {"cities": CITIES}
+
+
+@app.get("/api/leads/suburbs")
+def api_leads_suburbs(
+    city: Optional[str] = None,
+    authorization: str = Header(default=""),
+):
+    """Return suburbs for the given city. Admin-only. Default city Brisbane."""
+    _check_admin_auth(authorization)
+    key = (city or "").strip() or "Brisbane"
+    return {"suburbs": CITY_SUBURBS.get(key, BRISBANE_SUBURBS)}
 
 
 @app.get("/api/leads/autopilot/log")
@@ -3803,6 +3853,7 @@ def api_leads_mark_ready_as_emailed(
 class AutopilotDiscoveryBody(BaseModel):
     trade_type: str
     suburb: str
+    city: str = "Brisbane"
     target_count: int = 20
 
 
@@ -3821,7 +3872,8 @@ def api_autopilot_discovery(
 
         trade = (body.trade_type or "").strip() or "Plumber"
         suburb = (body.suburb or "").strip() or ""
-        suburb_area = f" in {suburb}" if suburb else " in Brisbane area"
+        city = (body.city or "").strip() or "Brisbane"
+        suburb_area = f" in {suburb}" if suburb else f" in {city} area"
         target = max(10, min(50, body.target_count or 20))
 
         _autopilot_log("discovery", f"Starting discovery: {trade}{suburb_area}, target {target}")
@@ -3837,9 +3889,10 @@ def api_autopilot_discovery(
         else:
             search_terms = ["plumber", "plumbing services", "emergency plumber"]
 
-        queries = [f"{term} {suburb} Brisbane" if suburb else f"{term} Brisbane Queensland" for term in search_terms]
+        location = f"{suburb} {city}" if suburb else city
+        queries = [f"{term} {location}" for term in search_terms]
         queries_display = ", ".join(f'"{q}"' for q in queries)
-        prompt = f"""Use web search to find real local businesses in Brisbane area. Trade: {trade}.
+        prompt = f"""Use web search to find real local businesses in {city} area. Trade: {trade}.
 Run exactly 3 web searches using these search terms (one search per term): {queries_display}.
 From the search results, extract a list of local businesses. For each business provide:
 - business_name (string)
@@ -3872,8 +3925,29 @@ Return a JSON array of objects with keys: business_name, website, email. Include
         if not isinstance(businesses, list):
             businesses = []
 
+        from urllib.parse import urlparse
+
+        def _normalise_domain(url: Optional[str]) -> Optional[str]:
+            if not url or not url.strip():
+                return None
+            u = (url or "").strip().lower()
+            if not u.startswith(("http://", "https://")):
+                u = "https://" + u
+            try:
+                netloc = urlparse(u).netloc or ""
+                if netloc.startswith("www."):
+                    netloc = netloc[4:]
+                return netloc.strip("/") or None
+            except Exception:
+                return None
+
         inserted = 0
         with get_conn() as conn:
+            existing_domains: Set[str] = set()
+            for row in conn.execute("SELECT website FROM leads WHERE website IS NOT NULL AND website != ''").fetchall():
+                d = _normalise_domain(row[0])
+                if d:
+                    existing_domains.add(d)
             for b in businesses[:target]:
                 name = (b.get("business_name") or "").strip()
                 if not name:
@@ -3888,6 +3962,9 @@ Return a JSON array of objects with keys: business_name, website, email. Include
                 ).fetchone()
                 if existing:
                     continue
+                domain = _normalise_domain(website)
+                if domain and domain in existing_domains:
+                    continue
                 conn.execute(
                     """INSERT INTO leads (trade_type, suburb, business_name, website, email, status)
                        VALUES (%s, %s, %s, %s, %s, 'new')""",
@@ -3895,6 +3972,8 @@ Return a JSON array of objects with keys: business_name, website, email. Include
                 )
                 conn.commit()
                 inserted += 1
+                if domain:
+                    existing_domains.add(domain)
 
         _autopilot_log("discovery", f"Inserted {inserted} new leads", {"count": inserted})
         return {"ok": True, "inserted": inserted, "total_found": len(businesses)}
@@ -4207,25 +4286,16 @@ def api_autopilot_email_writing(
 
             used_subjects_instruction = ""
             if used_subjects:
-                used_subjects_instruction = f'\n\nSubject lines already used in this batch (use a DIFFERENT style and phrasing — do not repeat):\n' + "\n".join(f"- {s}" for s in used_subjects[-15:])
+                used_subjects_instruction = '\n\nSubject lines already used in this batch (use a DIFFERENT pattern and phrasing, do not repeat):\n' + "\n".join(f"- {s}" for s in used_subjects[-15:])
 
             trade_lower = (trade_type or "").lower()
             if "bond" in trade_lower:
-                trade_angle = """This lead is a BOND CLEANING business. Use this angle in the email:
-- Their customers always ask the same questions: how much for a 3 bedroom, do you do carpets, do you guarantee the bond back, what's included.
-- Your angle: "Your customers are googling these questions at 9pm when they're about to move out — if your site can't answer them instantly, they call someone else." Bond cleaning is time-sensitive (end of lease deadlines) so instant answers = more bookings.
-- Mention MotionMade briefly: AI on their site that answers these questions 24/7, free trial. No generic "your website doesn't have a chat" — focus on the bond-cleaning pain."""
+                trade_angle = """This lead is a BOND CLEANING business. Their customers ask: how much for a 3 bedroom, do you do carpets, bond guarantee, what's included. Angle: customers google these at 9pm when moving out; if the site can't answer instantly they call someone else. Bond cleaning is time sensitive so instant answers mean more bookings. Mention MotionMade briefly (AI on their site that answers these 24/7, free trial). No generic chat widget pitch."""
             elif "house" in trade_lower or "home" in trade_lower or "domestic" in trade_lower:
-                trade_angle = """This lead is a HOUSE CLEANING business. Use this angle in the email:
-- Their customers want to know: pricing, frequency options, what products you use, whether you're insured.
-- Your angle: "Most people compare 3-4 cleaners before booking — the one that answers their questions fastest wins." House cleaning is repeat business, so one lost lead = months of lost income.
-- Mention MotionMade briefly: AI that answers these questions on their site so they don't lose leads to slower competitors, free trial. No generic chat widget pitch — focus on the comparison-shopping pain."""
+                trade_angle = """This lead is a HOUSE CLEANING business. Customers want pricing, frequency, products, insurance. Angle: most people compare 3 or 4 cleaners before booking; the one that answers fastest wins. House cleaning is repeat business so one lost lead is months of lost income. Mention MotionMade briefly. No generic pitch."""
             else:
-                trade_angle = """This lead is a PLUMBER. Use this angle in the email:
-- Their customers ask: emergency calls, "do you service my area", pricing for common jobs, availability.
-- Your angle: "When someone's got a burst pipe at 11pm they're not going to wait for you to call back tomorrow — if your website can tell them you service their area and give a rough price, they'll book you on the spot." Plumbers lose emergency jobs to whoever answers first.
-- Mention MotionMade briefly: AI that can answer area + rough pricing on their site 24/7, free trial. No generic pitch — focus on the emergency / after-hours pain."""
-            prompt = f"""Write a short, personal cold email to this business lead. Sound like a real person — no marketing speak, no SaaS jargon.
+                trade_angle = """This lead is a PLUMBER. Customers ask about emergencies, "do you service my area", pricing, availability. Angle: someone with a burst pipe at 11pm won't wait for a call back tomorrow; if the website says you service their area and gives a rough price they'll book on the spot. Plumbers lose emergency jobs to whoever answers first. Mention MotionMade briefly. No generic pitch."""
+            prompt = f"""Write a short cold email to this business lead.
 
 Business: {name}. Suburb: {suburb or 'Brisbane'}. Their email: {email}.
 
@@ -4233,12 +4303,15 @@ Business: {name}. Suburb: {suburb or 'Brisbane'}. Their email: {email}.
 """
             if audit_summary:
                 prompt += f"\nWhat we know about their website (reference something specific if you can): {audit_summary}\n"
-            prompt += f"""
-Requirements:
-- Under 5 sentences. Casual, friendly, Australian tone.
-- Subject line: vary the style — never use the same format as another email. Never use "demo" in the subject. Reference something specific from their site or the trade angle if you can.
-- Sign off as just "Abbed".
-- Return ONLY the email body (plain text). Then on the next line write "---SUBJECT---" and then the subject line.
+            prompt += """
+STRICT RULES:
+1. NEVER use hyphens or em dashes as punctuation. No "—" and no "-" between phrases. Use full stops or commas only. This is a dead giveaway of AI text.
+2. Subject line: curiosity driven and specific. NEVER generic like "Quick question about your website" or "Quick demo for [Business]". Use patterns like: "saw your [suburb] site last night" / "this is costing you jobs, [first name or business]" / "your competitor down the road just added this" / "what happens when someone visits your site at 11pm?" / "you're losing bond clean leads after hours" / "had an idea for [Business Name]". Make them curious enough to open. Feel like a message from a real person, not a company.
+3. Body: sound like a text message from a mate, not a sales pitch. Short sentences. No fancy words. No marketing language. No "leverage", "streamline", "solution", "empower" or any corporate buzzwords. Write like a 27 year old Brisbane bloke would actually write an email.
+4. Every email must be different. Vary the opening, the angle, the structure. Some start with a question, some with an observation, some are only 3 sentences. Never repeat the same pattern twice in this batch.
+5. Sign off as just "Abbed". No title, no company name, no footer.
+
+Return ONLY the email body (plain text). Then on the next line write "---SUBJECT---" and then the subject line.
 """
             if preview_url:
                 prompt += f"\nOptional: they have a preview link you can mention (no signup): {preview_url}"
@@ -4260,7 +4333,7 @@ Requirements:
                     body_text = body_text.strip()
                     subject = subject.strip()
                 else:
-                    subject = f"Quick question – {name}"
+                    subject = f"Had an idea for {name}"
                     body_text = text_out
                 used_subjects.append(subject)
                 with get_conn() as conn2:

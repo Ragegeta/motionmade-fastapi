@@ -129,7 +129,18 @@
                     </div>
                 </div>
                 <div class="control-group">
-                    <label>Brisbane suburb</label>
+                    <label>City / region</label>
+                    <select id="city">
+                        <option value="Brisbane" selected>Brisbane</option>
+                        <option value="Gold Coast">Gold Coast</option>
+                        <option value="Sunshine Coast">Sunshine Coast</option>
+                        <option value="Sydney">Sydney</option>
+                        <option value="Melbourne">Melbourne</option>
+                        <option value="Perth">Perth</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Suburb</label>
                     <select id="suburb"><option value="">All</option></select>
                 </div>
                 <div class="control-group">
@@ -220,19 +231,22 @@
                 loadSuburbs();
                 loadLeads();
                 startLogPolling();
+            document.getElementById('city').onchange = function() { loadSuburbs(); };
             } catch (e) {
                 document.getElementById('authError').textContent = e.message || 'Login failed';
             }
         };
 
         async function loadSuburbs() {
-            const sel = document.getElementById('suburb');
-            const fallback = '<option value="">All</option><option value="Brisbane City">Brisbane City</option>';
+            var cityEl = document.getElementById('city');
+            var city = (cityEl && cityEl.value) ? cityEl.value : 'Brisbane';
+            var sel = document.getElementById('suburb');
+            var fallback = '<option value="">All</option>';
             try {
-                const r = await fetch(API_BASE + '/api/leads/suburbs', { headers: getHeaders() });
+                var r = await fetch(API_BASE + '/api/leads/suburbs?city=' + encodeURIComponent(city), { headers: getHeaders() });
                 if (!r.ok) { sel.innerHTML = fallback; return; }
-                const data = await r.json();
-                sel.innerHTML = '<option value="">All</option>' + (data.suburbs || []).map(s => '<option value="' + escapeHtml(s) + '">' + escapeHtml(s) + '</option>').join('');
+                var data = await r.json();
+                sel.innerHTML = '<option value="">All</option>' + (data.suburbs || []).map(function(s) { return '<option value="' + escapeHtml(s) + '">' + escapeHtml(s) + '</option>'; }).join('');
             } catch (e) {
                 sel.innerHTML = fallback;
             }
@@ -390,7 +404,7 @@
                     if (STEPS[i].key === 'discovery') {
                         var r = await fetch(API_BASE + '/api/leads/autopilot/discovery', {
                             method: 'POST', headers: getHeaders(),
-                            body: JSON.stringify({ trade_type: trade, suburb: suburb, target_count: target })
+                            body: JSON.stringify({ trade_type: trade, suburb: suburb, city: (document.getElementById('city') && document.getElementById('city').value) || 'Brisbane', target_count: target })
                         });
                         discoveryResp = await r.json().catch(function() { return {}; });
                         if (!r.ok) throw new Error(discoveryResp.detail || 'Discovery failed');
