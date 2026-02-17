@@ -3748,10 +3748,15 @@ CITY_SUBURBS = {
 
 
 def _autopilot_log(phase: str, message: str, detail: Optional[dict] = None) -> None:
+    """Insert one log entry. Dedupe: skip if same (phase, message) was inserted in the last second."""
     with get_conn() as conn:
         conn.execute(
-            "INSERT INTO autopilot_log (phase, message, detail) VALUES (%s, %s, %s)",
-            (phase, message, json.dumps(detail) if detail else None),
+            """INSERT INTO autopilot_log (phase, message, detail)
+               SELECT %s, %s, %s WHERE NOT EXISTS (
+                 SELECT 1 FROM autopilot_log
+                 WHERE phase = %s AND message = %s AND created_at > NOW() - INTERVAL '1 second'
+               )""",
+            (phase, message, json.dumps(detail) if detail else None, phase, message),
         )
         conn.commit()
 
@@ -4045,12 +4050,27 @@ class AutopilotDiscoveryBody(BaseModel):
     target_count: int = 20
 
 
+def _discovery_query_variations(trade: str, suburb: str) -> list[str]:
+    """Return 2-3 search query strings for this trade + suburb. Dedupe is by domain elsewhere."""
+    t = (trade or "").strip().lower()
+    s = (suburb or "").strip()
+    if not s:
+        return []
+    if "bond" in t and "clean" in t:
+        return [f"bond cleaning {s}", f"end of lease cleaning {s}", f"vacate cleaning {s}"]
+    if "house" in t and "clean" in t:
+        return [f"house cleaning {s}", f"home cleaning {s}", f"domestic cleaning {s}"]
+    if "plumb" in t:
+        return [f"plumber {s}", f"emergency plumber {s}", f"plumbing services {s}"]
+    return [f"{trade} {s}"]
+
+
 @app.post("/api/leads/autopilot/discovery")
 def api_autopilot_discovery(
     body: AutopilotDiscoveryBody,
     authorization: str = Header(default=""),
 ):
-    """Run discovery via Google Places API (Text Search + Place Details). Real businesses only. Website verified with HEAD/GET. When suburb is All, cycle through unsearched suburbs. Admin-only."""
+    """Run discovery: multi-suburb loop + multiple query variations per suburb. Stops at target inserted or 10 suburbs. Admin-only."""
     _check_admin_auth(authorization)
     try:
         api_key = os.getenv("GOOGLE_PLACES_API_KEY", "").strip()
@@ -4062,31 +4082,16 @@ def api_autopilot_discovery(
         city = (body.city or "").strip() or "Brisbane"
         target = max(10, min(50, body.target_count or 20))
         suburbs_for_city = CITY_SUBURBS.get(city, BRISBANE_SUBURBS)
-
-        if suburb_raw.lower() == "all" or suburb_raw == "":
-            with get_conn() as conn:
-                searched = set(
-                    row[0] for row in conn.execute(
-                        "SELECT suburb FROM discovery_searches WHERE trade_type = %s AND city = %s",
-                        (trade, city),
-                    ).fetchall()
-                )
-            unsearched = [s for s in suburbs_for_city if s not in searched]
-            import random
-            suburb = random.choice(unsearched) if unsearched else random.choice(suburbs_for_city)
-        else:
-            suburb = suburb_raw
-
-        suburb_area = f" in {suburb}" if suburb else f" in {city} area"
-        suburb_or_city = (suburb or "").strip() or city or "Brisbane"
+        max_suburbs = 10
 
         with get_conn() as conn_log:
             conn_log.execute("DELETE FROM autopilot_log")
             conn_log.commit()
-        _autopilot_log("discovery", f"Starting discovery (Google Places): {trade}{suburb_area}, target {target}")
+        _autopilot_log("discovery", f"Starting discovery: {trade} in {city}, target {target} (multi-suburb)", {"target": target})
 
         from urllib.parse import urlparse, quote_plus
         import httpx
+        import random
 
         def _normalise_domain(url: Optional[str]) -> Optional[str]:
             if not url or not url.strip():
@@ -4103,15 +4108,14 @@ def api_autopilot_discovery(
                 return None
 
         def _website_reachable(url: Optional[str]) -> bool:
-            """Try HEAD first; if that fails or non-2xx/3xx, try GET with browser User-Agent. Accept 2xx or 3xx. Timeout 15s."""
             if not url or not url.strip():
                 return False
             u = (url or "").strip()
             if not u.startswith(("http://", "https://")):
                 u = "https://" + u
             browser_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-            def _ok(status: int) -> bool:
-                return 200 <= status < 400
+            def _ok(s: int) -> bool:
+                return 200 <= s < 400
             try:
                 with httpx.Client(timeout=15.0, follow_redirects=True) as client:
                     try:
@@ -4125,99 +4129,129 @@ def api_autopilot_discovery(
             except Exception:
                 return False
 
-        # Text Search: "bond cleaning Brisbane" (or "bond cleaning Chermside" when suburb cycled)
-        query = f"{trade} {suburb or city}"
-        all_results: list = []
-        next_url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={quote_plus(query)}&key={api_key}"
-        with httpx.Client(timeout=15.0) as client:
-            while next_url:
-                ts_resp = client.get(next_url)
-                ts_resp.raise_for_status()
-                ts_data = ts_resp.json()
-                if ts_data.get("status") not in ("OK", "ZERO_RESULTS"):
-                    _autopilot_log("discovery", f"Google Text Search status: {ts_data.get('status')}", ts_data)
-                    raise HTTPException(status_code=502, detail=f"Google Places Text Search returned: {ts_data.get('status')}")
-                page_results = ts_data.get("results") or []
-                all_results.extend(page_results)
-                next_token = (ts_data.get("next_page_token") or "").strip()
-                if not next_token or len(all_results) >= max(target, 20) * 2:
-                    break
-                time.sleep(2)
-                next_url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?pagetoken={quote_plus(next_token)}&key={api_key}"
-        results = all_results[: max(target, 20)]
-
-        # Place Details for each to get website (and name/address/phone)
-        places: list[dict] = []
-        with httpx.Client(timeout=15.0) as client:
-            for r in results:
-                place_id = (r.get("place_id") or "").strip()
-                if not place_id:
-                    continue
-                details_url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={quote_plus(place_id)}&fields=name,website,formatted_phone_number,formatted_address&key={api_key}"
-                try:
-                    d_resp = client.get(details_url)
-                    d_resp.raise_for_status()
-                    d_data = d_resp.json()
-                    if d_data.get("status") != "OK":
-                        continue
-                    detail = d_data.get("result") or {}
-                    website = (detail.get("website") or "").strip() or None
-                    if not website:
-                        continue
-                    name = (detail.get("name") or r.get("name") or "").strip()
-                    if not name:
-                        continue
-                    places.append({"business_name": name, "website": website})
-                except Exception as e:
-                    _autopilot_log("discovery", f"Place details failed {place_id}: {e}", {})
-                    continue
-
-        inserted = 0
-        skipped_bad_website = 0
-        with get_conn() as conn:
-            existing_domains: Set[str] = set()
-            for row in conn.execute("SELECT website FROM leads WHERE website IS NOT NULL AND website != ''").fetchall():
-                d = _normalise_domain(row[0])
-                if d:
-                    existing_domains.add(d)
-            for b in places:
-                name = (b.get("business_name") or "").strip()
-                website = (b.get("website") or "").strip() or None
-                if not name or not website:
-                    continue
-                if not _website_reachable(website):
-                    skipped_bad_website += 1
-                    continue
-                existing = conn.execute(
-                    "SELECT 1 FROM leads WHERE LOWER(TRIM(business_name)) = LOWER(%s) LIMIT 1",
-                    (name,),
-                ).fetchone()
-                if existing:
-                    continue
-                domain = _normalise_domain(website)
-                if domain and domain in existing_domains:
-                    continue
-                conn.execute(
-                    """INSERT INTO leads (trade_type, suburb, business_name, website, email, status)
-                       VALUES (%s, %s, %s, %s, %s, 'new')""",
-                    (trade, suburb_or_city, name, website, None),
+        if suburb_raw.lower() == "all" or suburb_raw == "":
+            with get_conn() as conn:
+                searched = set(
+                    row[0] for row in conn.execute(
+                        "SELECT suburb FROM discovery_searches WHERE trade_type = %s AND city = %s",
+                        (trade, city),
+                    ).fetchall()
                 )
-                conn.commit()
-                inserted += 1
-                if domain:
-                    existing_domains.add(domain)
-                if inserted >= target:
-                    break
+            unsearched = [s for s in suburbs_for_city if s not in searched]
+            random.shuffle(unsearched)
+            suburbs_to_try = unsearched[:max_suburbs] if unsearched else random.sample(suburbs_for_city, min(max_suburbs, len(suburbs_for_city)))
+        else:
+            suburbs_to_try = [suburb_raw]
 
-        with get_conn() as conn_ds:
-            conn_ds.execute(
-                "INSERT INTO discovery_searches (trade_type, city, suburb) VALUES (%s, %s, %s) ON CONFLICT (trade_type, city, suburb) DO NOTHING",
-                (trade, city, suburb),
-            )
-            conn_ds.commit()
+        total_inserted = 0
+        total_skipped_bad_website = 0
+        suburbs_searched: list[str] = []
+        seen_place_ids: Set[str] = set()
+        with get_conn() as conn:
+            existing_domains = {_normalise_domain(row[0]) for row in conn.execute("SELECT website FROM leads WHERE website IS NOT NULL AND website != ''").fetchall() if _normalise_domain(row[0])}
 
-        _autopilot_log("discovery", f"Inserted {inserted} new leads (skipped bad website: {skipped_bad_website})", {"count": inserted, "skipped_bad_website": skipped_bad_website})
-        return {"ok": True, "inserted": inserted, "total_found": len(places), "skipped_bad_website": skipped_bad_website, "suburb_searched": suburb}
+        for suburb in suburbs_to_try:
+            if total_inserted >= target:
+                break
+            suburb_or_city = (suburb or "").strip() or city or "Brisbane"
+            queries = _discovery_query_variations(trade, suburb)
+            if not queries:
+                queries = [f"{trade} {suburb}"]
+            all_results: list = []
+            for query in queries:
+                next_url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={quote_plus(query)}&key={api_key}"
+                with httpx.Client(timeout=15.0) as client:
+                    while next_url:
+                        ts_resp = client.get(next_url)
+                        ts_resp.raise_for_status()
+                        ts_data = ts_resp.json()
+                        if ts_data.get("status") not in ("OK", "ZERO_RESULTS"):
+                            _autopilot_log("discovery", f"Google Text Search status: {ts_data.get('status')}", ts_data)
+                            raise HTTPException(status_code=502, detail=f"Google Places Text Search returned: {ts_data.get('status')}")
+                        page_results = ts_data.get("results") or []
+                        for r in page_results:
+                            pid = (r.get("place_id") or "").strip()
+                            if pid and pid not in seen_place_ids:
+                                seen_place_ids.add(pid)
+                                all_results.append(r)
+                        next_token = (ts_data.get("next_page_token") or "").strip()
+                        if not next_token or len(all_results) >= target * 3:
+                            break
+                        time.sleep(2)
+                        next_url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?pagetoken={quote_plus(next_token)}&key={api_key}"
+
+            places: list[dict] = []
+            with httpx.Client(timeout=15.0) as client:
+                for r in all_results:
+                    place_id = (r.get("place_id") or "").strip()
+                    if not place_id:
+                        continue
+                    details_url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={quote_plus(place_id)}&fields=name,website,formatted_phone_number,formatted_address&key={api_key}"
+                    try:
+                        d_resp = client.get(details_url)
+                        d_resp.raise_for_status()
+                        d_data = d_resp.json()
+                        if d_data.get("status") != "OK":
+                            continue
+                        detail = d_data.get("result") or {}
+                        website = (detail.get("website") or "").strip() or None
+                        if not website:
+                            continue
+                        name = (detail.get("name") or r.get("name") or "").strip()
+                        if not name:
+                            continue
+                        domain = _normalise_domain(website)
+                        if domain and domain in existing_domains:
+                            continue
+                        places.append({"business_name": name, "website": website})
+                    except Exception as e:
+                        _autopilot_log("discovery", f"Place details failed {place_id}: {e}", {})
+                        continue
+
+            inserted_this_suburb = 0
+            skipped_this = 0
+            with get_conn() as conn:
+                for b in places:
+                    if total_inserted >= target:
+                        break
+                    name = (b.get("business_name") or "").strip()
+                    website = (b.get("website") or "").strip() or None
+                    if not name or not website:
+                        continue
+                    if not _website_reachable(website):
+                        skipped_this += 1
+                        continue
+                    existing = conn.execute(
+                        "SELECT 1 FROM leads WHERE LOWER(TRIM(business_name)) = LOWER(%s) LIMIT 1",
+                        (name,),
+                    ).fetchone()
+                    if existing:
+                        continue
+                    domain = _normalise_domain(website)
+                    if domain and domain in existing_domains:
+                        continue
+                    conn.execute(
+                        """INSERT INTO leads (trade_type, suburb, business_name, website, email, status)
+                           VALUES (%s, %s, %s, %s, %s, 'new')""",
+                        (trade, suburb_or_city, name, website, None),
+                    )
+                    conn.commit()
+                    inserted_this_suburb += 1
+                    total_inserted += 1
+                    if domain:
+                        existing_domains.add(domain)
+            total_skipped_bad_website += skipped_this
+            suburbs_searched.append(suburb)
+            with get_conn() as conn_ds:
+                conn_ds.execute(
+                    "INSERT INTO discovery_searches (trade_type, city, suburb) VALUES (%s, %s, %s) ON CONFLICT (trade_type, city, suburb) DO NOTHING",
+                    (trade, city, suburb),
+                )
+                conn_ds.commit()
+            _autopilot_log("discovery", f"{suburb}: inserted {inserted_this_suburb}, skipped website {skipped_this}", {"suburb": suburb, "inserted": inserted_this_suburb})
+
+        _autopilot_log("discovery", f"Inserted {total_inserted} new leads total (skipped bad website: {total_skipped_bad_website})", {"count": total_inserted, "skipped_bad_website": total_skipped_bad_website})
+        return {"ok": True, "inserted": total_inserted, "total_found": total_inserted, "skipped_bad_website": total_skipped_bad_website, "suburbs_searched": suburbs_searched, "suburb_searched": suburbs_searched[0] if suburbs_searched else None}
     except HTTPException:
         raise
     except Exception as e:
@@ -4250,7 +4284,7 @@ def api_autopilot_audit(
             if body.lead_ids:
                 placeholders = ",".join(["%s"] * len(body.lead_ids))
                 rows = conn.execute(
-                    f"SELECT id, business_name, website, email, suburb FROM leads WHERE id IN ({placeholders})",
+                    f"SELECT id, business_name, website, email, suburb FROM leads WHERE id IN ({placeholders}) AND status = 'new' AND website IS NOT NULL AND website != ''",
                     tuple(body.lead_ids),
                 ).fetchall()
             else:
@@ -4552,6 +4586,7 @@ def api_autopilot_email_writing(
             rows = conn.execute(
                 """SELECT id, business_name, email, preview_url, suburb, audit_details, trade_type FROM leads
                    WHERE status IN ('audited', 'previewed') AND email IS NOT NULL AND email != ''
+                   AND (email_subject IS NULL OR email_subject = '')
                    ORDER BY id"""
             ).fetchall()
 
