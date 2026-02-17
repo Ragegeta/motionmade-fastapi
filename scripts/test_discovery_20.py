@@ -46,11 +46,14 @@ def main():
         print(f"OK: {inserted} leads (>=10)")
     time.sleep(1)
 
-    # 3. Audit
+    # 3. Audit (may 502 on Render if many leads)
     print("\n--- 3. Audit ---")
-    r = requests.post(f"{BASE_URL}/api/leads/autopilot/audit", headers=HEADERS, json={}, timeout=180)
-    r.raise_for_status()
-    print(r.json())
+    try:
+        r = requests.post(f"{BASE_URL}/api/leads/autopilot/audit", headers=HEADERS, json={}, timeout=180)
+        r.raise_for_status()
+        print(r.json())
+    except Exception as e:
+        print(f"Audit failed (may timeout): {e}")
     time.sleep(1)
 
     # 4. Email-writing (may 502 on Render if many leads)

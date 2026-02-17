@@ -3748,13 +3748,13 @@ CITY_SUBURBS = {
 
 
 def _autopilot_log(phase: str, message: str, detail: Optional[dict] = None) -> None:
-    """Insert one log entry. Dedupe: skip if same (phase, message) was inserted in the last second."""
+    """Insert one log entry. Dedupe: skip if same (phase, message) was inserted in the last 5 seconds."""
     with get_conn() as conn:
         conn.execute(
             """INSERT INTO autopilot_log (phase, message, detail)
                SELECT %s, %s, %s WHERE NOT EXISTS (
                  SELECT 1 FROM autopilot_log
-                 WHERE phase = %s AND message = %s AND created_at > NOW() - INTERVAL '1 second'
+                 WHERE phase = %s AND message = %s AND created_at > NOW() - INTERVAL '5 seconds'
                )""",
             (phase, message, json.dumps(detail) if detail else None, phase, message),
         )
