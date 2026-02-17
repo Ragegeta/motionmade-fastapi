@@ -4698,7 +4698,7 @@ def _run_send_ready_background(rows: list, resend_key: str, limit: int, today_se
                 failed += 1
                 _autopilot_log("send", f"Sending to {to_addr}... Failed: {e}", {"lead_id": lead_id, "error": str(e)})
             if i < len(rows) - 1:
-                time.sleep(30)
+                time.sleep(15)  # 15s keeps batch under ~3 min so Render free tier is less likely to spin down mid-send
     finally:
         with _send_ready_lock:
             global _send_ready_in_progress
@@ -4753,7 +4753,7 @@ def api_leads_autopilot_send_ready(authorization: str = Header(default="")):
 def api_leads_send_all_ready(
     authorization: str = Header(default=""),
 ):
-    """Send all emails with status 'ready'. 30 second delay between each. Admin-only."""
+    """Send all emails with status 'ready'. 15 second delay between each. Admin-only."""
     _check_admin_auth(authorization)
     with get_conn() as conn:
         rows = conn.execute(
@@ -4768,7 +4768,7 @@ def api_leads_send_all_ready(
     for i, row in enumerate(rows):
         lead_id, name, email, subj, body = row[0], row[1], row[2], row[3], row[4]
         if i > 0:
-            time.sleep(30)
+            time.sleep(15)
         try:
             import requests as req_lib
             r = req_lib.post(
