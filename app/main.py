@@ -4611,7 +4611,7 @@ def api_leads_autopilot_send_ready(authorization: str = Header(default="")):
         body_text = (body or "").strip()
         try:
             resend.Emails.send({
-                "from": "Abbed <onboarding@resend.dev>",
+                "from": "Abbed <abbed@motionmadebne.com.au>",
                 "to": to_addr,
                 "subject": subject,
                 "text": body_text,
