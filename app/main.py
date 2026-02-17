@@ -4128,16 +4128,25 @@ Return a JSON array of objects with keys: business_name, website, email. Include
             return False
 
         def _website_reachable(url: Optional[str]) -> bool:
-            """HEAD request; return True only if response is 200, else False (timeout or non-200)."""
+            """Try HEAD first; if that fails or non-2xx/3xx, try GET with browser User-Agent. Accept 2xx or 3xx. Timeout 15s."""
             if not url or not url.strip():
                 return False
             u = (url or "").strip()
             if not u.startswith(("http://", "https://")):
                 u = "https://" + u
+            browser_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            def _ok(status: int) -> bool:
+                return 200 <= status < 400
             try:
-                with httpx.Client(timeout=10.0, follow_redirects=True) as client:
-                    r = client.head(u)
-                    return r.status_code == 200
+                with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+                    try:
+                        r = client.head(u, headers=browser_headers)
+                        if _ok(r.status_code):
+                            return True
+                    except Exception:
+                        pass
+                    r = client.get(u, headers=browser_headers)
+                    return _ok(r.status_code)
             except Exception:
                 return False
 
