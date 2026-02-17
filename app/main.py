@@ -4013,6 +4013,21 @@ def api_leads_mark_ready_as_emailed(
     return {"ok": True}
 
 
+@app.post("/api/leads/wipe")
+def api_leads_wipe(authorization: str = Header(default="")):
+    """Delete all leads and autopilot_log. Use to start fresh after removing fake data. Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        cur = conn.execute("SELECT COUNT(*) FROM leads")
+        deleted_leads = (cur.fetchone() or (0,))[0]
+        cur = conn.execute("SELECT COUNT(*) FROM autopilot_log")
+        deleted_logs = (cur.fetchone() or (0,))[0]
+        conn.execute("DELETE FROM leads")
+        conn.execute("DELETE FROM autopilot_log")
+        conn.commit()
+    return {"ok": True, "deleted_leads": deleted_leads, "deleted_logs": deleted_logs}
+
+
 class AutopilotDiscoveryBody(BaseModel):
     trade_type: str
     suburb: str
@@ -4047,16 +4062,16 @@ def api_autopilot_discovery(
         client = openai.OpenAI(api_key=api_key)
 
         location = f"{suburb}, {city}" if suburb else city
-        prompt = f"""Based on your knowledge of local businesses in {location}, Australia, generate a list of realistic local businesses for the trade: {trade}.
+        prompt = f"""Based on your knowledge of local businesses in {location}, Australia, generate a list of REAL local businesses for the trade: {trade}.
 
-These can be real businesses you know of from your training data, or plausible local business names and domains for this area. Local service businesses (plumbers, cleaners, etc.) in Australian suburbs are well established and well indexed.
+CRITICAL: Only include businesses you can verify actually exist. Do NOT invent or guess business names, websites, or emails. Fabricated entries (e.g. made-up names like "Johnny Bond Cleaning" or generic emails like abc@gmail.com) will be rejected.
 
 For each business provide:
-- business_name (string): plausible business name
-- website (URL if known or plausible, else null)
-- email (email if known or use a plausible pattern like info@businessname.com.au, else null)
+- business_name (string): real business name as known
+- website (URL only if you know a real, working URL for this business; otherwise null)
+- email (only if you know a real contact email, e.g. info@realdomain.com.au; do NOT use @gmail.com unless it is a known real address; otherwise null)
 
-Return a JSON array of objects with keys: business_name, website, email. Include up to {min(target, 30)} businesses. No other text, no markdown, only the JSON array."""
+Return a JSON array of objects with keys: business_name, website, email. Include only businesses you are confident are real. No other text, no markdown, only the JSON array."""
 
         resp = _llm_retry("discovery", lambda: client.chat.completions.create(
             model="gpt-4o",
@@ -4077,6 +4092,7 @@ Return a JSON array of objects with keys: business_name, website, email. Include
             businesses = []
 
         from urllib.parse import urlparse
+        import httpx
 
         def _normalise_domain(url: Optional[str]) -> Optional[str]:
             if not url or not url.strip():
@@ -4092,7 +4108,42 @@ Return a JSON array of objects with keys: business_name, website, email. Include
             except Exception:
                 return None
 
+        def _is_fake_email(addr: Optional[str]) -> bool:
+            """Reject obviously fabricated emails: abc@gmail.com, single-word@gmail.com, businessname@gmail.com."""
+            if not addr or not addr.strip():
+                return False
+            email = addr.strip().lower()
+            if "@" not in email:
+                return True
+            local, domain = email.split("@", 1)
+            if domain != "gmail.com":
+                return False
+            # Block exact known fakes
+            if local in ("abc", "test", "contact", "info", "hello", "admin", "support"):
+                return True
+            # Block single-word @gmail.com that looks like a made-up business name (no dots/numbers, long)
+            if re.match(r"^[a-z]+$", local):
+                if len(local) >= 10:
+                    return True
+            return False
+
+        def _website_reachable(url: Optional[str]) -> bool:
+            """HEAD request; return True only if response is 200, else False (timeout or non-200)."""
+            if not url or not url.strip():
+                return False
+            u = (url or "").strip()
+            if not u.startswith(("http://", "https://")):
+                u = "https://" + u
+            try:
+                with httpx.Client(timeout=10.0, follow_redirects=True) as client:
+                    r = client.head(u)
+                    return r.status_code == 200
+            except Exception:
+                return False
+
         inserted = 0
+        skipped_fake_email = 0
+        skipped_bad_website = 0
         with get_conn() as conn:
             existing_domains: Set[str] = set()
             for row in conn.execute("SELECT website FROM leads WHERE website IS NOT NULL AND website != ''").fetchall():
@@ -4106,6 +4157,15 @@ Return a JSON array of objects with keys: business_name, website, email. Include
                 website = (b.get("website") or "").strip() or None
                 email = (b.get("email") or "").strip() or None
                 if not website and not email:
+                    continue
+                if email and _is_fake_email(email):
+                    skipped_fake_email += 1
+                    continue
+                # Only insert leads we can verify: website must exist (HEAD 200)
+                if website and not _website_reachable(website):
+                    skipped_bad_website += 1
+                    continue
+                if not website:
                     continue
                 existing = conn.execute(
                     "SELECT 1 FROM leads WHERE LOWER(TRIM(business_name)) = LOWER(%s) LIMIT 1",
@@ -4126,8 +4186,8 @@ Return a JSON array of objects with keys: business_name, website, email. Include
                 if domain:
                     existing_domains.add(domain)
 
-        _autopilot_log("discovery", f"Inserted {inserted} new leads", {"count": inserted})
-        return {"ok": True, "inserted": inserted, "total_found": len(businesses)}
+        _autopilot_log("discovery", f"Inserted {inserted} new leads (skipped fake email: {skipped_fake_email}, bad website: {skipped_bad_website})", {"count": inserted, "skipped_fake_email": skipped_fake_email, "skipped_bad_website": skipped_bad_website})
+        return {"ok": True, "inserted": inserted, "total_found": len(businesses), "skipped_fake_email": skipped_fake_email, "skipped_bad_website": skipped_bad_website}
     except HTTPException:
         raise
     except Exception as e:
@@ -4393,7 +4453,7 @@ def _build_leads_email_prompt(
     preview_url: Optional[str],
     used_subjects: list,
 ) -> str:
-    """Build the email-writing prompt for one lead. Shared by email-writing and rewrite-ready."""
+    """Build the email-writing prompt for one lead."""
     trade_lower = (trade_type or "").lower()
     if "bond" in trade_lower:
         trade_angle = "Bond cleaning: customers google at 9pm when moving out; if the site can't answer instantly they call someone else. Time sensitive, instant answers mean more bookings."
@@ -4517,82 +4577,6 @@ def api_autopilot_email_writing(
         print(f"[EMAIL-WRITING] {tb}")
         _autopilot_log("email", str(e), {"traceback": tb})
         raise HTTPException(status_code=500, detail=f"Email writing failed:\n{tb}")
-
-
-@app.post("/api/leads/autopilot/rewrite-ready-emails")
-def api_leads_autopilot_rewrite_ready_emails(
-    limit: int = 5,
-    authorization: str = Header(default=""),
-):
-    """Rewrite leads with status 'ready' using the current email prompt. Default batch size 5 to avoid timeout; call repeatedly until rewritten is 0. Admin-only."""
-    _check_admin_auth(authorization)
-    try:
-        api_key = os.getenv("OPENAI_API_KEY", "").strip()
-        if not api_key:
-            raise HTTPException(status_code=500, detail="OPENAI_API_KEY not set")
-
-        with get_conn() as conn:
-            rows = conn.execute(
-                """SELECT id, business_name, email, preview_url, suburb, audit_details, trade_type
-                   FROM leads WHERE status = 'ready' AND email IS NOT NULL AND email != ''
-                   ORDER BY id"""
-            ).fetchall()
-        batch_size = max(1, min(limit, 50))
-        rows = rows[:batch_size]
-        total_ready = len(rows)
-
-        import openai
-        client = openai.OpenAI(api_key=api_key)
-        rewritten = 0
-        used_subjects: list[str] = []
-        for i, row in enumerate(rows):
-            if i > 0:
-                time.sleep(5)
-            lead_id, name, email, preview_url, suburb = row[0], row[1], row[2], row[3], row[4]
-            audit_details = row[5] if len(row) > 5 else None
-            trade_type = (row[6] if len(row) > 6 else None) or ""
-            if isinstance(audit_details, dict):
-                audit_summary = ", ".join(f"{k}: {v}" for k, v in audit_details.items() if v is not None and k != "error")
-            else:
-                audit_summary = str(audit_details) if audit_details else ""
-            _autopilot_log("email", f"Rewriting email for {name}", {"lead_id": lead_id})
-
-            prompt = _build_leads_email_prompt(name, suburb or "", email or "", audit_summary, trade_type, preview_url, used_subjects)
-
-            try:
-                resp = _llm_retry("email", lambda: client.chat.completions.create(
-                    model="gpt-4o",
-                    max_tokens=1024,
-                    messages=[{"role": "user", "content": prompt}],
-                ))
-                text_out = (resp.choices[0].message.content or "").strip()
-                if "---SUBJECT---" in text_out:
-                    body_text, subject = text_out.split("---SUBJECT---", 1)
-                    body_text = body_text.strip()
-                    subject = subject.strip()
-                else:
-                    subject = f"AI front desk for {name}"
-                    body_text = text_out
-                used_subjects.append(subject)
-                with get_conn() as conn2:
-                    conn2.execute(
-                        "UPDATE leads SET email_subject = %s, email_body = %s, updated_at = now() WHERE id = %s",
-                        (subject, body_text, lead_id),
-                    )
-                    conn2.commit()
-                rewritten += 1
-            except Exception as e:
-                _autopilot_log("email", f"Rewrite failed {name}: {str(e)}", {"lead_id": lead_id, "error": str(e)})
-
-        _autopilot_log("email", f"Rewrote {rewritten} ready emails", {"count": rewritten})
-        return {"ok": True, "rewritten": rewritten, "total_ready": total_ready}
-    except HTTPException:
-        raise
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(f"[REWRITE-READY] {tb}")
-        _autopilot_log("email", str(e), {"traceback": tb})
-        raise HTTPException(status_code=500, detail=f"Rewrite failed:\n{tb}")
 
 
 @app.post("/api/leads/autopilot/send-ready")
