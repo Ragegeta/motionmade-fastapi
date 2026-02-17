@@ -4570,15 +4570,16 @@ def api_autopilot_email_writing(
 
 @app.post("/api/leads/autopilot/send-ready")
 def api_leads_autopilot_send_ready(authorization: str = Header(default="")):
-    """Send all ready leads via Gmail SMTP. Respects DAILY_EMAIL_LIMIT. Admin-only."""
+    """Send all ready leads via Resend. Respects DAILY_EMAIL_LIMIT. Admin-only."""
     _check_admin_auth(authorization)
-    gmail_user = (os.getenv("GMAIL_ADDRESS") or "").strip()
-    gmail_pass = (os.getenv("GMAIL_APP_PASSWORD") or "").strip()
-    if not gmail_user or not gmail_pass:
+    resend_key = (os.getenv("RESEND_API_KEY") or "").strip()
+    if not resend_key:
         raise HTTPException(
             status_code=500,
-            detail="GMAIL_ADDRESS and GMAIL_APP_PASSWORD must be set",
+            detail="RESEND_API_KEY must be set",
         )
+    import resend
+    resend.api_key = resend_key
     limit = _daily_email_limit()
     with get_conn() as conn:
         today_count_row = conn.execute(
@@ -4609,16 +4610,13 @@ def api_leads_autopilot_send_ready(authorization: str = Header(default="")):
         subject = (subj or f"MotionMade demo for {name}").strip()
         body_text = (body or "").strip()
         try:
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = f"Abbed <{gmail_user}>"
-            msg["To"] = to_addr
-            msg["Reply-To"] = "abbed@motionmadebne.com.au"
-            msg.attach(MIMEText(body_text, "plain", "utf-8"))
-            with smtplib.SMTP("smtp.gmail.com", 587) as server:
-                server.starttls()
-                server.login(gmail_user, gmail_pass)
-                server.sendmail(gmail_user, to_addr, msg.as_string())
+            resend.Emails.send({
+                "from": "Abbed <onboarding@resend.dev>",
+                "to": to_addr,
+                "subject": subject,
+                "text": body_text,
+                "reply_to": "abbed@motionmadebne.com.au",
+            })
             with get_conn() as conn2:
                 conn2.execute(
                     "UPDATE leads SET status = 'emailed', updated_at = now() WHERE id = %s",

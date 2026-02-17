@@ -13,3 +13,4 @@ numpy>=1.24.0
 bcrypt>=4.0.0
 python-jose[cryptography]>=3.3.0
 sendgrid>=6.11.0
+resend>=2.0.0
