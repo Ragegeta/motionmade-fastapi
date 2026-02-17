@@ -497,6 +497,15 @@ CREATE TABLE IF NOT EXISTS autopilot_log (
 );
 CREATE INDEX IF NOT EXISTS autopilot_log_created_idx ON autopilot_log(created_at DESC);
 
+CREATE TABLE IF NOT EXISTS discovery_searches (
+  id BIGSERIAL PRIMARY KEY,
+  trade_type TEXT NOT NULL,
+  city TEXT NOT NULL,
+  suburb TEXT NOT NULL,
+  searched_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS discovery_searches_trade_city_suburb_idx ON discovery_searches(trade_type, city, suburb);
+
 CREATE TABLE IF NOT EXISTS contact_submissions (
   id SERIAL PRIMARY KEY,
   name TEXT,
@@ -4041,7 +4050,7 @@ def api_autopilot_discovery(
     body: AutopilotDiscoveryBody,
     authorization: str = Header(default=""),
 ):
-    """Run discovery via Google Places API (Text Search + Place Details). Real businesses only. Website verified with HEAD/GET. Admin-only."""
+    """Run discovery via Google Places API (Text Search + Place Details). Real businesses only. Website verified with HEAD/GET. When suburb is All, cycle through unsearched suburbs. Admin-only."""
     _check_admin_auth(authorization)
     try:
         api_key = os.getenv("GOOGLE_PLACES_API_KEY", "").strip()
@@ -4049,10 +4058,26 @@ def api_autopilot_discovery(
             raise HTTPException(status_code=500, detail="GOOGLE_PLACES_API_KEY not set")
 
         trade = (body.trade_type or "").strip() or "Plumber"
-        suburb = (body.suburb or "").strip() or ""
+        suburb_raw = (body.suburb or "").strip()
         city = (body.city or "").strip() or "Brisbane"
-        suburb_area = f" in {suburb}" if suburb else f" in {city} area"
         target = max(10, min(50, body.target_count or 20))
+        suburbs_for_city = CITY_SUBURBS.get(city, BRISBANE_SUBURBS)
+
+        if suburb_raw.lower() == "all" or suburb_raw == "":
+            with get_conn() as conn:
+                searched = set(
+                    row[0] for row in conn.execute(
+                        "SELECT suburb FROM discovery_searches WHERE trade_type = %s AND city = %s",
+                        (trade, city),
+                    ).fetchall()
+                )
+            unsearched = [s for s in suburbs_for_city if s not in searched]
+            import random
+            suburb = random.choice(unsearched) if unsearched else random.choice(suburbs_for_city)
+        else:
+            suburb = suburb_raw
+
+        suburb_area = f" in {suburb}" if suburb else f" in {city} area"
         suburb_or_city = (suburb or "").strip() or city or "Brisbane"
 
         with get_conn() as conn_log:
@@ -4100,18 +4125,26 @@ def api_autopilot_discovery(
             except Exception:
                 return False
 
-        # Text Search: "bond cleaning Brisbane"
+        # Text Search: "bond cleaning Brisbane" (or "bond cleaning Chermside" when suburb cycled)
         query = f"{trade} {suburb or city}"
-        text_search_url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={quote_plus(query)}&key={api_key}"
+        all_results: list = []
+        next_url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={quote_plus(query)}&key={api_key}"
         with httpx.Client(timeout=15.0) as client:
-            ts_resp = client.get(text_search_url)
-        ts_resp.raise_for_status()
-        ts_data = ts_resp.json()
-        if ts_data.get("status") not in ("OK", "ZERO_RESULTS"):
-            _autopilot_log("discovery", f"Google Text Search status: {ts_data.get('status')}", ts_data)
-            raise HTTPException(status_code=502, detail=f"Google Places Text Search returned: {ts_data.get('status')}")
-        results = ts_data.get("results") or []
-        results = results[: max(target, 20)]
+            while next_url:
+                ts_resp = client.get(next_url)
+                ts_resp.raise_for_status()
+                ts_data = ts_resp.json()
+                if ts_data.get("status") not in ("OK", "ZERO_RESULTS"):
+                    _autopilot_log("discovery", f"Google Text Search status: {ts_data.get('status')}", ts_data)
+                    raise HTTPException(status_code=502, detail=f"Google Places Text Search returned: {ts_data.get('status')}")
+                page_results = ts_data.get("results") or []
+                all_results.extend(page_results)
+                next_token = (ts_data.get("next_page_token") or "").strip()
+                if not next_token or len(all_results) >= max(target, 20) * 2:
+                    break
+                time.sleep(2)
+                next_url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?pagetoken={quote_plus(next_token)}&key={api_key}"
+        results = all_results[: max(target, 20)]
 
         # Place Details for each to get website (and name/address/phone)
         places: list[dict] = []
@@ -4176,8 +4209,15 @@ def api_autopilot_discovery(
                 if inserted >= target:
                     break
 
+        with get_conn() as conn_ds:
+            conn_ds.execute(
+                "INSERT INTO discovery_searches (trade_type, city, suburb) VALUES (%s, %s, %s) ON CONFLICT (trade_type, city, suburb) DO NOTHING",
+                (trade, city, suburb),
+            )
+            conn_ds.commit()
+
         _autopilot_log("discovery", f"Inserted {inserted} new leads (skipped bad website: {skipped_bad_website})", {"count": inserted, "skipped_bad_website": skipped_bad_website})
-        return {"ok": True, "inserted": inserted, "total_found": len(places), "skipped_bad_website": skipped_bad_website}
+        return {"ok": True, "inserted": inserted, "total_found": len(places), "skipped_bad_website": skipped_bad_website, "suburb_searched": suburb}
     except HTTPException:
         raise
     except Exception as e:
@@ -4590,6 +4630,11 @@ def _run_send_ready_background(rows: list, resend_key: str, limit: int, today_se
             to_addr = (email or "").strip()
             if not to_addr:
                 continue
+            with get_conn() as conn_check:
+                status_row = conn_check.execute("SELECT status FROM leads WHERE id = %s", (lead_id,)).fetchone()
+                if status_row and (status_row[0] or "").strip() == "emailed":
+                    _autopilot_log("send", f"Skipped (already emailed): {to_addr}", {"lead_id": lead_id})
+                    continue
             subject = (subj or f"MotionMade demo for {name}").strip()
             body_text = (body or "").strip()
             try:

@@ -609,10 +609,16 @@
             await loadLeads();
 
             if (summaryEl) {
-                var totalFound = discoveryResp.total_found != null ? discoveryResp.total_found : (discoveryResp.inserted != null ? discoveryResp.inserted : 0);
-                var withEmail = leadsCache.filter(function(l) { return (l.email || '').trim().length > 0; }).length;
-                var readyToSend = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; }).length;
-                summaryEl.textContent = 'Found ' + totalFound + ' businesses, ' + withEmail + ' had emails, ' + readyToSend + ' emails written and ready to send.';
+                var inserted = discoveryResp.inserted != null ? discoveryResp.inserted : -1;
+                if (inserted === 0) {
+                    var loc = (discoveryResp.suburb_searched || suburb || (document.getElementById('city') && document.getElementById('city').value) || 'Brisbane');
+                    summaryEl.textContent = 'No new businesses found for ' + trade + ' in ' + loc + '. Try a different suburb or trade.';
+                } else {
+                    var totalFound = discoveryResp.total_found != null ? discoveryResp.total_found : (discoveryResp.inserted != null ? discoveryResp.inserted : 0);
+                    var withEmail = leadsCache.filter(function(l) { return (l.email || '').trim().length > 0; }).length;
+                    var readyToSend = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; }).length;
+                    summaryEl.textContent = (inserted > 0 ? inserted + ' new leads found. ' : '') + 'Found ' + totalFound + ' businesses, ' + withEmail + ' had emails, ' + readyToSend + ' emails written and ready to send.';
+                }
                 summaryEl.classList.remove('hidden');
             }
         };
