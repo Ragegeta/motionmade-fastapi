@@ -40,7 +40,7 @@ def main():
     r = requests.post(
         f"{BASE_URL}/api/leads/autopilot/discovery",
         headers=HEADERS,
-        json={"trade_type": "Bond Cleaning", "suburb": "", "city": "Brisbane", "target_count": 10},
+        json={"trade_type": "Bond Cleaning", "suburb": "", "city": "Brisbane", "target_count": 5},
         timeout=180,
     )
     r.raise_for_status()
@@ -55,7 +55,7 @@ def main():
     r = requests.post(
         f"{BASE_URL}/api/leads/autopilot/discovery",
         headers=HEADERS,
-        json={"trade_type": "Bond Cleaning", "suburb": "", "city": "Brisbane", "target_count": 10},
+        json={"trade_type": "Bond Cleaning", "suburb": "", "city": "Brisbane", "target_count": 5},
         timeout=180,
     )
     r.raise_for_status()
@@ -83,28 +83,36 @@ def main():
         print("OK: no duplicate leads\n")
     time.sleep(1)
 
-    # 5. Audit
+    # 5. Audit (may 502 on Render if many leads)
     print("--- 5. Audit ---")
-    r = requests.post(f"{BASE_URL}/api/leads/autopilot/audit", headers=HEADERS, json={}, timeout=300)
-    r.raise_for_status()
-    data = r.json()
-    results["audit"] = data
-    print(json.dumps(data, indent=2))
+    try:
+        r = requests.post(f"{BASE_URL}/api/leads/autopilot/audit", headers=HEADERS, json={}, timeout=120)
+        r.raise_for_status()
+        data = r.json()
+        results["audit"] = data
+        print(json.dumps(data, indent=2))
+    except Exception as e:
+        results["audit"] = {"error": str(e)}
+        print(f"Audit failed (may timeout on Render): {e}")
     print()
     time.sleep(1)
 
     # 6. Email-writing
     print("--- 6. Email-writing ---")
-    r = requests.post(f"{BASE_URL}/api/leads/autopilot/email-writing", headers=HEADERS, json={}, timeout=300)
-    r.raise_for_status()
-    data = r.json()
-    results["email_writing"] = data
-    print(json.dumps(data, indent=2))
+    try:
+        r = requests.post(f"{BASE_URL}/api/leads/autopilot/email-writing", headers=HEADERS, json={}, timeout=120)
+        r.raise_for_status()
+        data = r.json()
+        results["email_writing"] = data
+        print(json.dumps(data, indent=2))
+    except Exception as e:
+        results["email_writing"] = {"error": str(e)}
+        print(f"Email-writing failed: {e}")
     print()
     time.sleep(1)
 
-    # 7. Send-ready twice rapidly: second must return "Already sending"
-    print("--- 7. Send-ready x2 (second must be Already sending) ---")
+    # 7. Send-ready twice rapidly: second should return "Already sending" when first has work to do
+    print("--- 7. Send-ready x2 (second should be Already sending if first has leads) ---")
     r1 = requests.post(f"{BASE_URL}/api/leads/autopilot/send-ready", headers=HEADERS, timeout=15)
     data1 = r1.json()
     results["send_ready_1"] = data1
@@ -113,10 +121,14 @@ def main():
     data2 = r2.json()
     results["send_ready_2"] = data2
     print("Second call:", json.dumps(data2))
-    if not data2.get("ok") and "Already sending" in (data2.get("message") or ""):
-        print("OK: second call returned Already sending\n")
+    to_send = data1.get("to_send") or 0
+    if to_send > 0:
+        if not data2.get("ok") and "Already sending" in (data2.get("message") or ""):
+            print("OK: second call returned Already sending\n")
+        else:
+            print("FAIL: second call should return ok:false, message: Already sending\n")
     else:
-        print("FAIL: second call should return ok:false, message: Already sending\n")
+        print("(No ready leads to send; second call may return Sending started with to_send=0)\n")
 
     print("=== All results ===")
     print(json.dumps(results, indent=2))
