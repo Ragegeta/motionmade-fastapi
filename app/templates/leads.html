@@ -46,6 +46,7 @@
         .daily-counter-wrap .daily-sent { font-weight: 500; }
         .daily-limit-warning { font-size: 13px; color: #b45309; margin-bottom: 8px; }
         .daily-limit-block { font-size: 13px; color: #dc2626; margin-bottom: 8px; font-weight: 500; }
+        .daily-limit-reset-timer { margin-left: 6px; color: #6b7280; font-weight: 400; }
         .btn-limit-gear { background: none; border: none; cursor: pointer; padding: 4px; color: #6b7280; font-size: 16px; }
         .btn-limit-gear:hover { color: #374151; }
         .limit-dropdown { position: absolute; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 6px 0; z-index: 50; min-width: 100px; left: 0; top: 100%; margin-top: 4px; }
@@ -186,7 +187,7 @@
                 </div>
             </div>
             <div id="dailyLimitWarning" class="daily-limit-warning hidden">Almost at daily limit. Slow down to avoid spam flags.</div>
-            <div id="dailyLimitBlock" class="daily-limit-block hidden">Daily limit reached. Send more tomorrow.</div>
+            <div id="dailyLimitBlock" class="daily-limit-block hidden">Daily limit reached. Send more tomorrow. <span id="dailyLimitResetTimer" class="daily-limit-reset-timer"></span></div>
 
             <div id="pipelineStatusBar" class="pipeline-status-bar hidden">
                 <span>Today: <span id="statSent" class="stat-sent">0</span> / <span id="statLimit">20</span> limit</span>
@@ -356,6 +357,49 @@
         let leadsCache = [];
         var dailySentCount = 0;
         var dailyLimit = 20;
+        var dailyLimitResetTimerInterval = null;
+
+        function getMsUntilMidnightBrisbane() {
+            var now = new Date();
+            var brisbaneOffset = 10 * 60 * 60 * 1000;
+            var dayMs = 24 * 60 * 60 * 1000;
+            var brisbaneDayStart = Math.floor((now.getTime() + brisbaneOffset) / dayMs) * dayMs - brisbaneOffset;
+            var nextMidnightMs = brisbaneDayStart + dayMs;
+            return Math.max(0, nextMidnightMs - now.getTime());
+        }
+
+        function formatResetCountdown(ms) {
+            if (ms <= 0) return '(resets now)';
+            var s = Math.floor(ms / 1000);
+            var m = Math.floor(s / 60);
+            s = s % 60;
+            var h = Math.floor(m / 60);
+            m = m % 60;
+            if (h > 0) return 'You can send again in ' + h + 'h ' + m + 'm (midnight Brisbane)';
+            if (m > 0) return 'You can send again in ' + m + 'm ' + s + 's (midnight Brisbane)';
+            return 'You can send again in ' + s + 's (midnight Brisbane)';
+        }
+
+        function updateResetTimer() {
+            var el = document.getElementById('dailyLimitResetTimer');
+            if (!el) return;
+            if (dailySentCount < dailyLimit) {
+                if (dailyLimitResetTimerInterval) { clearInterval(dailyLimitResetTimerInterval); dailyLimitResetTimerInterval = null; }
+                el.textContent = '';
+                return;
+            }
+            var ms = getMsUntilMidnightBrisbane();
+            el.textContent = formatResetCountdown(ms);
+            if (!dailyLimitResetTimerInterval) {
+                dailyLimitResetTimerInterval = setInterval(function() {
+                    updateResetTimer();
+                    if (dailySentCount < dailyLimit && dailyLimitResetTimerInterval) {
+                        clearInterval(dailyLimitResetTimerInterval);
+                        dailyLimitResetTimerInterval = null;
+                    }
+                }, 1000);
+            }
+        }
 
         function getDailyLimit() {
             try {
@@ -398,6 +442,8 @@
                 if (dailySentCount >= dailyLimit) { btn.disabled = true; btn.title = 'Daily limit reached.'; }
                 else { btn.disabled = false; btn.title = ''; }
             });
+            updateSendAllButton();
+            updateResetTimer();
         }
 
         async function loadLeads() {
@@ -450,7 +496,11 @@
                     var toSend = Math.min(nReady, canSend);
                     if (sendBtnLabel) {
                         sendBtnLabel.style.display = '';
-                        sendBtnLabel.textContent = (toSend < nReady && toSend > 0) ? 'Send ' + toSend + ' of ' + nReady + ' (daily limit: ' + dailyLimit + ')' : 'Send ' + nReady + ' Emails Now';
+                        if (dailySentCount >= dailyLimit) {
+                            sendBtnLabel.textContent = nReady + ' ready (daily limit reached)';
+                        } else {
+                            sendBtnLabel.textContent = (toSend < nReady && toSend > 0) ? 'Send ' + toSend + ' of ' + nReady + ' (daily limit: ' + dailyLimit + ')' : 'Send ' + nReady + ' Emails Now';
+                        }
                     }
                 } else sendAllBtn.classList.add('hidden');
             }
