@@ -4,6 +4,7 @@ import json
 import re
 import os
 import smtplib
+import threading
 import time
 import hashlib
 import traceback
@@ -4568,9 +4569,62 @@ def api_autopilot_email_writing(
         raise HTTPException(status_code=500, detail=f"Email writing failed:\n{tb}")
 
 
+_send_ready_lock = threading.Lock()
+_send_ready_in_progress = False
+
+
+def _run_send_ready_background(rows: list, resend_key: str, limit: int, today_sent: int) -> None:
+    global _send_ready_in_progress
+    import resend
+    resend.api_key = resend_key
+    sent = 0
+    failed = 0
+    skipped_limit = 0
+    try:
+        for i, row in enumerate(rows):
+            if today_sent >= limit:
+                skipped_limit += 1
+                _autopilot_log("send", f"Skipped (daily limit): {row[1]}", {"lead_id": row[0]})
+                continue
+            lead_id, name, email, subj, body = row[0], row[1], row[2], row[3], row[4]
+            to_addr = (email or "").strip()
+            if not to_addr:
+                continue
+            subject = (subj or f"MotionMade demo for {name}").strip()
+            body_text = (body or "").strip()
+            try:
+                resend.Emails.send({
+                    "from": "Abbed <abbed@motionmadebne.com.au>",
+                    "to": to_addr,
+                    "subject": subject,
+                    "text": body_text,
+                    "reply_to": "abbed@motionmadebne.com.au",
+                })
+                with get_conn() as conn2:
+                    conn2.execute(
+                        "UPDATE leads SET status = 'emailed', updated_at = now() WHERE id = %s",
+                        (lead_id,),
+                    )
+                    conn2.commit()
+                sent += 1
+                today_sent += 1
+                _autopilot_log("send", f"Sending to {to_addr}... Sent ✓", {"lead_id": lead_id})
+            except Exception as e:
+                failed += 1
+                _autopilot_log("send", f"Sending to {to_addr}... Failed: {e}", {"lead_id": lead_id, "error": str(e)})
+            if i < len(rows) - 1:
+                time.sleep(30)
+    finally:
+        with _send_ready_lock:
+            global _send_ready_in_progress
+            _send_ready_in_progress = False
+        _autopilot_log("send", f"Sending complete: {sent} sent, {failed} failed, {skipped_limit} skipped (daily limit)", {"sent": sent, "failed": failed, "skipped_limit": skipped_limit})
+
+
 @app.post("/api/leads/autopilot/send-ready")
 def api_leads_autopilot_send_ready(authorization: str = Header(default="")):
-    """Send all ready leads via Resend. Respects DAILY_EMAIL_LIMIT. Admin-only."""
+    """Start sending ready leads via Resend in background. Returns immediately. Respects DAILY_EMAIL_LIMIT. Admin-only."""
+    global _send_ready_in_progress
     _check_admin_auth(authorization)
     resend_key = (os.getenv("RESEND_API_KEY") or "").strip()
     if not resend_key:
@@ -4578,60 +4632,36 @@ def api_leads_autopilot_send_ready(authorization: str = Header(default="")):
             status_code=500,
             detail="RESEND_API_KEY must be set",
         )
-    import resend
-    resend.api_key = resend_key
-    limit = _daily_email_limit()
-    with get_conn() as conn:
-        today_count_row = conn.execute(
-            """SELECT COUNT(*) FROM leads
-               WHERE status = 'emailed'
-               AND (updated_at AT TIME ZONE 'Australia/Brisbane')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Australia/Brisbane')::date"""
-        ).fetchone()
-    today_sent = today_count_row[0] if today_count_row else 0
-    with get_conn() as conn:
-        rows = conn.execute(
-            """SELECT id, business_name, email, email_subject, email_body
-               FROM leads
-               WHERE status = 'ready' AND email IS NOT NULL AND email != ''
-               ORDER BY id"""
-        ).fetchall()
-    sent = 0
-    failed = 0
-    skipped_limit = 0
-    for i, row in enumerate(rows):
-        if today_sent >= limit:
-            skipped_limit += 1
-            _autopilot_log("send", f"Skipped (daily limit): {row[1]}", {"lead_id": row[0]})
-            continue
-        lead_id, name, email, subj, body = row[0], row[1], row[2], row[3], row[4]
-        to_addr = (email or "").strip()
-        if not to_addr:
-            continue
-        subject = (subj or f"MotionMade demo for {name}").strip()
-        body_text = (body or "").strip()
-        try:
-            resend.Emails.send({
-                "from": "Abbed <abbed@motionmadebne.com.au>",
-                "to": to_addr,
-                "subject": subject,
-                "text": body_text,
-                "reply_to": "abbed@motionmadebne.com.au",
-            })
-            with get_conn() as conn2:
-                conn2.execute(
-                    "UPDATE leads SET status = 'emailed', updated_at = now() WHERE id = %s",
-                    (lead_id,),
-                )
-                conn2.commit()
-            sent += 1
-            today_sent += 1
-            _autopilot_log("send", f"Sending email to {to_addr}... Sent ✓", {"lead_id": lead_id})
-        except Exception as e:
-            failed += 1
-            _autopilot_log("send", f"Sending email to {to_addr}... Failed: {e}", {"lead_id": lead_id, "error": str(e)})
-        if i < len(rows) - 1:
-            time.sleep(30)
-    return {"ok": True, "sent": sent, "failed": failed, "skipped_limit": skipped_limit}
+    with _send_ready_lock:
+        if _send_ready_in_progress:
+            return {"ok": False, "message": "Already sending"}
+        limit = _daily_email_limit()
+        with get_conn() as conn:
+            today_count_row = conn.execute(
+                """SELECT COUNT(*) FROM leads
+                   WHERE status = 'emailed'
+                   AND (updated_at AT TIME ZONE 'Australia/Brisbane')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Australia/Brisbane')::date"""
+            ).fetchone()
+        today_sent = today_count_row[0] if today_count_row else 0
+        with get_conn() as conn:
+            rows = conn.execute(
+                """SELECT id, business_name, email, email_subject, email_body
+                   FROM leads
+                   WHERE status = 'ready' AND email IS NOT NULL AND email != ''
+                   ORDER BY id"""
+            ).fetchall()
+        to_send = 0
+        for row in rows:
+            if today_sent + to_send >= limit:
+                break
+            if (row[2] or "").strip():
+                to_send += 1
+        if not rows:
+            return {"ok": True, "message": "No ready leads", "to_send": 0}
+        _send_ready_in_progress = True
+    thread = threading.Thread(target=_run_send_ready_background, args=(list(rows), resend_key, limit, today_sent), daemon=True)
+    thread.start()
+    return {"ok": True, "message": "Sending started", "to_send": to_send}
 
 
 @app.post("/api/leads/send-all-ready")

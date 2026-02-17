@@ -629,7 +629,6 @@
             var ready = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; });
             if (!ready.length) return;
             var btn = this;
-            var totalToSend = ready.length;
             var summaryEl = document.getElementById('runSummary');
             var progressEl = document.getElementById('progressMsg');
             var sendBtnLabel = document.getElementById('sendBtnLabel');
@@ -643,45 +642,71 @@
             progressEl.textContent = 'Sending emails...';
             progressEl.classList.add('active');
             if (sendBtnLabel) sendBtnLabel.style.display = 'none';
-            if (sendBtnProgress) { sendBtnProgress.style.display = ''; sendProgressText.textContent = 'Sending... 0 of ' + totalToSend; if (sendProgressBar) sendProgressBar.style.width = '0%'; }
             if (sendBtnDone) sendBtnDone.style.display = 'none';
-            try {
-                var logR = await fetch(API_BASE + '/api/leads/autopilot/log?limit=1', { headers: getHeaders() });
-                if (logR.ok) { var logData = await logR.json(); if ((logData.log || []).length) lastLogId = logData.log[logData.log.length - 1].id || lastLogId; }
-            } catch (z) {}
-            var sentSoFar = 0;
-            sendProgressInterval = setInterval(async function() {
-                try {
-                    var r = await fetch(API_BASE + '/api/leads/autopilot/log?since_id=' + lastLogId + '&limit=200', { headers: getHeaders() });
-                    if (!r.ok) return;
-                    var data = await r.json();
-                    (data.log || []).forEach(function(entry) { if (entry.id > lastLogId) lastLogId = entry.id; if (entry.phase === 'send' && (entry.message || '').indexOf('Sent ✓') !== -1) sentSoFar++; });
-                    if (sendProgressText) sendProgressText.textContent = 'Sending... ' + sentSoFar + ' of ' + totalToSend;
-                    if (sendProgressBar) sendProgressBar.style.width = (totalToSend ? Math.min(100, (sentSoFar / totalToSend) * 100) : 0) + '%';
-                } catch (e) {}
-            }, 2000);
             try {
                 var r = await fetch(API_BASE + '/api/leads/autopilot/send-ready', { method: 'POST', headers: getHeaders() });
                 var data = await r.json().catch(function() { return {}; });
-                if (sendProgressInterval) { clearInterval(sendProgressInterval); sendProgressInterval = null; }
-                if (sendBtnProgress) sendBtnProgress.style.display = 'none';
-                if (sendBtnDone) { sendBtnDone.style.display = ''; sendBtnDone.textContent = '✅ All sent!'; }
-                if (sendProgressBar) sendProgressBar.style.width = '100%';
-                if (summaryEl) {
-                    var sent = data.sent != null ? data.sent : 0;
-                    var failed = data.failed != null ? data.failed : 0;
-                    var skipped = data.skipped_limit != null ? data.skipped_limit : 0;
-                    summaryEl.textContent = 'Sent ' + sent + ' emails. ' + failed + ' failed. ' + skipped + ' skipped (daily limit).';
-                    summaryEl.classList.remove('hidden');
-                }
-                await loadLeads();
-                loadDailySent();
-                setTimeout(function() {
-                    if (sendBtnDone) sendBtnDone.style.display = 'none';
+                if (!data.ok) {
+                    if ((data.message || '').indexOf('Already sending') !== -1) {
+                        if (summaryEl) { summaryEl.textContent = 'Already sending. Check the log below for progress.'; summaryEl.classList.remove('hidden'); }
+                    } else {
+                        if (summaryEl) { summaryEl.textContent = data.message || 'Send failed'; summaryEl.classList.remove('hidden'); }
+                    }
                     if (sendBtnLabel) sendBtnLabel.style.display = '';
                     btn.classList.remove('sending');
                     btn.disabled = false;
-                    updateSendAllButton();
+                    progressEl.textContent = '';
+                    progressEl.classList.remove('active');
+                    return;
+                }
+                var totalToSend = data.to_send != null ? data.to_send : 0;
+                if (totalToSend === 0) {
+                    if (summaryEl) { summaryEl.textContent = data.message || 'No emails to send.'; summaryEl.classList.remove('hidden'); }
+                    if (sendBtnLabel) sendBtnLabel.style.display = '';
+                    btn.classList.remove('sending');
+                    btn.disabled = false;
+                    progressEl.textContent = '';
+                    progressEl.classList.remove('active');
+                    return;
+                }
+                if (sendBtnProgress) { sendBtnProgress.style.display = ''; sendProgressText.textContent = 'Sending... 0 of ' + totalToSend; if (sendProgressBar) sendProgressBar.style.width = '0%'; }
+                var logR = await fetch(API_BASE + '/api/leads/autopilot/log?limit=1', { headers: getHeaders() }).catch(function() { return { ok: false }; });
+                if (logR.ok) { var logData = await logR.json(); if ((logData.log || []).length) lastLogId = logData.log[logData.log.length - 1].id || lastLogId; }
+                var sentSoFar = 0;
+                var completed = false;
+                sendProgressInterval = setInterval(async function() {
+                    if (completed) return;
+                    try {
+                        var r2 = await fetch(API_BASE + '/api/leads/autopilot/log?since_id=' + lastLogId + '&limit=200', { headers: getHeaders() });
+                        if (!r2.ok) return;
+                        var logData2 = await r2.json();
+                        (logData2.log || []).forEach(function(entry) {
+                            if (entry.id > lastLogId) lastLogId = entry.id;
+                            if (entry.phase === 'send') {
+                                if ((entry.message || '').indexOf('Sent ✓') !== -1) sentSoFar++;
+                                if ((entry.message || '').indexOf('Sending complete:') !== -1) completed = true;
+                            }
+                        });
+                        if (sendProgressText) sendProgressText.textContent = 'Sending... ' + sentSoFar + ' of ' + totalToSend;
+                        if (sendProgressBar) sendProgressBar.style.width = (totalToSend ? Math.min(100, (sentSoFar / totalToSend) * 100) : 0) + '%';
+                        if (completed) {
+                            if (sendProgressInterval) { clearInterval(sendProgressInterval); sendProgressInterval = null; }
+                            if (sendBtnProgress) sendBtnProgress.style.display = 'none';
+                            if (sendBtnDone) { sendBtnDone.style.display = ''; sendBtnDone.textContent = '✅ All sent!'; }
+                            if (sendProgressBar) sendProgressBar.style.width = '100%';
+                            var lastMsg = (logData2.log || []).filter(function(e) { return (e.message || '').indexOf('Sending complete:') !== -1; }).pop();
+                            if (summaryEl && lastMsg) { summaryEl.textContent = lastMsg.message || ''; summaryEl.classList.remove('hidden'); }
+                            await loadLeads();
+                            loadDailySent();
+                            setTimeout(function() {
+                                if (sendBtnDone) sendBtnDone.style.display = 'none';
+                                if (sendBtnLabel) sendBtnLabel.style.display = '';
+                                btn.classList.remove('sending');
+                                btn.disabled = false;
+                                updateSendAllButton();
+                            }, 2000);
+                        }
+                    } catch (e) {}
                 }, 2000);
             } catch (e) {
                 if (sendProgressInterval) { clearInterval(sendProgressInterval); sendProgressInterval = null; }
