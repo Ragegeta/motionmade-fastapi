@@ -4423,8 +4423,11 @@ def api_autopilot_email_writing(
 
 
 @app.post("/api/leads/autopilot/rewrite-ready-emails")
-def api_leads_autopilot_rewrite_ready_emails(authorization: str = Header(default="")):
-    """One-time: rewrite all leads with status 'ready' using the current email prompt. Admin-only."""
+def api_leads_autopilot_rewrite_ready_emails(
+    limit: int = 5,
+    authorization: str = Header(default=""),
+):
+    """Rewrite leads with status 'ready' using the current email prompt. Default batch size 5 to avoid timeout; call repeatedly until rewritten is 0. Admin-only."""
     _check_admin_auth(authorization)
     try:
         api_key = os.getenv("OPENAI_API_KEY", "").strip()
@@ -4437,6 +4440,9 @@ def api_leads_autopilot_rewrite_ready_emails(authorization: str = Header(default
                    FROM leads WHERE status = 'ready' AND email IS NOT NULL AND email != ''
                    ORDER BY id"""
             ).fetchall()
+        batch_size = max(1, min(limit, 50))
+        rows = rows[:batch_size]
+        total_ready = len(rows)
 
         import openai
         client = openai.OpenAI(api_key=api_key)
@@ -4482,7 +4488,7 @@ def api_leads_autopilot_rewrite_ready_emails(authorization: str = Header(default
                 _autopilot_log("email", f"Rewrite failed {name}: {str(e)}", {"lead_id": lead_id, "error": str(e)})
 
         _autopilot_log("email", f"Rewrote {rewritten} ready emails", {"count": rewritten})
-        return {"ok": True, "rewritten": rewritten}
+        return {"ok": True, "rewritten": rewritten, "total_ready": total_ready}
     except HTTPException:
         raise
     except Exception as e:
