@@ -507,6 +507,18 @@ CREATE TABLE IF NOT EXISTS contact_submissions (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS contact_submissions_created_idx ON contact_submissions(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS enquiries (
+  id SERIAL PRIMARY KEY,
+  name TEXT,
+  business_name TEXT,
+  email TEXT,
+  phone TEXT,
+  business_type TEXT,
+  message TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS enquiries_created_idx ON enquiries(created_at DESC);
 """
 
 
@@ -1320,6 +1332,91 @@ async def contact_form(request: Request):
             conn.commit()
     except Exception as e:
         print(f"[CONTACT] DB error: {e}")
+
+    return {"ok": True}
+
+
+class EnquiryBody(BaseModel):
+    name: Optional[str] = None
+    business_name: Optional[str] = None
+    business: Optional[str] = None  # alias from form
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    business_type: Optional[str] = None
+    type: Optional[str] = None  # alias from form
+    message: Optional[str] = None
+
+
+def _send_enquiry_notification_email(
+    to_email: str,
+    business_name: str,
+    name: str,
+    email: str,
+    phone: str,
+    business_type: str,
+    message: str,
+) -> None:
+    """Send notification email to GMAIL_ADDRESS via Gmail SMTP. Raises on failure."""
+    gmail_user = (os.getenv("GMAIL_ADDRESS") or "").strip()
+    gmail_pass = (os.getenv("GMAIL_APP_PASSWORD") or "").strip()
+    if not gmail_user or not gmail_pass:
+        raise ValueError("GMAIL_ADDRESS and GMAIL_APP_PASSWORD must be set")
+    subject = f"New enquiry from {business_name or 'Website'}"
+    body = f"""New contact form submission from motionmadebne.com.au
+
+Name: {name or '-'}
+Business name: {business_name or '-'}
+Email: {email or '-'}
+Phone: {phone or '-'}
+Business type: {business_type or '-'}
+
+Message:
+{message or '-'}
+"""
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"MotionMade <{gmail_user}>"
+    msg["To"] = to_email
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+        server.starttls()
+        server.login(gmail_user, gmail_pass)
+        server.sendmail(gmail_user, to_email, msg.as_string())
+
+
+@app.post("/api/enquiry")
+def api_enquiry(body: EnquiryBody):
+    """Public endpoint: store contact form submission in enquiries table and email GMAIL_ADDRESS. No auth."""
+    name = (body.name or "").strip() or None
+    business_name = (body.business_name or body.business or "").strip() or None
+    email = (body.email or "").strip() or None
+    phone = (body.phone or "").strip() or None
+    business_type = (body.business_type or body.type or "").strip() or None
+    message = (body.message or "").strip() or None
+
+    with get_conn() as conn:
+        conn.execute(
+            """INSERT INTO enquiries (name, business_name, email, phone, business_type, message)
+               VALUES (%s, %s, %s, %s, %s, %s)""",
+            (name, business_name, email, phone, business_type, message),
+        )
+        conn.commit()
+
+    to_email = (os.getenv("GMAIL_ADDRESS") or "").strip()
+    if to_email:
+        try:
+            _send_enquiry_notification_email(
+                to_email=to_email,
+                business_name=business_name or "Website",
+                name=name or "",
+                email=email or "",
+                phone=phone or "",
+                business_type=business_type or "",
+                message=message or "",
+            )
+        except Exception as e:
+            print(f"[ENQUIRY] Email failed: {e}")
+            # Submission already stored; do not fail the request
 
     return {"ok": True}
 
