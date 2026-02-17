@@ -3,9 +3,12 @@ from __future__ import annotations
 import json
 import re
 import os
+import smtplib
 import time
 import hashlib
 import traceback
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 from typing import List, Optional, Set
 from datetime import datetime, timedelta
@@ -3749,17 +3752,27 @@ def api_leads_suburbs(
     return {"suburbs": CITY_SUBURBS.get(key, BRISBANE_SUBURBS)}
 
 
+def _daily_email_limit() -> int:
+    """Daily email limit from env (default 20)."""
+    try:
+        return max(1, int(os.getenv("DAILY_EMAIL_LIMIT", "20").strip()))
+    except ValueError:
+        return 20
+
+
 @app.get("/api/leads/daily-sent-count")
 def api_leads_daily_sent_count(authorization: str = Header(default="")):
-    """Count leads marked as emailed today (AEST). Admin-only."""
+    """Count leads marked as emailed today (AEST) and daily limit. Admin-only."""
     _check_admin_auth(authorization)
+    limit = _daily_email_limit()
     with get_conn() as conn:
         row = conn.execute(
             """SELECT COUNT(*) FROM leads
                WHERE status = 'emailed'
                AND (updated_at AT TIME ZONE 'Australia/Brisbane')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Australia/Brisbane')::date"""
         ).fetchone()
-    return {"count": row[0] if row else 0}
+    count = row[0] if row else 0
+    return {"count": count, "limit": limit}
 
 
 @app.get("/api/leads/autopilot/log")
@@ -4377,6 +4390,74 @@ Return ONLY the email body (plain text). Then on the next line write "---SUBJECT
         print(f"[EMAIL-WRITING] {tb}")
         _autopilot_log("email", str(e), {"traceback": tb})
         raise HTTPException(status_code=500, detail=f"Email writing failed:\n{tb}")
+
+
+@app.post("/api/leads/autopilot/send-ready")
+def api_leads_autopilot_send_ready(authorization: str = Header(default="")):
+    """Send all ready leads via Gmail SMTP. Respects DAILY_EMAIL_LIMIT. Admin-only."""
+    _check_admin_auth(authorization)
+    gmail_user = (os.getenv("GMAIL_ADDRESS") or "").strip()
+    gmail_pass = (os.getenv("GMAIL_APP_PASSWORD") or "").strip()
+    if not gmail_user or not gmail_pass:
+        raise HTTPException(
+            status_code=500,
+            detail="GMAIL_ADDRESS and GMAIL_APP_PASSWORD must be set",
+        )
+    limit = _daily_email_limit()
+    with get_conn() as conn:
+        today_count_row = conn.execute(
+            """SELECT COUNT(*) FROM leads
+               WHERE status = 'emailed'
+               AND (updated_at AT TIME ZONE 'Australia/Brisbane')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Australia/Brisbane')::date"""
+        ).fetchone()
+    today_sent = today_count_row[0] if today_count_row else 0
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT id, business_name, email, email_subject, email_body
+               FROM leads
+               WHERE status = 'ready' AND email IS NOT NULL AND email != ''
+               ORDER BY id"""
+        ).fetchall()
+    sent = 0
+    failed = 0
+    skipped_limit = 0
+    for i, row in enumerate(rows):
+        if today_sent >= limit:
+            skipped_limit += 1
+            _autopilot_log("send", f"Skipped (daily limit): {row[1]}", {"lead_id": row[0]})
+            continue
+        lead_id, name, email, subj, body = row[0], row[1], row[2], row[3], row[4]
+        to_addr = (email or "").strip()
+        if not to_addr:
+            continue
+        subject = (subj or f"MotionMade demo for {name}").strip()
+        body_text = (body or "").strip()
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"Abbed <{gmail_user}>"
+            msg["To"] = to_addr
+            msg["Reply-To"] = "abbed@motionmadebne.com.au"
+            msg.attach(MIMEText(body_text, "plain", "utf-8"))
+            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                server.starttls()
+                server.login(gmail_user, gmail_pass)
+                server.sendmail(gmail_user, to_addr, msg.as_string())
+            with get_conn() as conn2:
+                conn2.execute(
+                    "UPDATE leads SET status = 'emailed', updated_at = now() WHERE id = %s",
+                    (lead_id,),
+                )
+                conn2.commit()
+            sent += 1
+            today_sent += 1
+            _autopilot_log("send", f"Sending email to {to_addr}... Sent ✓", {"lead_id": lead_id})
+        except Exception as e:
+            failed += 1
+            _autopilot_log("send", f"Sending email to {to_addr}... Failed: {e}", {"lead_id": lead_id, "error": str(e)})
+        if i < len(rows) - 1:
+            time.sleep(30)
+    return {"ok": True, "sent": sent, "failed": failed, "skipped_limit": skipped_limit}
 
 
 @app.post("/api/leads/send-all-ready")

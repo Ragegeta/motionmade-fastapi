@@ -184,7 +184,8 @@
             <div class="pipeline-top">
                 <h2>Pipeline</h2>
                 <div class="send-all-wrap">
-                    <button type="button" id="prepareSendGmail" class="btn-send-all hidden" style="background:#ea4335;">Download &amp; Send via Gmail (<span id="readyCount">0</span> ready)</button>
+                    <button type="button" id="sendAllNowBtn" class="btn-send-all hidden">Send All Emails Now (<span id="readyCount">0</span> ready)</button>
+                    <button type="button" id="prepareSendGmail" class="btn-send-all hidden" style="background:#6b7280;">Download &amp; Send via Gmail (backup)</button>
                     <button type="button" id="refreshLeads" class="btn-refresh">Refresh</button>
                 </div>
             </div>
@@ -327,17 +328,23 @@
                 if (!r.ok) return;
                 var data = await r.json();
                 dailySentCount = data.count != null ? data.count : 0;
+                if (data.limit != null) dailyLimit = data.limit;
             } catch (e) { return; }
             var textEl = document.getElementById('dailySentText');
             var warnEl = document.getElementById('dailyLimitWarning');
             var blockEl = document.getElementById('dailyLimitBlock');
             var prepareBtn = document.getElementById('prepareSendGmail');
+            var sendAllBtn = document.getElementById('sendAllNowBtn');
             if (textEl) textEl.textContent = 'Emails sent today: ' + dailySentCount + '/' + dailyLimit;
-            if (warnEl) { if (dailySentCount >= 15) warnEl.classList.remove('hidden'); else warnEl.classList.add('hidden'); }
+            if (warnEl) { if (dailySentCount >= Math.max(1, dailyLimit - 5)) warnEl.classList.remove('hidden'); else warnEl.classList.add('hidden'); }
             if (blockEl) { if (dailySentCount >= dailyLimit) blockEl.classList.remove('hidden'); else blockEl.classList.add('hidden'); }
             if (prepareBtn) {
                 if (dailySentCount >= dailyLimit) { prepareBtn.disabled = true; prepareBtn.title = 'Daily limit reached. Send more tomorrow.'; }
-                else { prepareBtn.disabled = false; prepareBtn.title = ''; }
+                else { prepareBtn.disabled = false; prepareBtn.title = 'Backup: download CSV and use Google Sheets + Apps Script'; }
+            }
+            if (sendAllBtn) {
+                if (dailySentCount >= dailyLimit) { sendAllBtn.disabled = true; sendAllBtn.title = 'Daily limit reached. Send more tomorrow.'; }
+                else { sendAllBtn.disabled = false; sendAllBtn.title = ''; }
             }
             document.querySelectorAll('.btn-open-gmail').forEach(function(btn) {
                 if (dailySentCount >= dailyLimit) { btn.disabled = true; btn.title = 'Daily limit reached. Send more tomorrow.'; }
@@ -372,10 +379,15 @@
             const n = ready.length;
             const countEl = document.getElementById('readyCount');
             if (countEl) countEl.textContent = n;
-            const b = document.getElementById('prepareSendGmail');
-            if (b) {
-                if (n > 0) b.classList.remove('hidden');
-                else b.classList.add('hidden');
+            const sendAllBtn = document.getElementById('sendAllNowBtn');
+            const prepareBtn = document.getElementById('prepareSendGmail');
+            if (sendAllBtn) {
+                if (n > 0) sendAllBtn.classList.remove('hidden');
+                else sendAllBtn.classList.add('hidden');
+            }
+            if (prepareBtn) {
+                if (n > 0) prepareBtn.classList.remove('hidden');
+                else prepareBtn.classList.add('hidden');
             }
         }
 
@@ -573,6 +585,38 @@
             if (/[",\r\n]/.test(t)) return '"' + t + '"';
             return t;
         }
+        document.getElementById('sendAllNowBtn').onclick = async function() {
+            if (dailySentCount >= dailyLimit) { alert('Daily limit reached. Send more tomorrow.'); return; }
+            var ready = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; });
+            if (!ready.length) return;
+            var btn = this;
+            var summaryEl = document.getElementById('runSummary');
+            var progressEl = document.getElementById('progressMsg');
+            btn.disabled = true;
+            if (summaryEl) summaryEl.classList.add('hidden');
+            progressEl.textContent = 'Sending emails...';
+            progressEl.classList.add('active');
+            lastLogId = 0;
+            try {
+                var r = await fetch(API_BASE + '/api/leads/autopilot/send-ready', { method: 'POST', headers: getHeaders() });
+                var data = await r.json().catch(function() { return {}; });
+                if (summaryEl) {
+                    var sent = data.sent != null ? data.sent : 0;
+                    var failed = data.failed != null ? data.failed : 0;
+                    var skipped = data.skipped_limit != null ? data.skipped_limit : 0;
+                    summaryEl.textContent = 'Sent ' + sent + ' emails. ' + failed + ' failed. ' + skipped + ' skipped (daily limit).';
+                    summaryEl.classList.remove('hidden');
+                }
+            } catch (e) {
+                if (summaryEl) { summaryEl.textContent = 'Send failed: ' + (e.message || e); summaryEl.classList.remove('hidden'); }
+            }
+            progressEl.textContent = '';
+            progressEl.classList.remove('active');
+            btn.disabled = false;
+            await loadLeads();
+            loadDailySent();
+        };
+
         document.getElementById('prepareSendGmail').onclick = function() {
             if (dailySentCount >= dailyLimit) { alert('Daily limit reached. Send more tomorrow.'); return; }
             var ready = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; });
