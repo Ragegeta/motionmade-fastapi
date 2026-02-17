@@ -4287,6 +4287,68 @@ def api_autopilot_preview(
         raise HTTPException(status_code=500, detail=f"Preview failed:\n{tb}")
 
 
+def _build_leads_email_prompt(
+    name: str,
+    suburb: str,
+    email: str,
+    audit_summary: str,
+    trade_type: str,
+    preview_url: Optional[str],
+    used_subjects: list,
+) -> str:
+    """Build the email-writing prompt for one lead. Shared by email-writing and rewrite-ready."""
+    trade_lower = (trade_type or "").lower()
+    if "bond" in trade_lower:
+        trade_angle = "Bond cleaning: customers google at 9pm when moving out; if the site can't answer instantly they call someone else. Time sensitive, instant answers mean more bookings."
+    elif "house" in trade_lower or "home" in trade_lower or "domestic" in trade_lower:
+        trade_angle = "House cleaning: most people compare 3 or 4 cleaners; the one that answers fastest wins. Repeat business, one lost lead is months of lost income."
+    else:
+        trade_angle = "Plumbing: someone with a burst pipe at 11pm won't wait for a call back. If the website says you service their area and gives a rough price they'll book on the spot."
+    suburb_br = suburb or "Brisbane"
+    used_instruction = ""
+    if used_subjects:
+        used_instruction = '\n\nSubject lines already used in this batch (use a DIFFERENT pattern, do not repeat):\n' + "\n".join(f"- {s}" for s in used_subjects[-15:])
+    prompt = f"""Write a cold email to this business lead. Match this exact tone and structure.
+
+Business: {name}. Suburb: {suburb_br}. Their email: {email}.
+Trade: {trade_type or 'plumber'}. Trade context: {trade_angle}
+"""
+    if audit_summary:
+        prompt += f"What we know about their website: {audit_summary}\n"
+    if preview_url:
+        prompt += f"Optional: they have a preview link (no signup): {preview_url}\n"
+    prompt += """
+SUBJECT LINE: Direct, mentions AI, specific to their business. Examples (vary the pattern):
+- "AI front desk for [Business Name]"
+- "stop losing after hours leads [Business Name]"
+- "[Business Name] is missing jobs after hours"
+- "built something for Brisbane [trade] businesses"
+
+BODY STRUCTURE (every email MUST follow this pattern):
+
+1. Opening: "Hey," or "Hey mate," (never "Hey there," or "Hi [name],")
+2. First line: Reference their specific website or business. "Checked out your site earlier." or "Had a look at [Business Name]'s site."
+3. The problem: One or two sentences about what's missing. Be specific to their trade.
+4. What I built: "I built something called MotionMade that fixes this." Always say "I built" — own it, don't distance from it. Explain it sits on their website, answers customer questions 24/7, based on their actual business info (pricing, services, areas). Say "Not generic chatbot stuff, it actually knows your business."
+5. Free trial: "I'm offering a free trial for Brisbane [trade] businesses at the moment so you can see if it works for you with zero risk." Always mention free trial. Always say "at the moment" to create soft urgency.
+6. Link: "Have a look here: https://motionmadebne.com.au"
+7. CTA: "Happy to chat if you've got any questions. Flick me a reply or give me a call on 0437 037 584."
+8. Sign off: "Abbed" (nothing else, no title, no company)
+
+STRICT RULES:
+- No hyphens or em dashes anywhere. Use full stops or commas only.
+- No corporate words: leverage, streamline, solution, empower, optimize, innovative
+- No "there's this AI I know" or similar distancing language. Always "I built"
+- No "Cheers" sign off. Just "Abbed"
+- Every email must be different in the specific problem they reference, but follow the same structure
+- Phone number is always 0437 037 584
+- Website is always https://motionmadebne.com.au
+
+Return ONLY the email body (plain text). Then on the next line write "---SUBJECT---" and then the subject line.
+""" + used_instruction
+    return prompt
+
+
 @app.post("/api/leads/autopilot/email-writing")
 def api_autopilot_email_writing(
     body: Optional[dict] = None,
@@ -4322,45 +4384,7 @@ def api_autopilot_email_writing(
                 audit_summary = str(audit_details) if audit_details else ""
             _autopilot_log("email", f"Writing email for {name}", {"lead_id": lead_id})
 
-            used_subjects_instruction = ""
-            if used_subjects:
-                used_subjects_instruction = '\n\nSubject lines already used in this batch (use a DIFFERENT pattern and phrasing, do not repeat):\n' + "\n".join(f"- {s}" for s in used_subjects[-15:])
-
-            trade_lower = (trade_type or "").lower()
-            if "bond" in trade_lower:
-                trade_angle = """This lead is a BOND CLEANING business. Their customers ask: how much for a 3 bedroom, do you do carpets, bond guarantee, what's included. Angle: customers google these at 9pm when moving out; if the site can't answer instantly they call someone else. Bond cleaning is time sensitive so instant answers mean more bookings. Mention MotionMade briefly (AI on their site that answers these 24/7, free trial). No generic chat widget pitch."""
-            elif "house" in trade_lower or "home" in trade_lower or "domestic" in trade_lower:
-                trade_angle = """This lead is a HOUSE CLEANING business. Customers want pricing, frequency, products, insurance. Angle: most people compare 3 or 4 cleaners before booking; the one that answers fastest wins. House cleaning is repeat business so one lost lead is months of lost income. Mention MotionMade briefly. No generic pitch."""
-            else:
-                trade_angle = """This lead is a PLUMBER. Customers ask about emergencies, "do you service my area", pricing, availability. Angle: someone with a burst pipe at 11pm won't wait for a call back tomorrow; if the website says you service their area and gives a rough price they'll book on the spot. Plumbers lose emergency jobs to whoever answers first. Mention MotionMade briefly. No generic pitch."""
-            prompt = f"""Write a short cold email to this business lead.
-
-Business: {name}. Suburb: {suburb or 'Brisbane'}. Their email: {email}.
-
-{trade_angle}
-"""
-            if audit_summary:
-                prompt += f"\nWhat we know about their website (reference something specific if you can): {audit_summary}\n"
-            abbed_phone = (os.getenv("ABBED_PHONE") or "").strip()
-            if abbed_phone:
-                prompt += f"\nUse this phone number in the CTA: {abbed_phone}. E.g. 'give me a call on {abbed_phone}' or 'give me a bell on {abbed_phone}'.\n"
-            else:
-                prompt += "\nNo phone number provided. In the CTA just say something like 'reply to this email or shoot me a message' (no phone).\n"
-            prompt += """
-STRICT RULES:
-1. NEVER use hyphens or em dashes as punctuation. No "—" and no "-" between phrases. Use full stops or commas only. This is a dead giveaway of AI text.
-2. Subject line: be direct about the product, not clickbait. The subject must clearly communicate that this is an AI tool that helps them convert more leads. Examples: "AI that books jobs for your cleaning business while you sleep" / "an AI front desk for [Business Name]" / "AI that answers your customers' questions 24/7" / "stop losing after hours leads, [Business Name]" / "AI tool built for Brisbane bond cleaners". Still vary them, but be upfront that it's AI and that it helps convert leads. No tricks or misleading subjects.
-3. Body: sound like a text message from a mate, not a sales pitch. Short sentences. No fancy words. No marketing language. No "leverage", "streamline", "solution", "empower" or any corporate buzzwords. Write like a 27 year old Brisbane bloke would actually write an email. Make it clear this isn't a generic chatbot: mention that the AI answers based on the business's own FAQs and info (e.g. "it learns your pricing, your services, your areas, and answers customers based on your actual business info" or "it answers based on your own FAQs, not generic responses"). This is a key differentiator.
-4. Always include the link https://motionmadebne.com.au in the email body. Add a line near the end like "Check it out here: https://motionmadebne.com.au" or weave it naturally into the CTA. Use the full URL so it's clickable.
-5. Every email must end with a friendly, approachable call to action before the sign-off. Something like "If you want to see how it works or have any questions, just reply to this email or give me a call on [phone]." Make it feel like a real person offering help, not a sales pitch. Never say "schedule a call" or "book a demo". Keep it casual: "give me a bell", "flick me a reply", "reply to this email or shoot me a message" are good. If a phone number is provided below, use it in the CTA; otherwise just say "reply to this email or shoot me a message".
-6. Every email must be different. Vary the opening, the angle, the structure. Some start with a question, some with an observation, some are only 3 sentences. Never repeat the same pattern twice in this batch.
-7. Sign off as just "Abbed". No title, no company name, no footer.
-
-Return ONLY the email body (plain text). Then on the next line write "---SUBJECT---" and then the subject line.
-"""
-            if preview_url:
-                prompt += f"\nOptional: they have a preview link you can mention (no signup): {preview_url}"
-            prompt += used_subjects_instruction
+            prompt = _build_leads_email_prompt(name, suburb or "", email or "", audit_summary, trade_type, preview_url, used_subjects)
 
             try:
                 resp = _llm_retry("email", lambda: client.chat.completions.create(
@@ -4374,7 +4398,7 @@ Return ONLY the email body (plain text). Then on the next line write "---SUBJECT
                     body_text = body_text.strip()
                     subject = subject.strip()
                 else:
-                    subject = f"Had an idea for {name}"
+                    subject = f"AI front desk for {name}"
                     body_text = text_out
                 used_subjects.append(subject)
                 with get_conn() as conn2:
@@ -4396,6 +4420,76 @@ Return ONLY the email body (plain text). Then on the next line write "---SUBJECT
         print(f"[EMAIL-WRITING] {tb}")
         _autopilot_log("email", str(e), {"traceback": tb})
         raise HTTPException(status_code=500, detail=f"Email writing failed:\n{tb}")
+
+
+@app.post("/api/leads/autopilot/rewrite-ready-emails")
+def api_leads_autopilot_rewrite_ready_emails(authorization: str = Header(default="")):
+    """One-time: rewrite all leads with status 'ready' using the current email prompt. Admin-only."""
+    _check_admin_auth(authorization)
+    try:
+        api_key = os.getenv("OPENAI_API_KEY", "").strip()
+        if not api_key:
+            raise HTTPException(status_code=500, detail="OPENAI_API_KEY not set")
+
+        with get_conn() as conn:
+            rows = conn.execute(
+                """SELECT id, business_name, email, preview_url, suburb, audit_details, trade_type
+                   FROM leads WHERE status = 'ready' AND email IS NOT NULL AND email != ''
+                   ORDER BY id"""
+            ).fetchall()
+
+        import openai
+        client = openai.OpenAI(api_key=api_key)
+        rewritten = 0
+        used_subjects: list[str] = []
+        for i, row in enumerate(rows):
+            if i > 0:
+                time.sleep(5)
+            lead_id, name, email, preview_url, suburb = row[0], row[1], row[2], row[3], row[4]
+            audit_details = row[5] if len(row) > 5 else None
+            trade_type = (row[6] if len(row) > 6 else None) or ""
+            if isinstance(audit_details, dict):
+                audit_summary = ", ".join(f"{k}: {v}" for k, v in audit_details.items() if v is not None and k != "error")
+            else:
+                audit_summary = str(audit_details) if audit_details else ""
+            _autopilot_log("email", f"Rewriting email for {name}", {"lead_id": lead_id})
+
+            prompt = _build_leads_email_prompt(name, suburb or "", email or "", audit_summary, trade_type, preview_url, used_subjects)
+
+            try:
+                resp = _llm_retry("email", lambda: client.chat.completions.create(
+                    model="gpt-4o",
+                    max_tokens=1024,
+                    messages=[{"role": "user", "content": prompt}],
+                ))
+                text_out = (resp.choices[0].message.content or "").strip()
+                if "---SUBJECT---" in text_out:
+                    body_text, subject = text_out.split("---SUBJECT---", 1)
+                    body_text = body_text.strip()
+                    subject = subject.strip()
+                else:
+                    subject = f"AI front desk for {name}"
+                    body_text = text_out
+                used_subjects.append(subject)
+                with get_conn() as conn2:
+                    conn2.execute(
+                        "UPDATE leads SET email_subject = %s, email_body = %s, updated_at = now() WHERE id = %s",
+                        (subject, body_text, lead_id),
+                    )
+                    conn2.commit()
+                rewritten += 1
+            except Exception as e:
+                _autopilot_log("email", f"Rewrite failed {name}: {str(e)}", {"lead_id": lead_id, "error": str(e)})
+
+        _autopilot_log("email", f"Rewrote {rewritten} ready emails", {"count": rewritten})
+        return {"ok": True, "rewritten": rewritten}
+    except HTTPException:
+        raise
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(f"[REWRITE-READY] {tb}")
+        _autopilot_log("email", str(e), {"traceback": tb})
+        raise HTTPException(status_code=500, detail=f"Rewrite failed:\n{tb}")
 
 
 @app.post("/api/leads/autopilot/send-ready")
