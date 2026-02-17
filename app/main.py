@@ -4040,58 +4040,26 @@ def api_autopilot_discovery(
     body: AutopilotDiscoveryBody,
     authorization: str = Header(default=""),
 ):
-    """Run discovery: use OpenAI GPT-4o to generate realistic local business leads for the trade/location. Admin-only."""
+    """Run discovery via Google Places API (Text Search + Place Details). Real businesses only. Website verified with HEAD/GET. Admin-only."""
     _check_admin_auth(authorization)
     try:
-        api_key = os.getenv("OPENAI_API_KEY", "").strip()
+        api_key = os.getenv("GOOGLE_PLACES_API_KEY", "").strip()
         if not api_key:
-            raise HTTPException(status_code=500, detail="OPENAI_API_KEY not set")
+            raise HTTPException(status_code=500, detail="GOOGLE_PLACES_API_KEY not set")
 
         trade = (body.trade_type or "").strip() or "Plumber"
         suburb = (body.suburb or "").strip() or ""
         city = (body.city or "").strip() or "Brisbane"
         suburb_area = f" in {suburb}" if suburb else f" in {city} area"
         target = max(10, min(50, body.target_count or 20))
+        suburb_or_city = (suburb or "").strip() or city or "Brisbane"
 
         with get_conn() as conn_log:
             conn_log.execute("DELETE FROM autopilot_log")
             conn_log.commit()
-        _autopilot_log("discovery", f"Starting discovery: {trade}{suburb_area}, target {target}")
+        _autopilot_log("discovery", f"Starting discovery (Google Places): {trade}{suburb_area}, target {target}")
 
-        import openai
-        client = openai.OpenAI(api_key=api_key)
-
-        location = f"{suburb}, {city}" if suburb else city
-        prompt = f"""Based on your knowledge of local businesses in {location}, Australia, generate a list of REAL local businesses for the trade: {trade}.
-
-CRITICAL: Only include businesses you can verify actually exist. Do NOT invent or guess business names, websites, or emails. Fabricated entries (e.g. made-up names like "Johnny Bond Cleaning" or generic emails like abc@gmail.com) will be rejected.
-
-For each business provide:
-- business_name (string): real business name as known
-- website (URL only if you know a real, working URL for this business; otherwise null)
-- email (only if you know a real contact email, e.g. info@realdomain.com.au; do NOT use @gmail.com unless it is a known real address; otherwise null)
-
-Return a JSON array of objects with keys: business_name, website, email. Include only businesses you are confident are real. No other text, no markdown, only the JSON array."""
-
-        resp = _llm_retry("discovery", lambda: client.chat.completions.create(
-            model="gpt-4o",
-            max_tokens=4096,
-            messages=[{"role": "user", "content": prompt}],
-        ))
-        text = (resp.choices[0].message.content or "").strip()
-        if text.startswith("```"):
-            text = re.sub(r"^```(?:json)?\s*", "", text)
-            text = re.sub(r"\s*```$", "", text)
-        try:
-            businesses = json.loads(text)
-        except json.JSONDecodeError:
-            _autopilot_log("discovery", "Could not parse discovery response as JSON", {"raw": text[:500]})
-            raise HTTPException(status_code=500, detail="Discovery returned invalid JSON")
-
-        if not isinstance(businesses, list):
-            businesses = []
-
-        from urllib.parse import urlparse
+        from urllib.parse import urlparse, quote_plus
         import httpx
 
         def _normalise_domain(url: Optional[str]) -> Optional[str]:
@@ -4107,25 +4075,6 @@ Return a JSON array of objects with keys: business_name, website, email. Include
                 return netloc.strip("/") or None
             except Exception:
                 return None
-
-        def _is_fake_email(addr: Optional[str]) -> bool:
-            """Reject obviously fabricated emails: abc@gmail.com, single-word@gmail.com, businessname@gmail.com."""
-            if not addr or not addr.strip():
-                return False
-            email = addr.strip().lower()
-            if "@" not in email:
-                return True
-            local, domain = email.split("@", 1)
-            if domain != "gmail.com":
-                return False
-            # Block exact known fakes
-            if local in ("abc", "test", "contact", "info", "hello", "admin", "support"):
-                return True
-            # Block single-word @gmail.com that looks like a made-up business name (no dots/numbers, long)
-            if re.match(r"^[a-z]+$", local):
-                if len(local) >= 10:
-                    return True
-            return False
 
         def _website_reachable(url: Optional[str]) -> bool:
             """Try HEAD first; if that fails or non-2xx/3xx, try GET with browser User-Agent. Accept 2xx or 3xx. Timeout 15s."""
@@ -4150,8 +4099,46 @@ Return a JSON array of objects with keys: business_name, website, email. Include
             except Exception:
                 return False
 
+        # Text Search: "bond cleaning Brisbane"
+        query = f"{trade} {suburb or city}"
+        text_search_url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={quote_plus(query)}&key={api_key}"
+        with httpx.Client(timeout=15.0) as client:
+            ts_resp = client.get(text_search_url)
+        ts_resp.raise_for_status()
+        ts_data = ts_resp.json()
+        if ts_data.get("status") not in ("OK", "ZERO_RESULTS"):
+            _autopilot_log("discovery", f"Google Text Search status: {ts_data.get('status')}", ts_data)
+            raise HTTPException(status_code=502, detail=f"Google Places Text Search returned: {ts_data.get('status')}")
+        results = ts_data.get("results") or []
+        results = results[: max(target, 20)]
+
+        # Place Details for each to get website (and name/address/phone)
+        places: list[dict] = []
+        with httpx.Client(timeout=15.0) as client:
+            for r in results:
+                place_id = (r.get("place_id") or "").strip()
+                if not place_id:
+                    continue
+                details_url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={quote_plus(place_id)}&fields=name,website,formatted_phone_number,formatted_address&key={api_key}"
+                try:
+                    d_resp = client.get(details_url)
+                    d_resp.raise_for_status()
+                    d_data = d_resp.json()
+                    if d_data.get("status") != "OK":
+                        continue
+                    detail = d_data.get("result") or {}
+                    website = (detail.get("website") or "").strip() or None
+                    if not website:
+                        continue
+                    name = (detail.get("name") or r.get("name") or "").strip()
+                    if not name:
+                        continue
+                    places.append({"business_name": name, "website": website})
+                except Exception as e:
+                    _autopilot_log("discovery", f"Place details failed {place_id}: {e}", {})
+                    continue
+
         inserted = 0
-        skipped_fake_email = 0
         skipped_bad_website = 0
         with get_conn() as conn:
             existing_domains: Set[str] = set()
@@ -4159,22 +4146,13 @@ Return a JSON array of objects with keys: business_name, website, email. Include
                 d = _normalise_domain(row[0])
                 if d:
                     existing_domains.add(d)
-            for b in businesses[:target]:
+            for b in places:
                 name = (b.get("business_name") or "").strip()
-                if not name:
-                    continue
                 website = (b.get("website") or "").strip() or None
-                email = (b.get("email") or "").strip() or None
-                if not website and not email:
+                if not name or not website:
                     continue
-                if email and _is_fake_email(email):
-                    skipped_fake_email += 1
-                    continue
-                # Only insert leads we can verify: website must exist (HEAD 200)
-                if website and not _website_reachable(website):
+                if not _website_reachable(website):
                     skipped_bad_website += 1
-                    continue
-                if not website:
                     continue
                 existing = conn.execute(
                     "SELECT 1 FROM leads WHERE LOWER(TRIM(business_name)) = LOWER(%s) LIMIT 1",
@@ -4188,15 +4166,17 @@ Return a JSON array of objects with keys: business_name, website, email. Include
                 conn.execute(
                     """INSERT INTO leads (trade_type, suburb, business_name, website, email, status)
                        VALUES (%s, %s, %s, %s, %s, 'new')""",
-                    (trade, (suburb or "").strip() or city or "Brisbane", name, website, email),
+                    (trade, suburb_or_city, name, website, None),
                 )
                 conn.commit()
                 inserted += 1
                 if domain:
                     existing_domains.add(domain)
+                if inserted >= target:
+                    break
 
-        _autopilot_log("discovery", f"Inserted {inserted} new leads (skipped fake email: {skipped_fake_email}, bad website: {skipped_bad_website})", {"count": inserted, "skipped_fake_email": skipped_fake_email, "skipped_bad_website": skipped_bad_website})
-        return {"ok": True, "inserted": inserted, "total_found": len(businesses), "skipped_fake_email": skipped_fake_email, "skipped_bad_website": skipped_bad_website}
+        _autopilot_log("discovery", f"Inserted {inserted} new leads (skipped bad website: {skipped_bad_website})", {"count": inserted, "skipped_bad_website": skipped_bad_website})
+        return {"ok": True, "inserted": inserted, "total_found": len(places), "skipped_bad_website": skipped_bad_website}
     except HTTPException:
         raise
     except Exception as e:
