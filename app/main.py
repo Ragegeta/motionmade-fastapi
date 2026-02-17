@@ -4139,7 +4139,12 @@ def api_autopilot_discovery(
                 )
             unsearched = [s for s in suburbs_for_city if s not in searched]
             random.shuffle(unsearched)
-            suburbs_to_try = unsearched[:max_suburbs] if unsearched else random.sample(suburbs_for_city, min(max_suburbs, len(suburbs_for_city)))
+            suburbs_to_try = list(unsearched[:max_suburbs])
+            if len(suburbs_to_try) < max_suburbs:
+                already_searched = [s for s in suburbs_for_city if s in searched]
+                random.shuffle(already_searched)
+                need = max_suburbs - len(suburbs_to_try)
+                suburbs_to_try.extend(already_searched[:need])
         else:
             suburbs_to_try = [suburb_raw]
 

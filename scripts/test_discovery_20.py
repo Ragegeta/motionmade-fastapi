@@ -38,6 +38,8 @@ def main():
     data = r.json()
     print(json.dumps(data, indent=2))
     inserted = data.get("inserted", 0)
+    suburbs = data.get("suburbs_searched") or (data.get("suburb_searched") and [data["suburb_searched"]] or [])
+    print(f"Suburbs searched: {len(suburbs)} -> {suburbs}")
     if inserted < 10:
         print(f"WARNING: expected >=10 leads, got {inserted}")
     else:
@@ -51,11 +53,14 @@ def main():
     print(r.json())
     time.sleep(1)
 
-    # 4. Email-writing
+    # 4. Email-writing (may 502 on Render if many leads)
     print("\n--- 4. Email-writing ---")
-    r = requests.post(f"{BASE_URL}/api/leads/autopilot/email-writing", headers=HEADERS, json={}, timeout=180)
-    r.raise_for_status()
-    print(r.json())
+    try:
+        r = requests.post(f"{BASE_URL}/api/leads/autopilot/email-writing", headers=HEADERS, json={}, timeout=180)
+        r.raise_for_status()
+        print(r.json())
+    except Exception as e:
+        print(f"Email-writing failed (may timeout): {e}")
     time.sleep(1)
 
     # 5. Fetch log and check for duplicate messages
