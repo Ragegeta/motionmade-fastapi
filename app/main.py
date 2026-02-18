@@ -3950,7 +3950,7 @@ def api_leads_stats(authorization: str = Header(default="")):
     return {"trades": trades, "total_ready": total_ready, "total_sent_today": total_sent_today, "total_all": total_all, "limit": _daily_email_limit()}
 
 
-@app.post("/api/leads/{lead_id}/skip")
+@app.post("/api/lead/{lead_id}/skip")
 def api_lead_skip(lead_id: int, authorization: str = Header(default="")):
     """Mark a lead as skipped. Removes from ready queue but keeps for dedup. Admin-only."""
     _check_admin_auth(authorization)
@@ -4077,7 +4077,7 @@ def api_leads_wipe(authorization: str = Header(default="")):
     return {"ok": True, "deleted_leads": deleted_leads, "deleted_logs": deleted_logs}
 
 
-@app.get("/api/leads/{lead_id}")
+@app.get("/api/lead/{lead_id}")
 def api_lead_get(
     lead_id: int,
     authorization: str = Header(default=""),
@@ -4099,7 +4099,7 @@ def api_lead_get(
     }
 
 
-@app.patch("/api/leads/{lead_id}")
+@app.patch("/api/lead/{lead_id}")
 def api_leads_update(
     lead_id: int,
     body: dict,
