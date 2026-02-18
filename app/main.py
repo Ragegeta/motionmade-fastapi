@@ -3746,6 +3746,42 @@ CITY_SUBURBS = {
     "Perth": PERTH_SUBURBS,
 }
 
+PRIORITY_SUBURBS = {
+    "Brisbane": [
+        "Brisbane City", "South Brisbane", "Fortitude Valley", "West End", "Paddington",
+        "Chermside", "Indooroopilly", "Carindale", "Mount Gravatt", "Sunnybank",
+        "Nundah", "Bulimba", "Coorparoo", "Holland Park", "Aspley",
+        "Kedron", "Toowong", "Greenslopes", "Wynnum", "Redcliffe",
+    ],
+    "Gold Coast": [
+        "Surfers Paradise", "Southport", "Broadbeach", "Robina", "Burleigh Heads",
+        "Helensvale", "Coomera", "Labrador", "Coolangatta", "Palm Beach",
+    ],
+    "Sunshine Coast": [
+        "Maroochydore", "Caloundra", "Noosa Heads", "Mooloolaba", "Buderim",
+        "Nambour", "Kawana Waters", "Coolum Beach", "Noosaville", "Sippy Downs",
+    ],
+    "Sydney": [
+        "Sydney CBD", "Parramatta", "Bondi", "Surry Hills", "Chatswood",
+        "North Sydney", "Newtown", "Marrickville", "Randwick", "Hurstville",
+    ],
+    "Melbourne": [
+        "Melbourne CBD", "Richmond", "South Yarra", "Fitzroy", "Brunswick",
+        "St Kilda", "Hawthorn", "Footscray", "Box Hill", "Glen Waverley",
+    ],
+    "Perth": [
+        "Perth CBD", "Fremantle", "Northbridge", "Subiaco", "Joondalup",
+        "Scarborough", "Victoria Park", "Leederville", "Mount Lawley", "South Perth",
+    ],
+}
+
+def _ordered_suburbs(city: str, all_suburbs: list) -> list:
+    """Return suburbs with priority suburbs first, then the rest alphabetically."""
+    priority = PRIORITY_SUBURBS.get(city, [])
+    priority_set = set(priority)
+    rest = sorted([s for s in all_suburbs if s not in priority_set])
+    return [s for s in priority if s in set(all_suburbs)] + rest
+
 
 def _autopilot_log(phase: str, message: str, detail: Optional[dict] = None) -> None:
     """Insert one log entry. Dedupe: skip if same (phase, message) was inserted in the last 5 seconds."""
@@ -3885,6 +3921,46 @@ def api_leads_daily_sent_count(authorization: str = Header(default="")):
         ).fetchone()
     count = row[0] if row else 0
     return {"count": count, "limit": limit}
+
+
+@app.get("/api/leads/stats")
+def api_leads_stats(authorization: str = Header(default="")):
+    """Pipeline stats: ready/sent/total counts, broken down by trade. Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT trade_type,
+                      COUNT(*) FILTER (WHERE status = 'ready') AS ready,
+                      COUNT(*) FILTER (WHERE status = 'emailed'
+                        AND (updated_at AT TIME ZONE 'Australia/Brisbane')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Australia/Brisbane')::date) AS sent_today,
+                      COUNT(*) FILTER (WHERE status = 'emailed') AS sent_all,
+                      COUNT(*) AS total
+               FROM leads WHERE status != 'skip'
+               GROUP BY trade_type ORDER BY trade_type"""
+        ).fetchall()
+    trades = []
+    total_ready = 0
+    total_sent_today = 0
+    total_all = 0
+    for r in rows:
+        trades.append({"trade": r[0], "ready": r[1], "sent_today": r[2], "sent_all": r[3], "total": r[4]})
+        total_ready += r[1]
+        total_sent_today += r[2]
+        total_all += r[4]
+    return {"trades": trades, "total_ready": total_ready, "total_sent_today": total_sent_today, "total_all": total_all, "limit": _daily_email_limit()}
+
+
+@app.post("/api/leads/{lead_id}/skip")
+def api_lead_skip(lead_id: int, authorization: str = Header(default="")):
+    """Mark a lead as skipped. Removes from ready queue but keeps for dedup. Admin-only."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        row = conn.execute("SELECT id FROM leads WHERE id = %s", (lead_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        conn.execute("UPDATE leads SET status = 'skip', updated_at = now() WHERE id = %s", (lead_id,))
+        conn.commit()
+    return {"ok": True}
 
 
 @app.get("/api/leads/autopilot/log")
@@ -4084,9 +4160,6 @@ def api_autopilot_discovery(
         suburbs_for_city = CITY_SUBURBS.get(city, BRISBANE_SUBURBS)
         max_suburbs = 10
 
-        with get_conn() as conn_log:
-            conn_log.execute("DELETE FROM autopilot_log")
-            conn_log.commit()
         _autopilot_log("discovery", f"Starting discovery: {trade} in {city}, target {target} (multi-suburb)", {"target": target})
 
         from urllib.parse import urlparse, quote_plus
@@ -4137,12 +4210,11 @@ def api_autopilot_discovery(
                         (trade, city),
                     ).fetchall()
                 )
-            unsearched = [s for s in suburbs_for_city if s not in searched]
-            random.shuffle(unsearched)
+            ordered = _ordered_suburbs(city, suburbs_for_city)
+            unsearched = [s for s in ordered if s not in searched]
             suburbs_to_try = list(unsearched[:max_suburbs])
             if len(suburbs_to_try) < max_suburbs:
-                already_searched = [s for s in suburbs_for_city if s in searched]
-                random.shuffle(already_searched)
+                already_searched = [s for s in ordered if s in searched]
                 need = max_suburbs - len(suburbs_to_try)
                 suburbs_to_try.extend(already_searched[:need])
         else:
@@ -4733,7 +4805,7 @@ def api_leads_autopilot_send_ready(authorization: str = Header(default="")):
                 """SELECT id, business_name, email, email_subject, email_body
                    FROM leads
                    WHERE status = 'ready' AND email IS NOT NULL AND email != ''
-                   ORDER BY id"""
+                   ORDER BY COALESCE(audit_score, 0) DESC, id"""
             ).fetchall()
         to_send = 0
         for row in rows:

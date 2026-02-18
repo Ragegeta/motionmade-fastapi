@@ -16,51 +16,70 @@
         .error { color: #dc2626; margin-top: 10px; font-size: 14px; }
         .hidden { display: none !important; }
 
+        /* Activity banner */
+        .activity-banner { border-radius: 12px; padding: 14px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 500; }
+        .activity-banner.idle { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+        .activity-banner.busy { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+        .activity-banner.success { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+        .pulse { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .idle .pulse { background: #22c55e; }
+        .busy .pulse { background: #3b82f6; animation: pulse 1.2s ease-in-out infinite; }
+        .success .pulse { background: #22c55e; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+        .progress-track { height: 6px; background: #e5e7eb; border-radius: 3px; width: 100%; margin-top: 8px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb); border-radius: 3px; transition: width 0.4s ease; }
+
+        /* Daily batch button */
+        .daily-batch-wrap { background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%); border-radius: 14px; padding: 24px; margin-bottom: 20px; text-align: center; color: white; }
+        .daily-batch-wrap h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+        .daily-batch-wrap p { font-size: 14px; opacity: 0.8; margin-bottom: 16px; }
+        .btn-daily-batch { padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 18px; cursor: pointer; border: none; background: white; color: #1e40af; transition: all 0.2s; }
+        .btn-daily-batch:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .btn-daily-batch:disabled { opacity: 0.5; cursor: not-allowed; }
+
         .controls { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
         .control-group { display: flex; flex-direction: column; gap: 4px; }
         .control-group label { font-size: 11px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.02em; }
         .control-group input, .control-group select { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; min-width: 120px; font-size: 15px; }
         .control-group input[type="number"] { width: 80px; }
         .trade-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-        .btn-trade { padding: 10px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; background: #f3f4f6; color: #374151; border: 2px solid #e5e7eb; font-weight: 500; }
+        .btn-trade { padding: 10px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; background: #f3f4f6; color: #374151; border: 2px solid #e5e7eb; font-weight: 500; transition: all 0.15s; }
         .btn-trade:hover { background: #e5e7eb; }
         .btn-trade.selected { background: #2563EB; color: white; border-color: #2563EB; }
-        .btn-run { padding: 14px 28px; border-radius: 10px; font-weight: 600; font-size: 16px; cursor: pointer; border: none; background: #2563EB; color: white; }
+        .btn-trade:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-run { padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; background: #2563EB; color: white; white-space: nowrap; transition: all 0.15s; }
         .btn-run:hover:not(:disabled) { background: #1d4ed8; }
-        .btn-run:disabled { opacity: 0.7; cursor: not-allowed; }
-        .progress-msg { font-size: 14px; color: #6b7280; margin-left: 12px; }
-        .progress-msg.active { color: #2563EB; font-weight: 500; }
+        .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-run-all-trades { background: #7c3aed; }
+        .btn-run-all-trades:hover:not(:disabled) { background: #6d28d9; }
 
+        /* Log */
         .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; color: #6b7280; }
         .log-header a { color: #2563EB; cursor: pointer; text-decoration: none; }
-        .log-header a:hover { text-decoration: underline; }
-        .log-panel { background: #1f2937; color: #e5e7eb; border-radius: 8px; padding: 14px 16px; font-family: ui-monospace, monospace; font-size: 12px; max-height: 180px; overflow-y: auto; margin-bottom: 20px; }
+        .log-panel { background: #1f2937; color: #e5e7eb; border-radius: 8px; padding: 14px 16px; font-family: ui-monospace, monospace; font-size: 12px; max-height: 200px; overflow-y: auto; margin-bottom: 20px; }
         .log-panel .log-entry { margin-bottom: 4px; }
         .log-panel .log-phase { color: #93c5fd; }
         .log-panel .log-time { color: #9ca3af; margin-right: 8px; font-size: 11px; }
-        .run-summary { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; color: #065f46; }
-        .no-email-section { margin-top: 16px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; }
-        .no-email-section summary { padding: 10px 14px; cursor: pointer; font-size: 13px; color: #6b7280; }
-        .expand-content .value.email-body { min-height: 80px; }
-        .daily-counter-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 14px; color: #374151; }
-        .daily-counter-wrap .daily-sent { font-weight: 500; }
-        .daily-limit-warning { font-size: 13px; color: #b45309; margin-bottom: 8px; }
-        .daily-limit-block { font-size: 13px; color: #dc2626; margin-bottom: 8px; font-weight: 500; }
-        .daily-limit-reset-timer { margin-left: 6px; color: #6b7280; font-weight: 400; }
-        .btn-limit-gear { background: none; border: none; cursor: pointer; padding: 4px; color: #6b7280; font-size: 16px; }
-        .btn-limit-gear:hover { color: #374151; }
-        .limit-dropdown { position: absolute; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 6px 0; z-index: 50; min-width: 100px; left: 0; top: 100%; margin-top: 4px; }
-        .limit-dropdown button { display: block; width: 100%; padding: 8px 14px; text-align: left; border: none; background: none; cursor: pointer; font-size: 13px; }
-        .limit-dropdown button:hover { background: #f3f4f6; }
 
-        .pipeline-status-bar { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
-        .pipeline-status-bar .stat-sent { color: #1d4ed8; font-weight: 600; }
-        .pipeline-status-bar .stat-sent.at-limit { color: #dc2626; }
-        .pipeline-status-bar .stat-ready { color: #059669; font-weight: 600; }
-        .pipeline-status-bar .stat-total { color: #6b7280; }
+        /* Stats bar */
+        .stats-bar { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
+        .stats-main { font-size: 15px; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; margin-bottom: 8px; }
+        .stats-main .ready { color: #059669; font-weight: 700; }
+        .stats-main .sent { color: #2563EB; font-weight: 600; }
+        .stats-main .sent.at-limit { color: #dc2626; }
+        .stats-main .total { color: #6b7280; }
+        .stats-breakdown { font-size: 13px; color: #6b7280; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+        .stats-breakdown .trade-stat { padding: 3px 10px; background: #f3f4f6; border-radius: 6px; }
 
+        /* Pipeline filter/search */
+        .pipeline-toolbar { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+        .pipeline-search { padding: 9px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-width: 220px; flex: 1; max-width: 360px; }
+        .pipeline-search:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
+        .pipeline-filter-select { padding: 9px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+
+        /* Pipeline sections */
         .pipeline-section { margin-bottom: 20px; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb; }
-        .pipeline-section.ready-section { background: #f0fdf4; border-color: #bbf7d0; }
+        .pipeline-section.ready-section { border-color: #bbf7d0; }
         .pipeline-section.sent-section { background: #f9fafb; border-color: #e5e7eb; }
         .pipeline-section-header { padding: 14px 18px; font-weight: 600; font-size: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
         .pipeline-section.ready-section .pipeline-section-header { background: #dcfce7; color: #166534; }
@@ -70,35 +89,63 @@
         .pipeline-section-header summary::-webkit-details-marker { display: none; }
 
         .send-all-wrap { display: flex; align-items: center; gap: 10px; }
-        .btn-send-all { padding: 12px 22px; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer; border: none; background: #059669; color: white; }
+        .btn-send-all { padding: 12px 22px; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer; border: none; background: #059669; color: white; transition: all 0.15s; }
         .btn-send-all:hover:not(:disabled) { background: #047857; }
-        .btn-send-all:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-send-all.sending { background: #2563EB; }
-        .btn-send-all.done { background: #059669; }
+        .btn-send-all:disabled { opacity: 0.5; cursor: not-allowed; }
         .send-progress-bar-wrap { height: 6px; background: #e5e7eb; border-radius: 3px; width: 160px; overflow: hidden; }
         .send-progress-bar-fill { height: 100%; background: #2563EB; border-radius: 3px; transition: width 0.2s; }
 
         .pipeline-table-wrap { overflow-x: auto; }
         table.pipeline-table { width: 100%; border-collapse: collapse; }
-        .pipeline-table th, .pipeline-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid rgba(0,0,0,0.06); vertical-align: middle; font-size: 14px; }
+        .pipeline-table th, .pipeline-table td { padding: 11px 14px; text-align: left; border-bottom: 1px solid rgba(0,0,0,0.06); vertical-align: middle; font-size: 14px; }
         .pipeline-table th { font-weight: 600; font-size: 11px; text-transform: uppercase; color: #6b7280; letter-spacing: 0.02em; }
         .pipeline-section.ready-section .pipeline-table tbody tr { background: #f0fdf4; }
         .pipeline-section.ready-section .pipeline-table tbody tr:hover { background: #dcfce7; }
         .pipeline-section.sent-section .pipeline-table tbody tr { background: #f9fafb; color: #6b7280; }
-        .pipeline-section.sent-section .pipeline-table tbody tr:hover { background: #f3f4f6; }
-        .pipeline-table .subject-preview { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+        .pipeline-table .subject-preview { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
         .pipeline-table .sent-at { font-size: 12px; color: #6b7280; }
-        .btn-preview { padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
-        .btn-preview:hover { background: #e5e7eb; }
-        .btn-open-gmail { padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; border: none; background: #ea4335; color: white; }
-        .btn-open-gmail:hover { background: #d33426; }
-        .btn-open-gmail:disabled { opacity: 0.5; cursor: not-allowed; }
+        .badge-trade { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+        .badge-bond { background: #dbeafe; color: #1e40af; }
+        .badge-house { background: #fef3c7; color: #92400e; }
+        .badge-plumber { background: #ede9fe; color: #5b21b6; }
+        .score-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+        .score-high { background: #dcfce7; color: #166534; }
+        .score-mid { background: #fef3c7; color: #92400e; }
+        .score-low { background: #fee2e2; color: #991b1b; }
+        .btn-sm { padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid #e5e7eb; background: #f3f4f6; color: #374151; transition: all 0.15s; }
+        .btn-sm:hover { background: #e5e7eb; }
+        .btn-sm:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-skip { color: #dc2626; border-color: #fecaca; }
+        .btn-skip:hover { background: #fee2e2; }
+        .btn-gmail { background: #ea4335; color: white; border-color: #ea4335; }
+        .btn-gmail:hover:not(:disabled) { background: #d33426; }
+        .btn-gmail:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .expand-row-pipeline { background: #fff; }
         .expand-row-pipeline td { padding: 16px 14px; border-bottom: 1px solid #e5e7eb; vertical-align: top; font-size: 13px; }
         .expand-row-pipeline .label { font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 4px; }
         .expand-row-pipeline .value { white-space: pre-wrap; word-break: break-word; }
         .expand-row-pipeline .value.body { background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #e5e7eb; }
+
+        .pagination { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 12px; font-size: 13px; }
+        .pagination button { padding: 6px 12px; border-radius: 6px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination button:hover:not(:disabled) { background: #f3f4f6; }
+        .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pagination .current { font-weight: 600; color: #2563eb; }
+
+        .no-email-section { margin-top: 16px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; }
+        .no-email-section summary { padding: 10px 14px; cursor: pointer; font-size: 13px; color: #6b7280; }
+
+        .daily-counter-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 14px; color: #374151; }
+        .daily-counter-wrap .daily-sent { font-weight: 500; }
+        .btn-limit-gear { background: none; border: none; cursor: pointer; padding: 4px; color: #6b7280; font-size: 16px; }
+        .btn-limit-gear:hover { color: #374151; }
+        .limit-dropdown { position: absolute; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 6px 0; z-index: 50; min-width: 100px; left: 0; top: 100%; margin-top: 4px; }
+        .limit-dropdown button { display: block; width: 100%; padding: 8px 14px; text-align: left; border: none; background: none; cursor: pointer; font-size: 13px; }
+        .limit-dropdown button:hover { background: #f3f4f6; }
+        .daily-limit-warning { font-size: 13px; color: #b45309; margin-bottom: 8px; }
+        .daily-limit-block { font-size: 13px; color: #dc2626; margin-bottom: 8px; font-weight: 500; }
+        .daily-limit-reset-timer { margin-left: 6px; color: #6b7280; font-weight: 400; }
 
         .btn-backup-csv { padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
         .btn-backup-csv:hover { background: #e5e7eb; }
@@ -113,28 +160,46 @@
         .modal-box { background: #fff; border-radius: 12px; max-width: 560px; width: 90%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         .modal-header { padding: 16px 20px; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 16px; }
         .modal-body { padding: 20px; overflow-y: auto; font-size: 14px; line-height: 1.6; color: #374151; }
-        .modal-body ol { margin: 0 0 14px 0; padding-left: 20px; }
-        .modal-body li { margin-bottom: 6px; }
         .modal-body pre { background: #1f2937; color: #e5e7eb; padding: 14px; border-radius: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 12px 0; text-align: left; }
         .modal-footer { padding: 14px 20px; border-top: 1px solid #e5e7eb; display: flex; gap: 10px; justify-content: flex-end; }
         .btn-copy-script { padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; background: #2563EB; color: white; border: none; }
-        .btn-copy-script:hover { background: #1d4ed8; }
         .btn-modal-close { padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
-        .btn-modal-close:hover { background: #e5e7eb; }
+
+        @media (max-width: 640px) {
+            .container { padding: 12px; }
+            .controls { padding: 14px; gap: 12px; }
+            .daily-batch-wrap { padding: 16px; }
+            .btn-daily-batch { padding: 14px 24px; font-size: 16px; }
+            .pipeline-table th, .pipeline-table td { padding: 8px 10px; font-size: 13px; }
+            .stats-main { font-size: 14px; }
+        }
     </style>
 </head>
 <body>
-    <header>
-        <span class="logo">MotionMade Leads</span>
-    </header>
+    <header><span class="logo">MotionMade Leads</span></header>
     <div class="container">
         <div class="auth-section" id="authSection">
             <input type="password" id="adminToken" placeholder="Admin token" />
-            <button id="loginBtn" class="auth-section button" style="padding:10px 18px;background:#2563EB;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;">Login</button>
+            <button id="loginBtn">Login</button>
             <div id="authError" class="error"></div>
         </div>
 
         <div id="mainContent" class="hidden">
+            <!-- Activity banner -->
+            <div id="activityBanner" class="activity-banner idle">
+                <span class="pulse"></span>
+                <span id="activityText">Ready.</span>
+            </div>
+            <div id="progressTrack" class="progress-track hidden"><div id="progressFill" class="progress-fill" style="width:0%"></div></div>
+
+            <!-- Daily batch -->
+            <div class="daily-batch-wrap">
+                <h2>Daily Lead Generation</h2>
+                <p>Discover leads across all trades, audit websites, and write emails in one click.</p>
+                <button type="button" id="dailyBatchBtn" class="btn-daily-batch">🚀 Run Daily Batch</button>
+            </div>
+
+            <!-- Controls -->
             <div class="controls">
                 <div class="control-group">
                     <label>Trade</label>
@@ -145,7 +210,7 @@
                     </div>
                 </div>
                 <div class="control-group">
-                    <label>City / region</label>
+                    <label>City</label>
                     <select id="city">
                         <option value="Brisbane" selected>Brisbane</option>
                         <option value="Gold Coast">Gold Coast</option>
@@ -156,82 +221,87 @@
                     </select>
                 </div>
                 <div class="control-group">
-                    <label>Suburb</label>
-                    <select id="suburb"><option value="">All</option></select>
+                    <label>Target</label>
+                    <input type="number" id="targetCount" min="5" max="50" value="10" />
                 </div>
-                <div class="control-group">
-                    <label>Target leads</label>
-                    <input type="number" id="targetCount" min="5" max="50" value="20" />
-                </div>
-                <div style="display:flex;align-items:center;flex:1;min-width:200px;">
-                    <button type="button" id="runAll" class="btn-run">🚀 Find Leads & Write Emails</button>
-                    <span id="progressMsg" class="progress-msg"></span>
-                </div>
+                <button type="button" id="runSingle" class="btn-run action-btn">🔍 Find Leads</button>
+                <button type="button" id="runAllTrades" class="btn-run btn-run-all-trades action-btn">🔄 Find All Trades</button>
             </div>
 
+            <!-- Log -->
             <div class="log-header"><span>Live log</span><a id="clearLog" href="#">Clear</a></div>
             <div class="log-panel" id="logPanel"></div>
-            <div id="runSummary" class="run-summary hidden"></div>
 
-            <div class="daily-counter-wrap">
-                <span id="dailySentText" class="daily-sent">Emails sent today: 0/20</span>
-                <div style="position:relative;">
-                    <button type="button" id="dailyLimitGear" class="btn-limit-gear" title="Daily limit">⚙</button>
-                    <div id="limitDropdown" class="limit-dropdown hidden">
-                        <button type="button" data-limit="10">10 per day</button>
-                        <button type="button" data-limit="15">15 per day</button>
-                        <button type="button" data-limit="20">20 per day</button>
-                        <button type="button" data-limit="30">30 per day</button>
-                        <button type="button" data-limit="50">50 per day</button>
-                    </div>
+            <!-- Stats -->
+            <div id="statsBar" class="stats-bar hidden">
+                <div class="stats-main">
+                    <span><span id="statReady" class="ready">0</span> ready to send</span>
+                    <span>|</span>
+                    <span><span id="statSentToday" class="sent">0</span> sent today / <span id="statLimit">20</span> limit</span>
+                    <span>|</span>
+                    <span><span id="statTotalAll" class="total">0</span> total leads</span>
+                    <span style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+                        <div style="position:relative;">
+                            <button type="button" id="dailyLimitGear" class="btn-limit-gear" title="Daily limit">⚙</button>
+                            <div id="limitDropdown" class="limit-dropdown hidden">
+                                <button type="button" data-limit="10">10/day</button>
+                                <button type="button" data-limit="15">15/day</button>
+                                <button type="button" data-limit="20">20/day</button>
+                                <button type="button" data-limit="30">30/day</button>
+                                <button type="button" data-limit="50">50/day</button>
+                            </div>
+                        </div>
+                        <button type="button" id="refreshLeads" class="btn-refresh">Refresh</button>
+                    </span>
                 </div>
+                <div id="statsBreakdown" class="stats-breakdown"></div>
             </div>
-            <div id="dailyLimitWarning" class="daily-limit-warning hidden">Almost at daily limit. Slow down to avoid spam flags.</div>
-            <div id="dailyLimitBlock" class="daily-limit-block hidden">Daily limit reached. Send more tomorrow. <span id="dailyLimitResetTimer" class="daily-limit-reset-timer"></span></div>
+            <div id="dailyLimitWarning" class="daily-limit-warning hidden">Almost at daily limit.</div>
+            <div id="dailyLimitBlock" class="daily-limit-block hidden">Daily limit reached. <span id="dailyLimitResetTimer" class="daily-limit-reset-timer"></span></div>
 
-            <div id="pipelineStatusBar" class="pipeline-status-bar hidden">
-                <span>Today: <span id="statSent" class="stat-sent">0</span> / <span id="statLimit">20</span> limit</span>
-                <span>|</span>
-                <span><span id="statReady" class="stat-ready">0</span> ready to send</span>
-                <span>|</span>
-                <span><span id="statTotal" class="stat-total">0</span> total leads</span>
-                <span style="margin-left:auto;"><button type="button" id="refreshLeads" class="btn-refresh">Refresh</button></span>
+            <!-- Pipeline toolbar -->
+            <div class="pipeline-toolbar">
+                <input type="text" id="pipelineSearch" class="pipeline-search" placeholder="Search by name or trade..." />
+                <select id="pipelineTradeFilter" class="pipeline-filter-select">
+                    <option value="">All trades</option>
+                    <option value="Bond Cleaning">Bond Cleaning</option>
+                    <option value="House Cleaning">House Cleaning</option>
+                    <option value="Plumber">Plumber</option>
+                </select>
             </div>
 
+            <!-- Ready section -->
             <div id="pipelineReadySection" class="pipeline-section ready-section hidden">
                 <div class="pipeline-section-header">
                     <span>📬 Ready to Send (<span id="readyCount">0</span>)</span>
                     <div class="send-all-wrap">
-                        <button type="button" id="sendAllNowBtn" class="btn-send-all hidden">
-                            <span id="sendBtnLabel">Send 0 Emails Now</span>
-                            <span id="sendBtnProgress" style="display:none;"><span id="sendProgressText">Sending... 0 of 0</span> <div class="send-progress-bar-wrap" style="display:inline-block;vertical-align:middle;width:120px;margin-left:6px;"><div id="sendProgressBar" class="send-progress-bar-fill" style="width:0%;"></div></div></span>
-                            <span id="sendBtnDone" style="display:none;">✅ All sent!</span>
-                        </button>
-                        <button type="button" id="prepareSendGmail" class="btn-backup-csv hidden" title="Backup: download CSV + Apps Script">CSV backup</button>
+                        <button type="button" id="sendAllNowBtn" class="btn-send-all action-btn hidden">Send 0 Emails Now</button>
+                        <button type="button" id="prepareSendGmail" class="btn-backup-csv hidden">CSV backup</button>
                     </div>
                 </div>
                 <div class="pipeline-table-wrap">
                     <table class="pipeline-table" id="leadsReadyTable">
-                        <thead><tr><th>Business</th><th>Email</th><th>Subject</th><th></th></tr></thead>
+                        <thead><tr><th>Business</th><th>Trade</th><th>Score</th><th>Subject</th><th style="width:140px;"></th></tr></thead>
                         <tbody id="leadsReadyBody"></tbody>
                     </table>
                 </div>
+                <div id="readyPagination" class="pagination hidden"></div>
             </div>
 
-            <details id="pipelineSentSection" class="pipeline-section sent-section hidden" style="margin-bottom:16px;">
-                <summary class="pipeline-section-header">
-                    <span>✅ Sent (<span id="sentCount">0</span>)</span>
-                </summary>
+            <!-- Sent section -->
+            <details id="pipelineSentSection" class="pipeline-section sent-section hidden">
+                <summary class="pipeline-section-header"><span>✅ Sent (<span id="sentCount">0</span>)</span></summary>
                 <div class="pipeline-table-wrap">
-                    <table class="pipeline-table" id="leadsSentTable">
-                        <thead><tr><th>Business</th><th>Email</th><th>Subject</th><th>When</th></tr></thead>
+                    <table class="pipeline-table">
+                        <thead><tr><th>Business</th><th>Trade</th><th>Subject</th><th>When</th></tr></thead>
                         <tbody id="leadsSentBody"></tbody>
                     </table>
                 </div>
+                <div id="sentPagination" class="pagination hidden"></div>
             </details>
 
             <details id="noEmailSection" class="no-email-section hidden">
-                <summary id="noEmailSummary" style="padding:10px 14px;margin:0;font-size:13px;color:#6b7280;cursor:pointer;">0 leads without email (hidden)</summary>
+                <summary id="noEmailSummary">0 leads without email</summary>
                 <div id="noEmailList" style="padding:8px 14px 12px;font-size:13px;color:#6b7280;"></div>
             </details>
 
@@ -245,8 +315,8 @@
         <div class="modal-box">
             <div class="modal-header">Download &amp; Send via Gmail</div>
             <div class="modal-body">
-                <p><strong>1.</strong> CSV has been downloaded. Open Google Sheets, create a new sheet, then <strong>File → Import → Upload</strong> and select <code>leads_gmail.csv</code>. Put the file in the first column (replace or paste).</p>
-                <p><strong>2.</strong> In Sheets: <strong>Extensions → Apps Script</strong>. Delete any sample code and paste the script below. Save (Ctrl+S), then run <code>sendEmails</code> (select it from the dropdown and click Run). Authorize when prompted. The script sends each row with a 30 second delay.</p>
+                <p><strong>1.</strong> CSV downloaded. Open Google Sheets → File → Import → Upload <code>leads_gmail.csv</code>.</p>
+                <p><strong>2.</strong> In Sheets: Extensions → Apps Script. Paste the script below, save, run <code>sendEmails</code>.</p>
                 <pre id="gmailScriptPre"></pre>
             </div>
             <div class="modal-footer">
@@ -257,604 +327,462 @@
     </div>
 
     <script>
-        const API_BASE = window.location.origin;
-        let adminToken = '';
+    (function() {
+        'use strict';
+        var API = window.location.origin;
+        var adminToken = '';
+        var leadsCache = [];
+        var dailySentCount = 0;
+        var dailyLimit = 20;
+        var operationRunning = false;
+        var lastLogId = 0;
+        var logAutoScroll = true;
+        var readyPage = 1;
+        var sentPage = 1;
+        var PAGE_SIZE = 25;
+        var TRADES = ['Bond Cleaning', 'House Cleaning', 'Plumber'];
+        var dailyLimitResetTimerInterval = null;
 
-        function getHeaders() {
-            return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken };
-        }
+        function h() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken }; }
+        function esc(s) { if (s == null) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function $(id) { return document.getElementById(id); }
 
-        function getSelectedTrade() {
-            var sel = document.querySelector('.btn-trade.selected');
-            return (sel && sel.getAttribute('data-trade')) || 'Plumber';
-        }
+        function getSelectedTrade() { var s = document.querySelector('.btn-trade.selected'); return s ? s.getAttribute('data-trade') : 'Bond Cleaning'; }
+        function getCity() { return ($('city') && $('city').value) || 'Brisbane'; }
+        function getTarget() { return Math.min(50, Math.max(5, parseInt(($('targetCount') && $('targetCount').value) || '10', 10) || 10)); }
 
         document.querySelectorAll('.btn-trade').forEach(function(btn) {
             btn.onclick = function() {
+                if (operationRunning) return;
                 document.querySelectorAll('.btn-trade').forEach(function(b) { b.classList.remove('selected'); });
                 this.classList.add('selected');
             };
         });
 
-        function escapeHtml(s) {
-            if (s == null) return '';
-            const div = document.createElement('div');
-            div.textContent = s;
-            return div.innerHTML;
-        }
-        function formatSentAt(updatedAtStr) {
-            if (!updatedAtStr) return 'Sent';
-            var d = new Date(updatedAtStr);
-            if (isNaN(d.getTime())) return 'Sent';
-            var now = new Date();
-            var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            var diffMs = now - d;
-            var diffMins = Math.floor(diffMs / 60000);
-            var diffHours = Math.floor(diffMs / 3600000);
-            var diffDays = Math.floor(diffMs / 86400000);
-            if (diffMins < 1) return 'Sent just now';
-            if (diffMins < 60) return 'Sent ' + diffMins + ' min' + (diffMins === 1 ? '' : 's') + ' ago';
-            if (d >= today) {
-                var h = d.getHours(); var m = d.getMinutes(); var am = h < 12; var h12 = h % 12 || 12;
-                return 'Sent today ' + h12 + ':' + (m < 10 ? '0' : '') + m + (am ? 'am' : 'pm');
-            }
-            if (diffDays === 1) return 'Sent yesterday';
-            if (diffDays < 7) return 'Sent ' + diffDays + ' days ago';
-            return 'Sent ' + d.toLocaleDateString();
+        function setOperationState(running) {
+            operationRunning = running;
+            document.querySelectorAll('.action-btn').forEach(function(b) { b.disabled = running; if (running) b.title = 'Wait for current operation to finish'; else b.title = ''; });
+            $('dailyBatchBtn').disabled = running;
+            document.querySelectorAll('.btn-trade').forEach(function(b) { b.disabled = running; });
         }
 
-        document.getElementById('loginBtn').onclick = async function() {
-            const token = document.getElementById('adminToken').value.trim();
-            if (!token) { document.getElementById('authError').textContent = 'Token required'; return; }
-            adminToken = token;
-            document.getElementById('authError').textContent = '';
-            try {
-                const r = await fetch(API_BASE + '/api/leads', { headers: getHeaders() });
-                if (r.status === 401) { document.getElementById('authError').textContent = 'Invalid token'; return; }
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                document.getElementById('authSection').classList.add('hidden');
-                document.getElementById('mainContent').classList.remove('hidden');
-                loadSuburbs();
-                loadLeads();
-                loadDailySent();
-                startLogPolling();
-            document.getElementById('city').onchange = function() { loadSuburbs(); };
-            var gear = document.getElementById('dailyLimitGear');
-            var limitDropdown = document.getElementById('limitDropdown');
-            if (gear && limitDropdown) {
-                gear.onclick = function(e) { e.stopPropagation(); limitDropdown.classList.toggle('hidden'); };
-                limitDropdown.onclick = function(e) { e.stopPropagation(); };
-                limitDropdown.querySelectorAll('button').forEach(function(btn) {
-                    btn.onclick = function() {
-                        var limit = parseInt(this.getAttribute('data-limit'), 10);
-                        try { localStorage.setItem('leads_daily_limit', String(limit)); } catch (z) {}
-                        limitDropdown.classList.add('hidden');
-                        loadDailySent();
-                    };
-                });
-            }
-            document.addEventListener('click', function() { if (limitDropdown) limitDropdown.classList.add('hidden'); });
-            } catch (e) {
-                document.getElementById('authError').textContent = e.message || 'Login failed';
-            }
-        };
-
-        async function loadSuburbs() {
-            var cityEl = document.getElementById('city');
-            var city = (cityEl && cityEl.value) ? cityEl.value : 'Brisbane';
-            var sel = document.getElementById('suburb');
-            var fallback = '<option value="">All</option>';
-            try {
-                var r = await fetch(API_BASE + '/api/leads/suburbs?city=' + encodeURIComponent(city), { headers: getHeaders() });
-                if (!r.ok) { sel.innerHTML = fallback; return; }
-                var data = await r.json();
-                sel.innerHTML = '<option value="">All</option>' + (data.suburbs || []).map(function(s) { return '<option value="' + escapeHtml(s) + '">' + escapeHtml(s) + '</option>'; }).join('');
-            } catch (e) {
-                sel.innerHTML = fallback;
-            }
+        function setBanner(type, text) {
+            var b = $('activityBanner');
+            b.className = 'activity-banner ' + type;
+            $('activityText').textContent = text;
+        }
+        function setProgress(pct) {
+            var track = $('progressTrack');
+            if (pct < 0) { track.classList.add('hidden'); return; }
+            track.classList.remove('hidden');
+            $('progressFill').style.width = Math.min(100, pct) + '%';
+        }
+        function flashSuccess(text) {
+            setBanner('success', text);
+            setProgress(-1);
+            setTimeout(function() { if (!operationRunning) updateIdleBanner(); }, 5000);
+        }
+        function updateIdleBanner() {
+            var ready = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; }).length;
+            if (ready > 0) setBanner('idle', '✅ Ready. ' + ready + ' emails queued to send.');
+            else setBanner('idle', '✅ All caught up. Run Daily Batch to find more leads.');
+            setProgress(-1);
         }
 
-        let leadsCache = [];
-        var dailySentCount = 0;
-        var dailyLimit = 20;
-        var dailyLimitResetTimerInterval = null;
+        /* Limit dropdown */
+        function getDailyLimit() { try { var v = localStorage.getItem('leads_daily_limit'); if (v) { var n = parseInt(v, 10); if ([10,15,20,30,50].indexOf(n) >= 0) return n; } } catch (e) {} return 20; }
+        $('dailyLimitGear').onclick = function(e) { e.stopPropagation(); $('limitDropdown').classList.toggle('hidden'); };
+        $('limitDropdown').onclick = function(e) { e.stopPropagation(); };
+        $('limitDropdown').querySelectorAll('button').forEach(function(btn) {
+            btn.onclick = function() { try { localStorage.setItem('leads_daily_limit', this.getAttribute('data-limit')); } catch (z) {} $('limitDropdown').classList.add('hidden'); loadStats(); };
+        });
+        document.addEventListener('click', function() { $('limitDropdown').classList.add('hidden'); });
 
-        function getMsUntilMidnightBrisbane() {
-            var now = new Date();
-            var brisbaneOffset = 10 * 60 * 60 * 1000;
-            var dayMs = 24 * 60 * 60 * 1000;
-            var brisbaneDayStart = Math.floor((now.getTime() + brisbaneOffset) / dayMs) * dayMs - brisbaneOffset;
-            var nextMidnightMs = brisbaneDayStart + dayMs;
-            return Math.max(0, nextMidnightMs - now.getTime());
-        }
+        /* Timer */
+        function getMsBrisbane() { var now = new Date(); var off = 10*3600000; var day = 86400000; var start = Math.floor((now.getTime()+off)/day)*day - off; return Math.max(0, start+day-now.getTime()); }
+        function fmtReset(ms) { if (ms<=0) return '(resets now)'; var s=Math.floor(ms/1000); var m=Math.floor(s/60); s%=60; var hr=Math.floor(m/60); m%=60; return hr>0?hr+'h '+m+'m':m+'m '+s+'s'; }
+        function updateResetTimer() { var el=$('dailyLimitResetTimer'); if(!el)return; if(dailySentCount<dailyLimit){if(dailyLimitResetTimerInterval){clearInterval(dailyLimitResetTimerInterval);dailyLimitResetTimerInterval=null;}el.textContent='';return;} el.textContent=fmtReset(getMsBrisbane()); if(!dailyLimitResetTimerInterval) dailyLimitResetTimerInterval=setInterval(updateResetTimer,1000); }
 
-        function formatResetCountdown(ms) {
-            if (ms <= 0) return '(resets now)';
-            var s = Math.floor(ms / 1000);
-            var m = Math.floor(s / 60);
-            s = s % 60;
-            var h = Math.floor(m / 60);
-            m = m % 60;
-            if (h > 0) return 'You can send again in ' + h + 'h ' + m + 'm (midnight Brisbane)';
-            if (m > 0) return 'You can send again in ' + m + 'm ' + s + 's (midnight Brisbane)';
-            return 'You can send again in ' + s + 's (midnight Brisbane)';
-        }
-
-        function updateResetTimer() {
-            var el = document.getElementById('dailyLimitResetTimer');
-            if (!el) return;
-            if (dailySentCount < dailyLimit) {
-                if (dailyLimitResetTimerInterval) { clearInterval(dailyLimitResetTimerInterval); dailyLimitResetTimerInterval = null; }
-                el.textContent = '';
-                return;
-            }
-            var ms = getMsUntilMidnightBrisbane();
-            el.textContent = formatResetCountdown(ms);
-            if (!dailyLimitResetTimerInterval) {
-                dailyLimitResetTimerInterval = setInterval(function() {
-                    updateResetTimer();
-                    if (dailySentCount < dailyLimit && dailyLimitResetTimerInterval) {
-                        clearInterval(dailyLimitResetTimerInterval);
-                        dailyLimitResetTimerInterval = null;
-                    }
-                }, 1000);
-            }
-        }
-
-        function getDailyLimit() {
-            try {
-                var v = localStorage.getItem('leads_daily_limit');
-                if (v) { var n = parseInt(v, 10); if ([10,15,20,30,50].indexOf(n) >= 0) return n; }
-            } catch (e) {}
-            return 20;
-        }
-
-        async function loadDailySent() {
+        /* Stats */
+        async function loadStats() {
             dailyLimit = getDailyLimit();
             try {
-                var r = await fetch(API_BASE + '/api/leads/daily-sent-count', { headers: getHeaders() });
+                var r = await fetch(API + '/api/leads/stats', { headers: h() });
                 if (!r.ok) return;
-                var data = await r.json();
-                dailySentCount = data.count != null ? data.count : 0;
-                if (data.limit != null) dailyLimit = data.limit;
-            } catch (e) { return; }
-            var textEl = document.getElementById('dailySentText');
-            var warnEl = document.getElementById('dailyLimitWarning');
-            var blockEl = document.getElementById('dailyLimitBlock');
-            var prepareBtn = document.getElementById('prepareSendGmail');
-            var sendAllBtn = document.getElementById('sendAllNowBtn');
-            var statSentEl = document.getElementById('statSent');
-            var statLimitEl = document.getElementById('statLimit');
-            if (textEl) textEl.textContent = 'Emails sent today: ' + dailySentCount + '/' + dailyLimit;
-            if (statSentEl) { statSentEl.textContent = dailySentCount; statSentEl.classList.toggle('at-limit', dailySentCount >= dailyLimit); }
-            if (statLimitEl) statLimitEl.textContent = dailyLimit;
-            if (warnEl) { if (dailySentCount >= Math.max(1, dailyLimit - 5)) warnEl.classList.remove('hidden'); else warnEl.classList.add('hidden'); }
-            if (blockEl) { if (dailySentCount >= dailyLimit) blockEl.classList.remove('hidden'); else blockEl.classList.add('hidden'); }
-            if (prepareBtn) {
-                if (dailySentCount >= dailyLimit) { prepareBtn.disabled = true; prepareBtn.title = 'Daily limit reached.'; }
-                else { prepareBtn.disabled = false; prepareBtn.title = 'Backup: download CSV + Apps Script'; }
-            }
-            if (sendAllBtn && !sendAllBtn.classList.contains('sending')) {
-                if (dailySentCount >= dailyLimit) { sendAllBtn.disabled = true; sendAllBtn.title = 'Daily limit reached. Send more tomorrow.'; }
-                else { sendAllBtn.disabled = false; sendAllBtn.title = ''; }
-            }
-            document.querySelectorAll('.btn-open-gmail').forEach(function(btn) {
-                if (dailySentCount >= dailyLimit) { btn.disabled = true; btn.title = 'Daily limit reached.'; }
-                else { btn.disabled = false; btn.title = ''; }
-            });
-            updateSendAllButton();
+                var d = await r.json();
+                dailySentCount = d.total_sent_today || 0;
+                dailyLimit = d.limit || dailyLimit;
+                $('statReady').textContent = d.total_ready || 0;
+                $('statSentToday').textContent = dailySentCount;
+                $('statSentToday').className = 'sent' + (dailySentCount >= dailyLimit ? ' at-limit' : '');
+                $('statLimit').textContent = dailyLimit;
+                $('statTotalAll').textContent = d.total_all || 0;
+                var bd = $('statsBreakdown');
+                bd.innerHTML = (d.trades || []).map(function(t) { return '<span class="trade-stat">' + esc(t.trade) + ': ' + t.ready + ' ready, ' + t.sent_today + ' sent</span>'; }).join('');
+                $('statsBar').classList.remove('hidden');
+            } catch (e) {}
+            var warn = $('dailyLimitWarning'); var block = $('dailyLimitBlock');
+            if (warn) { if (dailySentCount >= Math.max(1, dailyLimit - 5) && dailySentCount < dailyLimit) warn.classList.remove('hidden'); else warn.classList.add('hidden'); }
+            if (block) { if (dailySentCount >= dailyLimit) block.classList.remove('hidden'); else block.classList.add('hidden'); }
             updateResetTimer();
         }
 
+        /* Load leads (ALL trades, no trade filter — filter is client-side) */
         async function loadLeads() {
-            var trade = getSelectedTrade();
-            var suburb = document.getElementById('suburb').value;
-            var url = API_BASE + '/api/leads?';
-            if (trade) url += 'trade_type=' + encodeURIComponent(trade) + '&';
-            if (suburb) url += 'suburb=' + encodeURIComponent(suburb) + '&';
-            const r = await fetch(url, { headers: getHeaders() });
-            if (!r.ok) return;
-            const data = await r.json();
-            leadsCache = data.leads || [];
-            renderLeads(leadsCache);
-            updateSendAllButton();
-            loadDailySent();
-        }
-
-        function copyFullEmail(lead) {
-            const to = (lead.email || '').trim();
-            const subj = (lead.email_subject || '').trim();
-            const body = (lead.email_body || '').trim();
-            return 'To: ' + to + '\nSubject: ' + subj + '\n\n' + body;
-        }
-
-        function updateSendAllButton() {
-            const withEmail = leadsCache.filter(function(l) { return (l.email || '').trim().length > 0; });
-            const ready = leadsCache.filter(l => l.status === 'ready' && l.email);
-            const sent = leadsCache.filter(l => l.status === 'emailed');
-            const nReady = ready.length;
-            const nSent = sent.length;
-            const total = withEmail.length;
-            var statusBar = document.getElementById('pipelineStatusBar');
-            var readySection = document.getElementById('pipelineReadySection');
-            var sentSection = document.getElementById('pipelineSentSection');
-            if (statusBar) { if (total > 0) statusBar.classList.remove('hidden'); else statusBar.classList.add('hidden'); }
-            document.getElementById('statReady').textContent = nReady;
-            document.getElementById('statTotal').textContent = total;
-            document.getElementById('readyCount').textContent = nReady;
-            document.getElementById('sentCount').textContent = nSent;
-            if (readySection) { if (nReady > 0) readySection.classList.remove('hidden'); else readySection.classList.add('hidden'); }
-            if (sentSection) { if (nSent > 0) sentSection.classList.remove('hidden'); else sentSection.classList.add('hidden'); }
-            var sendAllBtn = document.getElementById('sendAllNowBtn');
-            var sendBtnLabel = document.getElementById('sendBtnLabel');
-            var sendBtnCount = document.getElementById('sendBtnCount');
-            var prepareBtn = document.getElementById('prepareSendGmail');
-            if (sendAllBtn) {
-                if (nReady > 0) {
-                    sendAllBtn.classList.remove('hidden');
-                    var canSend = Math.max(0, dailyLimit - dailySentCount);
-                    var toSend = Math.min(nReady, canSend);
-                    if (sendBtnLabel) {
-                        sendBtnLabel.style.display = '';
-                        if (dailySentCount >= dailyLimit) {
-                            sendBtnLabel.textContent = nReady + ' ready (daily limit reached)';
-                        } else {
-                            sendBtnLabel.textContent = (toSend < nReady && toSend > 0) ? 'Send ' + toSend + ' of ' + nReady + ' (daily limit: ' + dailyLimit + ')' : 'Send ' + nReady + ' Emails Now';
-                        }
-                    }
-                } else sendAllBtn.classList.add('hidden');
-            }
-            if (prepareBtn) { if (nReady > 0) prepareBtn.classList.remove('hidden'); else prepareBtn.classList.add('hidden'); }
-        }
-
-        function renderLeads(leads) {
-            const withEmail = leads.filter(function(l) { return (l.email || '').trim().length > 0; });
-            const noEmail = leads.filter(function(l) { return !(l.email || '').trim().length; });
-            const ready = withEmail.filter(function(l) { return l.status === 'ready'; });
-            const sent = withEmail.filter(function(l) { return l.status === 'emailed'; });
-
-            var readyBody = document.getElementById('leadsReadyBody');
-            var sentBody = document.getElementById('leadsSentBody');
-            if (!readyBody || !sentBody) return;
-
-            if (ready.length === 0) readyBody.innerHTML = '<tr><td colspan="4" style="padding:16px;color:#6b7280;font-size:14px;">No emails ready. Click Find Leads & Write Emails first.</td></tr>';
-            else {
-                var html = '';
-                ready.forEach(function(lead) {
-                    var subj = (lead.email_subject || '').trim();
-                    var subjPreview = subj.length > 50 ? subj.substring(0, 50) + '…' : subj;
-                    html += '<tr class="main-row ready-row" data-id="' + lead.id + '">' +
-                        '<td>' + escapeHtml(lead.business_name || '') + '</td>' +
-                        '<td>' + escapeHtml(lead.email || '') + '</td>' +
-                        '<td class="subject-preview" title="' + escapeHtml(lead.email_subject || '') + '">' + escapeHtml(subjPreview || '–') + '</td>' +
-                        '<td><button type="button" class="btn-preview" data-id="' + lead.id + '">Preview</button> <button type="button" class="btn-open-gmail" data-id="' + lead.id + '">Open in Gmail</button></td></tr>';
-                    html += '<tr class="expand-row-pipeline expand-ready-' + lead.id + '" style="display:none;"><td colspan="4"><div class="label">Subject</div><div class="value">' + escapeHtml(lead.email_subject || '') + '</div><div class="label">Body</div><div class="value body">' + escapeHtml(lead.email_body || '') + '</div></td></tr>';
-                });
-                readyBody.innerHTML = html;
-            }
-
-            if (sent.length === 0) sentBody.innerHTML = '<tr><td colspan="4" style="padding:16px;color:#6b7280;font-size:14px;">No emails sent yet.</td></tr>';
-            else {
-                var html2 = '';
-                sent.forEach(function(lead) {
-                    var subj = (lead.email_subject || '').trim();
-                    var subjPreview = subj.length > 45 ? subj.substring(0, 45) + '…' : subj;
-                    html2 += '<tr><td>' + escapeHtml(lead.business_name || '') + '</td><td>' + escapeHtml(lead.email || '') + '</td><td class="subject-preview">' + escapeHtml(subjPreview || '–') + '</td><td class="sent-at">' + formatSentAt(lead.updated_at) + '</td></tr>';
-                });
-                sentBody.innerHTML = html2;
-            }
-
-            var noSection = document.getElementById('noEmailSection');
-            var noSummary = document.getElementById('noEmailSummary');
-            var noList = document.getElementById('noEmailList');
-            if (noSection && noSummary) {
-                noSummary.textContent = noEmail.length + ' leads without email (hidden)';
-                if (noList) noList.textContent = noEmail.length ? noEmail.map(function(l) { return l.business_name || 'Unknown'; }).join(', ') : '';
-                if (noEmail.length) noSection.classList.remove('hidden'); else noSection.classList.add('hidden');
-            }
-
-            if (readyBody) {
-                readyBody.querySelectorAll('.btn-preview').forEach(function(btn) {
-                    btn.onclick = function(e) { e.stopPropagation(); var id = this.getAttribute('data-id'); var expand = document.querySelector('.expand-ready-' + id); if (expand) { var visible = expand.style.display !== 'none'; document.querySelectorAll('.expand-row-pipeline').forEach(function(r) { r.style.display = 'none'; }); expand.style.display = visible ? 'none' : 'table-row'; } };
-                });
-                readyBody.querySelectorAll('.btn-open-gmail').forEach(function(btn) {
-                    btn.onclick = function(e) {
-                        e.stopPropagation();
-                        if (dailySentCount >= dailyLimit) { alert('Daily limit reached. Send more tomorrow.'); return; }
-                        var id = btn.getAttribute('data-id');
-                        var lead = leadsCache.find(function(l) { return String(l.id) === id; });
-                        if (!lead || !lead.email) return;
-                        var mailto = 'mailto:' + lead.email + '?subject=' + encodeURIComponent((lead.email_subject || '').trim()) + '&body=' + encodeURIComponent((lead.email_body || '').trim());
-                        window.open(mailto, '_blank');
-                    };
-                });
-            }
-        }
-
-        const STEPS = [
-            { key: 'discovery', label: 'Finding businesses...' },
-            { key: 'audit', label: 'Auditing websites...' },
-            { key: 'email', label: 'Writing emails...' }
-        ];
-
-        document.getElementById('clearLog').onclick = async function(e) {
-            e.preventDefault();
             try {
-                await fetch(API_BASE + '/api/leads/autopilot/clear-log', { method: 'POST', headers: getHeaders() });
-            } catch (err) {}
-            document.getElementById('logPanel').innerHTML = '';
-        };
-
-        var GMAIL_APPS_SCRIPT = 'function sendEmails() {\n' +
-            '  var sheet = SpreadsheetApp.getActiveSheet();\n' +
-            '  var data = sheet.getDataRange().getValues();\n' +
-            '  var headers = data[0];\n' +
-            '  var emailCol = headers.indexOf("Email Address");\n' +
-            '  var subjectCol = headers.indexOf("Email Subject");\n' +
-            '  var bodyCol = headers.indexOf("Email Body");\n' +
-            '  var sent = 0;\n' +
-            '  for (var i = 1; i < data.length; i++) {\n' +
-            '    var email = data[i][emailCol];\n' +
-            '    var subject = data[i][subjectCol];\n' +
-            '    var body = data[i][bodyCol];\n' +
-            '    if (email && subject && body) {\n' +
-            '      try {\n' +
-            '        GmailApp.sendEmail(email, subject, body, {\n' +
-            '          name: "Abbed",\n' +
-            '          replyTo: "abbed@motionmadebne.com.au"\n' +
-            '        });\n' +
-            '        sheet.getRange(i + 1, headers.length + 1).setValue("SENT");\n' +
-            '        sent++;\n' +
-            '        Utilities.sleep(30000);\n' +
-            '      } catch (e) {\n' +
-            '        sheet.getRange(i + 1, headers.length + 1).setValue("FAILED: " + e.message);\n' +
-            '      }\n' +
-            '    }\n' +
-            '  }\n' +
-            '  SpreadsheetApp.getUi().alert("Done! Sent " + sent + " emails.");\n' +
-            '}';
-
-        document.getElementById('runAll').onclick = async function() {
-            lastLogId = 0;
-            const btn = this;
-            const progressEl = document.getElementById('progressMsg');
-            const summaryEl = document.getElementById('runSummary');
-            btn.disabled = true;
-            if (summaryEl) summaryEl.classList.add('hidden');
-            progressEl.classList.add('active');
-            var trade = getSelectedTrade();
-            var suburb = document.getElementById('suburb').value;
-            const target = Math.min(50, Math.max(5, parseInt(document.getElementById('targetCount').value, 10) || 20));
-            var discoveryResp = {}, auditResp = {}, emailResp = {};
-
-            for (var i = 0; i < STEPS.length; i++) {
-                progressEl.textContent = 'Step ' + (i + 1) + '/3: ' + STEPS[i].label;
-                try {
-                    if (STEPS[i].key === 'discovery') {
-                        var r = await fetch(API_BASE + '/api/leads/autopilot/discovery', {
-                            method: 'POST', headers: getHeaders(),
-                            body: JSON.stringify({ trade_type: trade, suburb: suburb, city: (document.getElementById('city') && document.getElementById('city').value) || 'Brisbane', target_count: target })
-                        });
-                        discoveryResp = await r.json().catch(function() { return {}; });
-                        if (!r.ok) throw new Error(discoveryResp.detail || 'Discovery failed');
-                    } else if (STEPS[i].key === 'audit') {
-                        r = await fetch(API_BASE + '/api/leads/autopilot/audit', { method: 'POST', headers: getHeaders(), body: JSON.stringify({}) });
-                        auditResp = await r.json().catch(function() { return {}; });
-                        if (!r.ok) throw new Error(auditResp.detail || 'Audit failed');
-                    } else {
-                        r = await fetch(API_BASE + '/api/leads/autopilot/email-writing', { method: 'POST', headers: getHeaders(), body: JSON.stringify({}) });
-                        emailResp = await r.json().catch(function() { return {}; });
-                        if (!r.ok) throw new Error(emailResp.detail || 'Email writing failed');
-                    }
-                    await loadLeads();
-                } catch (e) {
-                    var msg = (e && e.message) ? e.message : 'Step failed';
-                    progressEl.textContent = 'Step ' + (i + 1) + '/3 failed: ' + msg + '. Continuing…';
-                    await new Promise(function(res) { setTimeout(res, 2000); });
-                }
-            }
-            progressEl.textContent = '';
-            progressEl.classList.remove('active');
-            btn.disabled = false;
-            await loadLeads();
-
-            if (summaryEl) {
-                var inserted = discoveryResp.inserted != null ? discoveryResp.inserted : -1;
-                if (inserted === 0) {
-                    var loc = (discoveryResp.suburb_searched || suburb || (document.getElementById('city') && document.getElementById('city').value) || 'Brisbane');
-                    summaryEl.textContent = 'No new businesses found for ' + trade + ' in ' + loc + '. Try a different suburb or trade.';
-                } else {
-                    var totalFound = discoveryResp.total_found != null ? discoveryResp.total_found : (discoveryResp.inserted != null ? discoveryResp.inserted : 0);
-                    var withEmail = leadsCache.filter(function(l) { return (l.email || '').trim().length > 0; }).length;
-                    var readyToSend = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; }).length;
-                    summaryEl.textContent = (inserted > 0 ? inserted + ' new leads found. ' : '') + 'Found ' + totalFound + ' businesses, ' + withEmail + ' had emails, ' + readyToSend + ' emails written and ready to send.';
-                }
-                summaryEl.classList.remove('hidden');
-            }
-        };
-
-        function csvEscape(s) {
-            if (s == null) return '""';
-            var t = String(s).replace(/"/g, '""');
-            if (/[",\r\n]/.test(t)) return '"' + t + '"';
-            return t;
+                var r = await fetch(API + '/api/leads', { headers: h() });
+                if (!r.ok) return;
+                var d = await r.json();
+                leadsCache = d.leads || [];
+            } catch (e) {}
+            renderLeads();
+            loadStats();
+            if (!operationRunning) updateIdleBanner();
         }
+
+        function tradeBadge(t) {
+            var cls = 'badge-trade ';
+            if ((t||'').indexOf('Bond') >= 0) cls += 'badge-bond';
+            else if ((t||'').indexOf('House') >= 0) cls += 'badge-house';
+            else cls += 'badge-plumber';
+            return '<span class="' + cls + '">' + esc(t) + '</span>';
+        }
+        function scorePill(s) {
+            if (s == null) return '–';
+            var cls = s >= 7 ? 'score-high' : s >= 4 ? 'score-mid' : 'score-low';
+            return '<span class="score-pill ' + cls + '">' + s + '</span>';
+        }
+        function fmtSent(u) { if (!u) return 'Sent'; var d = new Date(u); if (isNaN(d)) return 'Sent'; var now = new Date(); var diff = Math.floor((now-d)/60000); if (diff < 1) return 'Just now'; if (diff < 60) return diff + 'm ago'; var dh = Math.floor(diff/60); if (dh < 24) return dh + 'h ago'; return d.toLocaleDateString(); }
+
+        function getFilteredLeads(statusList) {
+            var search = ($('pipelineSearch') && $('pipelineSearch').value || '').toLowerCase();
+            var tradeFilter = ($('pipelineTradeFilter') && $('pipelineTradeFilter').value) || '';
+            return leadsCache.filter(function(l) {
+                if (statusList.indexOf(l.status) < 0) return false;
+                if (tradeFilter && l.trade_type !== tradeFilter) return false;
+                if (search && (l.business_name || '').toLowerCase().indexOf(search) < 0 && (l.trade_type || '').toLowerCase().indexOf(search) < 0) return false;
+                return true;
+            });
+        }
+
+        function renderLeads() {
+            var readyLeads = getFilteredLeads(['ready']).filter(function(l) { return l.email; });
+            readyLeads.sort(function(a, b) { return (b.audit_score || 0) - (a.audit_score || 0); });
+            var sentLeads = getFilteredLeads(['emailed']);
+            var noEmail = leadsCache.filter(function(l) { return l.status !== 'skip' && l.status !== 'emailed' && !(l.email || '').trim(); });
+
+            $('readyCount').textContent = readyLeads.length;
+            $('sentCount').textContent = sentLeads.length;
+
+            var readySection = $('pipelineReadySection');
+            var sentSection = $('pipelineSentSection');
+            if (readyLeads.length > 0) readySection.classList.remove('hidden'); else readySection.classList.add('hidden');
+            if (sentLeads.length > 0) sentSection.classList.remove('hidden'); else sentSection.classList.add('hidden');
+
+            renderReadyTable(readyLeads);
+            renderSentTable(sentLeads);
+            updateSendBtn(readyLeads.length);
+
+            var noSec = $('noEmailSection');
+            var noSum = $('noEmailSummary');
+            if (noEmail.length) { noSec.classList.remove('hidden'); noSum.textContent = noEmail.length + ' leads without email'; $('noEmailList').textContent = noEmail.map(function(l) { return l.business_name || '?'; }).join(', '); }
+            else noSec.classList.add('hidden');
+        }
+
+        function renderReadyTable(leads) {
+            var totalPages = Math.max(1, Math.ceil(leads.length / PAGE_SIZE));
+            if (readyPage > totalPages) readyPage = totalPages;
+            var start = (readyPage - 1) * PAGE_SIZE;
+            var page = leads.slice(start, start + PAGE_SIZE);
+            var body = $('leadsReadyBody');
+            if (!page.length) { body.innerHTML = '<tr><td colspan="5" style="padding:16px;color:#6b7280;">No ready leads. Run discovery first.</td></tr>'; }
+            else {
+                body.innerHTML = page.map(function(l) {
+                    var subj = (l.email_subject || '').substring(0, 50);
+                    return '<tr data-id="' + l.id + '">' +
+                        '<td>' + esc(l.business_name) + '</td>' +
+                        '<td>' + tradeBadge(l.trade_type) + '</td>' +
+                        '<td>' + scorePill(l.audit_score) + '</td>' +
+                        '<td class="subject-preview" title="' + esc(l.email_subject) + '">' + esc(subj || '–') + '</td>' +
+                        '<td><button class="btn-sm btn-preview" data-id="' + l.id + '">Preview</button> <button class="btn-sm btn-gmail" data-id="' + l.id + '">Gmail</button> <button class="btn-sm btn-skip" data-id="' + l.id + '" title="Skip this lead">✕</button></td>' +
+                        '</tr>' +
+                        '<tr class="expand-row-pipeline expand-' + l.id + '" style="display:none"><td colspan="5"><div class="label">To</div><div class="value">' + esc(l.email) + '</div><div class="label" style="margin-top:8px">Subject</div><div class="value">' + esc(l.email_subject) + '</div><div class="label" style="margin-top:8px">Body</div><div class="value body">' + esc(l.email_body) + '</div></td></tr>';
+                }).join('');
+            }
+            renderPagination($('readyPagination'), readyPage, totalPages, function(p) { readyPage = p; renderReadyTable(leads); });
+            attachReadyHandlers();
+        }
+
+        function renderSentTable(leads) {
+            var totalPages = Math.max(1, Math.ceil(leads.length / PAGE_SIZE));
+            if (sentPage > totalPages) sentPage = totalPages;
+            var start = (sentPage - 1) * PAGE_SIZE;
+            var page = leads.slice(start, start + PAGE_SIZE);
+            var body = $('leadsSentBody');
+            if (!page.length) body.innerHTML = '<tr><td colspan="4" style="padding:16px;color:#6b7280;">No sent emails yet.</td></tr>';
+            else body.innerHTML = page.map(function(l) {
+                return '<tr><td>' + esc(l.business_name) + '</td><td>' + tradeBadge(l.trade_type) + '</td><td class="subject-preview">' + esc((l.email_subject||'').substring(0,45)) + '</td><td class="sent-at">' + fmtSent(l.updated_at) + '</td></tr>';
+            }).join('');
+            renderPagination($('sentPagination'), sentPage, totalPages, function(p) { sentPage = p; renderSentTable(leads); });
+        }
+
+        function renderPagination(el, current, total, cb) {
+            if (total <= 1) { el.classList.add('hidden'); return; }
+            el.classList.remove('hidden');
+            var html = '<button ' + (current <= 1 ? 'disabled' : '') + ' data-p="' + (current-1) + '">‹ Prev</button>';
+            html += '<span class="current">Page ' + current + ' of ' + total + '</span>';
+            html += '<button ' + (current >= total ? 'disabled' : '') + ' data-p="' + (current+1) + '">Next ›</button>';
+            el.innerHTML = html;
+            el.querySelectorAll('button').forEach(function(b) { b.onclick = function() { cb(parseInt(this.getAttribute('data-p'),10)); }; });
+        }
+
+        function updateSendBtn(nReady) {
+            var btn = $('sendAllNowBtn');
+            var csv = $('prepareSendGmail');
+            if (nReady > 0) { btn.classList.remove('hidden'); csv.classList.remove('hidden'); }
+            else { btn.classList.add('hidden'); csv.classList.add('hidden'); }
+            var canSend = Math.max(0, dailyLimit - dailySentCount);
+            var toSend = Math.min(nReady, canSend);
+            if (dailySentCount >= dailyLimit) { btn.textContent = nReady + ' ready (limit reached)'; btn.disabled = true; }
+            else { btn.textContent = (toSend < nReady ? 'Send ' + toSend + ' of ' + nReady : 'Send ' + nReady + ' Emails Now'); btn.disabled = operationRunning; }
+        }
+
+        function attachReadyHandlers() {
+            $('leadsReadyBody').querySelectorAll('.btn-preview').forEach(function(btn) {
+                btn.onclick = function(e) { e.stopPropagation(); var id = this.getAttribute('data-id'); var ex = document.querySelector('.expand-' + id); if (ex) { var vis = ex.style.display !== 'none'; document.querySelectorAll('.expand-row-pipeline').forEach(function(r) { r.style.display = 'none'; }); ex.style.display = vis ? 'none' : 'table-row'; } };
+            });
+            $('leadsReadyBody').querySelectorAll('.btn-gmail').forEach(function(btn) {
+                btn.onclick = function(e) {
+                    e.stopPropagation();
+                    if (dailySentCount >= dailyLimit) { alert('Daily limit reached.'); return; }
+                    var lead = leadsCache.find(function(l) { return String(l.id) === btn.getAttribute('data-id'); });
+                    if (!lead || !lead.email) return;
+                    window.open('mailto:' + lead.email + '?subject=' + encodeURIComponent(lead.email_subject || '') + '&body=' + encodeURIComponent(lead.email_body || ''), '_blank');
+                };
+            });
+            $('leadsReadyBody').querySelectorAll('.btn-skip').forEach(function(btn) {
+                btn.onclick = async function(e) {
+                    e.stopPropagation();
+                    var id = btn.getAttribute('data-id');
+                    if (!confirm('Skip this lead?')) return;
+                    try {
+                        await fetch(API + '/api/leads/' + id + '/skip', { method: 'POST', headers: h() });
+                        leadsCache = leadsCache.map(function(l) { if (String(l.id) === id) l.status = 'skip'; return l; });
+                        renderLeads();
+                        loadStats();
+                    } catch (er) {}
+                };
+            });
+        }
+
+        /* Search/filter */
+        $('pipelineSearch').oninput = function() { readyPage = 1; sentPage = 1; renderLeads(); };
+        $('pipelineTradeFilter').onchange = function() { readyPage = 1; sentPage = 1; renderLeads(); };
+
+        /* Run single trade discovery + audit + email */
+        async function runPipeline(trade, city, target) {
+            var inserted = 0;
+            setBanner('busy', '⏳ Finding ' + trade + ' businesses in ' + city + '...');
+            setProgress(5);
+            try {
+                var r = await fetch(API + '/api/leads/autopilot/discovery', { method: 'POST', headers: h(), body: JSON.stringify({ trade_type: trade, suburb: '', city: city, target_count: target }) });
+                var d = await r.json().catch(function() { return {}; });
+                inserted = d.inserted || 0;
+            } catch (e) {}
+            setProgress(33);
+            setBanner('busy', '⏳ Auditing websites...');
+            try { await fetch(API + '/api/leads/autopilot/audit', { method: 'POST', headers: h(), body: JSON.stringify({}) }); } catch (e) {}
+            setProgress(66);
+            setBanner('busy', '⏳ Writing emails...');
+            try { await fetch(API + '/api/leads/autopilot/email-writing', { method: 'POST', headers: h(), body: JSON.stringify({}) }); } catch (e) {}
+            setProgress(100);
+            return inserted;
+        }
+
+        $('runSingle').onclick = async function() {
+            setOperationState(true);
+            var trade = getSelectedTrade();
+            var city = getCity();
+            var target = getTarget();
+            var btn = $('runSingle');
+            btn.textContent = '🔍 Finding...';
+            var inserted = await runPipeline(trade, city, target);
+            btn.textContent = '🔍 Find Leads';
+            await loadLeads();
+            setOperationState(false);
+            flashSuccess('✅ Done! Found ' + inserted + ' new ' + trade + ' leads.');
+        };
+
+        $('runAllTrades').onclick = async function() {
+            setOperationState(true);
+            var city = getCity();
+            var target = getTarget();
+            var btn = $('runAllTrades');
+            btn.textContent = '🔄 Running...';
+            var totalInserted = 0;
+            var results = [];
+            for (var i = 0; i < TRADES.length; i++) {
+                setBanner('busy', '⏳ Finding ' + TRADES[i] + ' (' + (i+1) + '/' + TRADES.length + ')...');
+                setProgress((i / TRADES.length) * 100);
+                var ins = await runPipeline(TRADES[i], city, target);
+                totalInserted += ins;
+                results.push(TRADES[i] + ': ' + ins);
+                await loadLeads();
+            }
+            btn.textContent = '🔄 Find All Trades';
+            setOperationState(false);
+            flashSuccess('✅ All trades done! ' + results.join(', ') + '. Total: ' + totalInserted + ' new leads.');
+        };
+
+        $('dailyBatchBtn').onclick = async function() {
+            setOperationState(true);
+            var city = getCity();
+            var btn = $('dailyBatchBtn');
+            btn.textContent = '⏳ Running...';
+            var totalInserted = 0;
+            var results = [];
+            for (var i = 0; i < TRADES.length; i++) {
+                setBanner('busy', '⏳ Running ' + TRADES[i] + '... (' + (i+1) + '/' + TRADES.length + ')');
+                setProgress((i / TRADES.length) * 100);
+                var ins = await runPipeline(TRADES[i], city, 10);
+                totalInserted += ins;
+                results.push(TRADES[i] + ': found ' + ins);
+                await loadLeads();
+            }
+            btn.textContent = '🚀 Run Daily Batch';
+            await loadLeads();
+            setOperationState(false);
+            var readyN = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; }).length;
+            flashSuccess('✅ Done! ' + results.join('. ') + '. Total: ' + totalInserted + ' new leads, ' + readyN + ' emails ready to send.');
+        };
+
+        /* Send */
         var sendProgressInterval = null;
-        document.getElementById('sendAllNowBtn').onclick = async function() {
-            if (dailySentCount >= dailyLimit) { alert('Daily limit reached. Send more tomorrow.'); return; }
+        $('sendAllNowBtn').onclick = async function() {
+            if (dailySentCount >= dailyLimit) { alert('Daily limit reached.'); return; }
             var ready = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; });
             if (!ready.length) return;
-            var btn = this;
-            var summaryEl = document.getElementById('runSummary');
-            var progressEl = document.getElementById('progressMsg');
-            var sendBtnLabel = document.getElementById('sendBtnLabel');
-            var sendBtnProgress = document.getElementById('sendBtnProgress');
-            var sendBtnDone = document.getElementById('sendBtnDone');
-            var sendProgressText = document.getElementById('sendProgressText');
-            var sendProgressBar = document.getElementById('sendProgressBar');
-            btn.disabled = true;
-            btn.classList.add('sending');
-            if (summaryEl) summaryEl.classList.add('hidden');
-            progressEl.textContent = 'Sending emails...';
-            progressEl.classList.add('active');
-            if (sendBtnLabel) sendBtnLabel.style.display = 'none';
-            if (sendBtnDone) sendBtnDone.style.display = 'none';
+            setOperationState(true);
+            var btn = $('sendAllNowBtn');
+            btn.textContent = 'Sending... 0 of ?';
+            setBanner('busy', '⏳ Sending emails...');
+            setProgress(0);
             try {
-                var r = await fetch(API_BASE + '/api/leads/autopilot/send-ready', { method: 'POST', headers: getHeaders() });
+                var r = await fetch(API + '/api/leads/autopilot/send-ready', { method: 'POST', headers: h() });
                 var data = await r.json().catch(function() { return {}; });
-                if (!data.ok) {
-                    if ((data.message || '').indexOf('Already sending') !== -1) {
-                        if (summaryEl) { summaryEl.textContent = 'Already sending. Check the log below for progress.'; summaryEl.classList.remove('hidden'); }
-                    } else {
-                        if (summaryEl) { summaryEl.textContent = data.message || 'Send failed'; summaryEl.classList.remove('hidden'); }
-                    }
-                    if (sendBtnLabel) sendBtnLabel.style.display = '';
-                    btn.classList.remove('sending');
-                    btn.disabled = false;
-                    progressEl.textContent = '';
-                    progressEl.classList.remove('active');
+                if (!data.ok || !(data.to_send > 0)) {
+                    btn.textContent = 'Send';
+                    setOperationState(false);
+                    updateIdleBanner();
                     return;
                 }
-                var totalToSend = data.to_send != null ? data.to_send : 0;
-                if (totalToSend === 0) {
-                    if (summaryEl) { summaryEl.textContent = data.message || 'No emails to send.'; summaryEl.classList.remove('hidden'); }
-                    if (sendBtnLabel) sendBtnLabel.style.display = '';
-                    btn.classList.remove('sending');
-                    btn.disabled = false;
-                    progressEl.textContent = '';
-                    progressEl.classList.remove('active');
-                    return;
-                }
-                if (sendBtnProgress) { sendBtnProgress.style.display = ''; sendProgressText.textContent = 'Sending... 0 of ' + totalToSend; if (sendProgressBar) sendProgressBar.style.width = '0%'; }
-                var logR = await fetch(API_BASE + '/api/leads/autopilot/log?limit=1', { headers: getHeaders() }).catch(function() { return { ok: false }; });
-                if (logR.ok) { var logData = await logR.json(); if ((logData.log || []).length) lastLogId = logData.log[logData.log.length - 1].id || lastLogId; }
+                var totalToSend = data.to_send;
                 var sentSoFar = 0;
                 var completed = false;
                 sendProgressInterval = setInterval(async function() {
                     if (completed) return;
                     try {
-                        var r2 = await fetch(API_BASE + '/api/leads/autopilot/log?since_id=' + lastLogId + '&limit=200', { headers: getHeaders() });
+                        var r2 = await fetch(API + '/api/leads/autopilot/log?since_id=' + lastLogId + '&limit=200', { headers: h() });
                         if (!r2.ok) return;
-                        var logData2 = await r2.json();
-                        (logData2.log || []).forEach(function(entry) {
-                            if (entry.id > lastLogId) lastLogId = entry.id;
-                            if (entry.phase === 'send') {
-                                if ((entry.message || '').indexOf('Sent ✓') !== -1) sentSoFar++;
-                                if ((entry.message || '').indexOf('Sending complete:') !== -1) completed = true;
+                        var ld = await r2.json();
+                        (ld.log || []).forEach(function(e) {
+                            if (e.id > lastLogId) lastLogId = e.id;
+                            if (e.phase === 'send') {
+                                if ((e.message||'').indexOf('Sent ✓') >= 0) sentSoFar++;
+                                if ((e.message||'').indexOf('Sending complete:') >= 0) completed = true;
                             }
                         });
-                        if (sendProgressText) sendProgressText.textContent = 'Sending... ' + sentSoFar + ' of ' + totalToSend;
-                        if (sendProgressBar) sendProgressBar.style.width = (totalToSend ? Math.min(100, (sentSoFar / totalToSend) * 100) : 0) + '%';
+                        btn.textContent = 'Sending... ' + sentSoFar + ' of ' + totalToSend;
+                        setBanner('busy', '⏳ Sending emails (' + sentSoFar + '/' + totalToSend + ')...');
+                        setProgress(totalToSend ? (sentSoFar / totalToSend) * 100 : 0);
                         if (completed) {
-                            if (sendProgressInterval) { clearInterval(sendProgressInterval); sendProgressInterval = null; }
-                            if (sendBtnProgress) sendBtnProgress.style.display = 'none';
-                            if (sendBtnDone) { sendBtnDone.style.display = ''; sendBtnDone.textContent = '✅ All sent!'; }
-                            if (sendProgressBar) sendProgressBar.style.width = '100%';
-                            var lastMsg = (logData2.log || []).filter(function(e) { return (e.message || '').indexOf('Sending complete:') !== -1; }).pop();
-                            if (summaryEl && lastMsg) { summaryEl.textContent = lastMsg.message || ''; summaryEl.classList.remove('hidden'); }
+                            clearInterval(sendProgressInterval); sendProgressInterval = null;
                             await loadLeads();
-                            loadDailySent();
-                            setTimeout(function() {
-                                if (sendBtnDone) sendBtnDone.style.display = 'none';
-                                if (sendBtnLabel) sendBtnLabel.style.display = '';
-                                btn.classList.remove('sending');
-                                btn.disabled = false;
-                                updateSendAllButton();
-                            }, 2000);
+                            setOperationState(false);
+                            flashSuccess('✅ Sent ' + sentSoFar + ' emails!');
                         }
                     } catch (e) {}
                 }, 2000);
             } catch (e) {
                 if (sendProgressInterval) { clearInterval(sendProgressInterval); sendProgressInterval = null; }
-                if (sendBtnProgress) sendBtnProgress.style.display = 'none';
-                if (sendBtnLabel) sendBtnLabel.style.display = '';
-                btn.classList.remove('sending');
-                btn.disabled = false;
-                if (summaryEl) { summaryEl.textContent = 'Send failed: ' + (e.message || e); summaryEl.classList.remove('hidden'); }
+                setOperationState(false);
+                updateIdleBanner();
             }
-            progressEl.textContent = '';
-            progressEl.classList.remove('active');
         };
 
-        document.getElementById('prepareSendGmail').onclick = function() {
-            if (dailySentCount >= dailyLimit) { alert('Daily limit reached. Send more tomorrow.'); return; }
-            var ready = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; });
+        /* CSV backup */
+        var GMAIL_SCRIPT = 'function sendEmails() {\n  var sheet = SpreadsheetApp.getActiveSheet();\n  var data = sheet.getDataRange().getValues();\n  var headers = data[0];\n  var emailCol = headers.indexOf("Email Address");\n  var subjectCol = headers.indexOf("Email Subject");\n  var bodyCol = headers.indexOf("Email Body");\n  var sent = 0;\n  for (var i = 1; i < data.length; i++) {\n    var email = data[i][emailCol];\n    var subject = data[i][subjectCol];\n    var body = data[i][bodyCol];\n    if (email && subject && body) {\n      try {\n        GmailApp.sendEmail(email, subject, body, { name: "Abbed", replyTo: "abbed@motionmadebne.com.au" });\n        sheet.getRange(i+1, headers.length+1).setValue("SENT");\n        sent++;\n        Utilities.sleep(30000);\n      } catch (e) { sheet.getRange(i+1, headers.length+1).setValue("FAILED: "+e.message); }\n    }\n  }\n  SpreadsheetApp.getUi().alert("Done! Sent "+sent+" emails.");\n}';
+        function csvEsc(s) { if (s==null) return '""'; var t = String(s).replace(/"/g,'""'); return /[",\r\n]/.test(t) ? '"'+t+'"' : t; }
+        $('prepareSendGmail').onclick = function() {
+            var ready = leadsCache.filter(function(l) { return l.status==='ready'&&l.email; });
             if (!ready.length) return;
-            var rows = [['Business Name', 'Email Address', 'Email Subject', 'Email Body', 'Status']];
-            ready.forEach(function(l) {
-                rows.push([l.business_name || '', l.email || '', l.email_subject || '', l.email_body || '', '']);
-            });
-            var csv = rows.map(function(row) {
-                return row.map(csvEscape).join(',');
-            }).join('\r\n');
-            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-            var a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'leads_gmail.csv';
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            URL.revokeObjectURL(a.href);
-            a.remove();
-            var pre = document.getElementById('gmailScriptPre');
-            if (pre) { pre.textContent = GMAIL_APPS_SCRIPT; }
-            var modal = document.getElementById('gmailScriptModal');
-            if (modal) modal.classList.remove('hidden');
+            var rows = [['Business Name','Email Address','Email Subject','Email Body','Status']];
+            ready.forEach(function(l) { rows.push([l.business_name||'',l.email||'',l.email_subject||'',l.email_body||'','']); });
+            var csv = rows.map(function(r) { return r.map(csvEsc).join(','); }).join('\r\n');
+            var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = 'leads_gmail.csv'; a.click();
+            $('gmailScriptPre').textContent = GMAIL_SCRIPT;
+            $('gmailScriptModal').classList.remove('hidden');
         };
-        document.getElementById('copyScriptBtn').onclick = function() {
-            navigator.clipboard.writeText(GMAIL_APPS_SCRIPT).then(function() { alert('Script copied to clipboard. Paste into Apps Script and run sendEmails.'); }).catch(function() { alert('Copy failed. Select and copy the script manually.'); });
-        };
-        document.getElementById('closeScriptModalBtn').onclick = function() {
-            document.getElementById('gmailScriptModal').classList.add('hidden');
-        };
-        document.getElementById('gmailScriptModal').onclick = function(e) {
-            if (e.target && e.target.id === 'gmailScriptModal') e.target.classList.add('hidden');
-        };
+        $('copyScriptBtn').onclick = function() { navigator.clipboard.writeText(GMAIL_SCRIPT).catch(function(){}); };
+        $('closeScriptModalBtn').onclick = function() { $('gmailScriptModal').classList.add('hidden'); };
+        $('gmailScriptModal').onclick = function(e) { if (e.target.id === 'gmailScriptModal') e.target.classList.add('hidden'); };
 
-        document.getElementById('exportCsv').onclick = async function() {
-            var trade = getSelectedTrade();
-            var suburb = document.getElementById('suburb').value;
-            var url = API_BASE + '/api/leads/export?';
-            if (trade) url += 'trade_type=' + encodeURIComponent(trade) + '&';
-            if (suburb) url += 'suburb=' + encodeURIComponent(suburb);
-            const r = await fetch(url, { headers: getHeaders() });
+        /* Export */
+        $('exportCsv').onclick = async function() {
+            var url = API + '/api/leads/export?';
+            var r = await fetch(url, { headers: h() });
             if (!r.ok) return;
-            const blob = await r.blob();
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'leads_export.csv';
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            URL.revokeObjectURL(a.href);
-            a.remove();
+            var blob = await r.blob();
+            var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'leads_export.csv'; a.click();
         };
 
-        document.getElementById('refreshLeads').onclick = function() { loadLeads(); };
-
-        let lastLogId = 0;
+        /* Log polling with smart auto-scroll */
+        var logPanel = $('logPanel');
+        logPanel.addEventListener('scroll', function() {
+            logAutoScroll = (logPanel.scrollHeight - logPanel.scrollTop - logPanel.clientHeight) < 30;
+        });
         async function pollLog() {
             try {
-                const r = await fetch(API_BASE + '/api/leads/autopilot/log?since_id=' + lastLogId + '&limit=80', { headers: getHeaders() });
+                var r = await fetch(API + '/api/leads/autopilot/log?since_id=' + lastLogId + '&limit=80', { headers: h() });
                 if (!r.ok) return;
-                const data = await r.json();
-                const log = data.log || [];
-                const panel = document.getElementById('logPanel');
-                log.forEach(entry => {
-                    if (entry.id > lastLogId) lastLogId = entry.id;
-                    const time = entry.created_at ? new Date(entry.created_at).toLocaleTimeString() : '';
-                    const div = document.createElement('div');
+                var d = await r.json();
+                (d.log || []).forEach(function(e) {
+                    if (e.id > lastLogId) lastLogId = e.id;
+                    var div = document.createElement('div');
                     div.className = 'log-entry';
-                    div.innerHTML = '<span class="log-time">' + time + '</span><span class="log-phase">[' + escapeHtml(entry.phase || '') + ']</span> ' + escapeHtml(entry.message || '');
-                    panel.appendChild(div);
+                    div.innerHTML = '<span class="log-time">' + (e.created_at ? new Date(e.created_at).toLocaleTimeString() : '') + '</span><span class="log-phase">[' + esc(e.phase||'') + ']</span> ' + esc(e.message||'');
+                    logPanel.appendChild(div);
                 });
-                panel.scrollTop = panel.scrollHeight;
-            } catch (_) {}
+                if (logAutoScroll) logPanel.scrollTop = logPanel.scrollHeight;
+            } catch (e) {}
         }
-        function startLogPolling() {
-            pollLog();
-            setInterval(pollLog, 2500);
-        }
+        $('clearLog').onclick = async function(e) {
+            e.preventDefault();
+            try { await fetch(API + '/api/leads/autopilot/clear-log', { method: 'POST', headers: h() }); } catch (er) {}
+            logPanel.innerHTML = '';
+        };
+
+        $('refreshLeads').onclick = function() { loadLeads(); };
+        $('city').onchange = function() {};
+
+        /* Login */
+        $('loginBtn').onclick = async function() {
+            var token = $('adminToken').value.trim();
+            if (!token) { $('authError').textContent = 'Token required'; return; }
+            adminToken = token;
+            $('authError').textContent = '';
+            try {
+                var r = await fetch(API + '/api/leads', { headers: h() });
+                if (r.status === 401) { $('authError').textContent = 'Invalid token'; return; }
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                $('authSection').classList.add('hidden');
+                $('mainContent').classList.remove('hidden');
+                loadLeads();
+                setInterval(pollLog, 2500);
+                pollLog();
+            } catch (e) { $('authError').textContent = e.message || 'Login failed'; }
+        };
+    })();
     </script>
 </body>
 </html>
