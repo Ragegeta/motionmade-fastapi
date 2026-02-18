@@ -49,7 +49,7 @@ def main():
             "city": "Brisbane",
             "target_count": 10,
         },
-        timeout=120,
+        timeout=180,
     )
     if r.status_code != 200:
         print(f"Discovery failed: {r.status_code} {r.text}")

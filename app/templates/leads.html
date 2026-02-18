@@ -407,7 +407,7 @@
         async function loadStats() {
             dailyLimit = getDailyLimit();
             try {
-                var r = await fetch(API + '/api/leads/stats', { headers: h() });
+                var r = await fetch(API + '/api/leads/pipeline-stats', { headers: h() });
                 if (!r.ok) return;
                 var d = await r.json();
                 dailySentCount = d.total_sent_today || 0;

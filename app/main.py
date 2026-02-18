@@ -3923,7 +3923,7 @@ def api_leads_daily_sent_count(authorization: str = Header(default="")):
     return {"count": count, "limit": limit}
 
 
-@app.get("/api/leads/stats")
+@app.get("/api/leads/pipeline-stats")
 def api_leads_stats(authorization: str = Header(default="")):
     """Pipeline stats: ready/sent/total counts, broken down by trade. Admin-only."""
     _check_admin_auth(authorization)
