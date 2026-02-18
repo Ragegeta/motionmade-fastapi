@@ -566,7 +566,7 @@
                     var id = btn.getAttribute('data-id');
                     if (!confirm('Skip this lead?')) return;
                     try {
-                        await fetch(API + '/api/lead/' + id + '/skip', { method: 'POST', headers: h() });
+                        await fetch(API + '/api/leads/' + id + '/skip', { method: 'POST', headers: h() });
                         leadsCache = leadsCache.map(function(l) { if (String(l.id) === id) l.status = 'skip'; return l; });
                         renderLeads();
                         loadStats();
