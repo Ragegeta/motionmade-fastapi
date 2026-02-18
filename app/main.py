@@ -4040,48 +4040,6 @@ def api_leads_export(
     )
 
 
-@app.get("/api/leads/{lead_id}")
-def api_lead_get(
-    lead_id: int,
-    authorization: str = Header(default=""),
-):
-    """Get a single lead by id. Admin-only."""
-    _check_admin_auth(authorization)
-    with get_conn() as conn:
-        row = conn.execute(
-            "SELECT id, trade_type, suburb, business_name, website, email, status, audit_score, audit_details, preview_url, preview_demo_id, email_subject, email_body, created_at, updated_at FROM leads WHERE id = %s",
-            (lead_id,),
-        ).fetchone()
-    if not row:
-        raise HTTPException(status_code=404, detail="Lead not found")
-    return {
-        "id": row[0], "trade_type": row[1], "suburb": row[2], "business_name": row[3], "website": row[4],
-        "email": row[5], "status": row[6], "audit_score": row[7], "audit_details": row[8], "preview_url": row[9],
-        "preview_demo_id": row[10], "email_subject": row[11], "email_body": row[12],
-        "created_at": row[13].isoformat() if row[13] else None, "updated_at": row[14].isoformat() if row[14] else None,
-    }
-
-
-@app.patch("/api/leads/{lead_id}")
-def api_leads_update(
-    lead_id: int,
-    body: dict,
-    authorization: str = Header(default=""),
-):
-    """Update a lead (status, email, etc.). Admin-only."""
-    _check_admin_auth(authorization)
-    allowed = {"status", "email", "email_subject", "email_body", "business_name", "website", "audit_score", "audit_details", "preview_url", "preview_demo_id"}
-    updates = {k: v for k, v in (body or {}).items() if k in allowed}
-    if not updates:
-        return {"ok": True}
-    sets = ", ".join(f"{k} = %s" for k in updates)
-    values = list(updates.values()) + [lead_id]
-    with get_conn() as conn:
-        conn.execute(f"UPDATE leads SET {sets}, updated_at = now() WHERE id = %s", tuple(values))
-        conn.commit()
-    return {"ok": True}
-
-
 @app.post("/api/leads/mark-ready-as-emailed")
 def api_leads_mark_ready_as_emailed(
     trade_type: Optional[str] = None,
@@ -4117,6 +4075,48 @@ def api_leads_wipe(authorization: str = Header(default="")):
         conn.execute("DELETE FROM autopilot_log")
         conn.commit()
     return {"ok": True, "deleted_leads": deleted_leads, "deleted_logs": deleted_logs}
+
+
+@app.get("/api/leads/{lead_id}")
+def api_lead_get(
+    lead_id: int,
+    authorization: str = Header(default=""),
+):
+    """Get a single lead by id. Admin-only. Must be registered after all /api/leads/xxx routes."""
+    _check_admin_auth(authorization)
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id, trade_type, suburb, business_name, website, email, status, audit_score, audit_details, preview_url, preview_demo_id, email_subject, email_body, created_at, updated_at FROM leads WHERE id = %s",
+            (lead_id,),
+        ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return {
+        "id": row[0], "trade_type": row[1], "suburb": row[2], "business_name": row[3], "website": row[4],
+        "email": row[5], "status": row[6], "audit_score": row[7], "audit_details": row[8], "preview_url": row[9],
+        "preview_demo_id": row[10], "email_subject": row[11], "email_body": row[12],
+        "created_at": row[13].isoformat() if row[13] else None, "updated_at": row[14].isoformat() if row[14] else None,
+    }
+
+
+@app.patch("/api/leads/{lead_id}")
+def api_leads_update(
+    lead_id: int,
+    body: dict,
+    authorization: str = Header(default=""),
+):
+    """Update a lead (status, email, etc.). Admin-only."""
+    _check_admin_auth(authorization)
+    allowed = {"status", "email", "email_subject", "email_body", "business_name", "website", "audit_score", "audit_details", "preview_url", "preview_demo_id"}
+    updates = {k: v for k, v in (body or {}).items() if k in allowed}
+    if not updates:
+        return {"ok": True}
+    sets = ", ".join(f"{k} = %s" for k in updates)
+    values = list(updates.values()) + [lead_id]
+    with get_conn() as conn:
+        conn.execute(f"UPDATE leads SET {sets}, updated_at = now() WHERE id = %s", tuple(values))
+        conn.commit()
+    return {"ok": True}
 
 
 class AutopilotDiscoveryBody(BaseModel):
