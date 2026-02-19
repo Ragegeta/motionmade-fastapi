@@ -5054,6 +5054,55 @@ def api_leads_autopilot_send_ready(authorization: str = Header(default="")):
     return {"ok": True, "message": "Sending started", "to_send": to_send}
 
 
+class SendSelectedBody(BaseModel):
+    lead_ids: list
+
+
+@app.post("/api/leads/autopilot/send-selected")
+def api_leads_autopilot_send_selected(body: SendSelectedBody, authorization: str = Header(default="")):
+    """Send only the selected lead IDs. Respects daily limit. Sends in order provided (caller sorts by audit score)."""
+    global _send_ready_in_progress
+    _check_admin_auth(authorization)
+    resend_key = (os.getenv("RESEND_API_KEY") or "").strip()
+    if not resend_key:
+        raise HTTPException(status_code=500, detail="RESEND_API_KEY must be set")
+    ids = [int(i) for i in body.lead_ids if i is not None]
+    if not ids:
+        return {"ok": True, "message": "No leads selected", "to_send": 0}
+    with _send_ready_lock:
+        if _send_ready_in_progress:
+            return {"ok": False, "message": "Already sending"}
+        limit = _daily_email_limit()
+        with get_conn() as conn:
+            today_count_row = conn.execute(
+                """SELECT COUNT(*) FROM leads
+                   WHERE status = 'emailed'
+                   AND (updated_at AT TIME ZONE 'Australia/Brisbane')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Australia/Brisbane')::date"""
+            ).fetchone()
+        today_sent = today_count_row[0] if today_count_row else 0
+        placeholders = ",".join(["%s"] * len(ids))
+        with get_conn() as conn:
+            rows = conn.execute(
+                f"""SELECT id, business_name, email, email_subject, email_body
+                   FROM leads
+                   WHERE id IN ({placeholders}) AND status = 'ready' AND email IS NOT NULL AND email != ''
+                   ORDER BY COALESCE(audit_score, 0) DESC, id""",
+                tuple(ids),
+            ).fetchall()
+        to_send = 0
+        for row in rows:
+            if today_sent + to_send >= limit:
+                break
+            if (row[2] or "").strip():
+                to_send += 1
+        if not rows:
+            return {"ok": True, "message": "No matching ready leads", "to_send": 0}
+        _send_ready_in_progress = True
+    thread = threading.Thread(target=_run_send_ready_background, args=(list(rows), resend_key, limit, today_sent), daemon=True)
+    thread.start()
+    return {"ok": True, "message": "Sending started", "to_send": to_send}
+
+
 @app.post("/api/leads/send-all-ready")
 def api_leads_send_all_ready(
     authorization: str = Header(default=""),

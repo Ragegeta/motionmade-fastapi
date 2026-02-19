@@ -149,7 +149,17 @@
         .pipeline-section-header summary { list-style: none; display: flex; align-items: center; justify-content: space-between; width: 100%; }
         .pipeline-section-header summary::-webkit-details-marker { display: none; }
 
+        /* Ready toolbar */
+        .ready-toolbar { display: flex; align-items: center; gap: 10px; padding: 10px 20px; background: #f0fdf4; border-bottom: 1px solid #d1fae5; flex-wrap: wrap; }
+        .ready-toolbar label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #065f46; cursor: pointer; user-select: none; }
+        .ready-toolbar input[type="checkbox"] { width: 16px; height: 16px; accent-color: #059669; cursor: pointer; }
+        .ready-filter-select { padding: 6px 10px; border: 1px solid #a7f3d0; border-radius: 7px; font-size: 12px; background: #fff; font-family: inherit; color: #065f46; cursor: pointer; }
+        .ready-filter-select:focus { outline: none; border-color: #059669; }
+        .ready-selected-count { font-size: 12px; color: #047857; font-weight: 500; margin-left: auto; }
+
         .send-all-wrap { display: flex; align-items: center; gap: 10px; }
+        .pipeline-table .cb-col { width: 36px; text-align: center; }
+        .pipeline-table .cb-col input[type="checkbox"] { width: 15px; height: 15px; accent-color: #059669; cursor: pointer; }
         .btn-send-all { padding: 10px 22px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; background: #059669; color: white; transition: all 0.15s; font-family: inherit; }
         .btn-send-all:hover:not(:disabled) { background: #047857; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(5,150,105,0.3); }
         .btn-send-all:active:not(:disabled) { transform: translateY(0); }
@@ -385,13 +395,27 @@
                 <div class="pipeline-section-header">
                     <span>Ready to Send (<span id="readyCount">0</span>)</span>
                     <div class="send-all-wrap">
-                        <button type="button" id="sendAllNowBtn" class="btn-send-all action-btn hidden">Send 0 Emails Now</button>
+                        <button type="button" id="sendAllNowBtn" class="btn-send-all action-btn hidden">Send 0 Selected Emails Now</button>
                         <button type="button" id="prepareSendGmail" class="btn-backup-csv hidden">CSV backup</button>
                     </div>
                 </div>
+                <div class="ready-toolbar">
+                    <label><input type="checkbox" id="selectAllReady" /> Select all</label>
+                    <select id="readyTradeFilter" class="ready-filter-select">
+                        <option value="">All trades</option>
+                        <option value="Bond Cleaning">Bond Cleaning</option>
+                        <option value="House Cleaning">House Cleaning</option>
+                        <option value="Plumber">Plumber</option>
+                        <option value="Dentist">Dentist</option>
+                        <option value="Physiotherapist">Physiotherapist</option>
+                        <option value="Accountant">Accountant</option>
+                        <option value="Vet">Vet</option>
+                    </select>
+                    <span id="readySelectedCount" class="ready-selected-count"></span>
+                </div>
                 <div class="pipeline-table-wrap">
                     <table class="pipeline-table" id="leadsReadyTable">
-                        <thead><tr><th>Business</th><th>Trade</th><th>Score</th><th>Subject</th><th style="width:140px;"></th></tr></thead>
+                        <thead><tr><th class="cb-col"></th><th>Business</th><th>Trade</th><th>Score</th><th>Subject</th><th style="width:140px;"></th></tr></thead>
                         <tbody id="leadsReadyBody"></tbody>
                     </table>
                 </div>
@@ -454,6 +478,7 @@
         var PRO_TRADES = ['Dentist', 'Physiotherapist', 'Accountant', 'Vet'];
         var ALL_TRADES = TRADES.concat(PRO_TRADES);
         var dailyLimitResetTimerInterval = null;
+        var selectedLeadIds = new Set();
 
         function h() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken }; }
         function check401(r) { if (r.status === 401) { logout(); return true; } return false; }
@@ -586,9 +611,28 @@
             });
         }
 
+        function getReadyLeads() {
+            var search = ($('pipelineSearch') && $('pipelineSearch').value || '').toLowerCase();
+            var tradeFilter = ($('pipelineTradeFilter') && $('pipelineTradeFilter').value) || '';
+            var readyTradeFilter = ($('readyTradeFilter') && $('readyTradeFilter').value) || '';
+            return leadsCache.filter(function(l) {
+                if (l.status !== 'ready') return false;
+                if (!(l.email || '').trim()) return false;
+                if (tradeFilter && l.trade_type !== tradeFilter) return false;
+                if (readyTradeFilter && l.trade_type !== readyTradeFilter) return false;
+                if (search && (l.business_name || '').toLowerCase().indexOf(search) < 0 && (l.trade_type || '').toLowerCase().indexOf(search) < 0) return false;
+                return true;
+            }).sort(function(a, b) { return (b.audit_score || 0) - (a.audit_score || 0); });
+        }
+
+        function pruneSelectedIds(visibleLeads) {
+            var visibleIds = new Set(visibleLeads.map(function(l) { return String(l.id); }));
+            selectedLeadIds.forEach(function(id) { if (!visibleIds.has(id)) selectedLeadIds.delete(id); });
+        }
+
         function renderLeads() {
-            var readyLeads = getFilteredLeads(['ready']).filter(function(l) { return l.email; });
-            readyLeads.sort(function(a, b) { return (b.audit_score || 0) - (a.audit_score || 0); });
+            var readyLeads = getReadyLeads();
+            pruneSelectedIds(readyLeads);
             var sentLeads = getFilteredLeads(['emailed']);
             var noEmail = leadsCache.filter(function(l) { return l.status !== 'skip' && l.status !== 'emailed' && !(l.email || '').trim(); });
 
@@ -602,7 +646,7 @@
 
             renderReadyTable(readyLeads);
             renderSentTable(sentLeads);
-            updateSendBtn(readyLeads.length);
+            updateSendBtn();
 
             var noSec = $('noEmailSection');
             var noSum = $('noEmailSummary');
@@ -616,22 +660,26 @@
             var start = (readyPage - 1) * PAGE_SIZE;
             var page = leads.slice(start, start + PAGE_SIZE);
             var body = $('leadsReadyBody');
-            if (!page.length) { body.innerHTML = '<tr><td colspan="5" style="padding:20px;color:#94a3b8;font-size:13px;">No ready leads. Run discovery to get started.</td></tr>'; }
+            if (!page.length) { body.innerHTML = '<tr><td colspan="6" style="padding:20px;color:#94a3b8;font-size:13px;">No ready leads. Run discovery to get started.</td></tr>'; }
             else {
                 body.innerHTML = page.map(function(l) {
                     var subj = (l.email_subject || '').substring(0, 50);
+                    var checked = selectedLeadIds.has(String(l.id)) ? ' checked' : '';
                     return '<tr data-id="' + l.id + '">' +
+                        '<td class="cb-col"><input type="checkbox" class="lead-cb" data-id="' + l.id + '"' + checked + ' /></td>' +
                         '<td style="font-weight:500;color:#0f172a;">' + esc(l.business_name) + '</td>' +
                         '<td>' + tradeBadge(l.trade_type) + '</td>' +
                         '<td>' + scorePill(l.audit_score) + '</td>' +
                         '<td class="subject-preview" title="' + esc(l.email_subject) + '">' + esc(subj || '—') + '</td>' +
                         '<td><button class="btn-sm btn-preview" data-id="' + l.id + '">Preview</button> <button class="btn-sm btn-gmail" data-id="' + l.id + '">Gmail</button> <button class="btn-sm btn-skip" data-id="' + l.id + '" title="Skip this lead">&#10005;</button></td>' +
                         '</tr>' +
-                        '<tr class="expand-row-pipeline expand-' + l.id + '" style="display:none"><td colspan="5"><div class="label">To</div><div class="value">' + esc(l.email) + '</div><div class="label" style="margin-top:12px">Subject</div><div class="value">' + esc(l.email_subject) + '</div><div class="label" style="margin-top:12px">Body</div><div class="value body">' + esc(l.email_body) + '</div></td></tr>';
+                        '<tr class="expand-row-pipeline expand-' + l.id + '" style="display:none"><td colspan="6"><div class="label">To</div><div class="value">' + esc(l.email) + '</div><div class="label" style="margin-top:12px">Subject</div><div class="value">' + esc(l.email_subject) + '</div><div class="label" style="margin-top:12px">Body</div><div class="value body">' + esc(l.email_body) + '</div></td></tr>';
                 }).join('');
             }
             renderPagination($('readyPagination'), readyPage, totalPages, function(p) { readyPage = p; renderReadyTable(leads); });
             attachReadyHandlers();
+            updateSelectAllState(leads);
+            updateSelectedCountLabel();
         }
 
         function renderSentTable(leads) {
@@ -657,18 +705,60 @@
             el.querySelectorAll('button').forEach(function(b) { b.onclick = function() { cb(parseInt(this.getAttribute('data-p'),10)); }; });
         }
 
-        function updateSendBtn(nReady) {
+        function updateSendBtn() {
             var btn = $('sendAllNowBtn');
             var csv = $('prepareSendGmail');
+            var readyLeads = getReadyLeads();
+            var nReady = readyLeads.length;
+            var nSelected = selectedLeadIds.size;
             if (nReady > 0) { btn.classList.remove('hidden'); csv.classList.remove('hidden'); }
             else { btn.classList.add('hidden'); csv.classList.add('hidden'); }
-            var canSend = Math.max(0, dailyLimit - dailySentCount);
-            var toSend = Math.min(nReady, canSend);
-            if (dailySentCount >= dailyLimit) { btn.textContent = nReady + ' ready (limit reached)'; btn.disabled = true; }
-            else { btn.textContent = (toSend < nReady ? 'Send ' + toSend + ' of ' + nReady : 'Send ' + nReady + ' Emails Now'); btn.disabled = operationRunning; }
+            if (nSelected === 0) {
+                btn.textContent = 'Select emails to send';
+                btn.disabled = true;
+            } else if (dailySentCount >= dailyLimit) {
+                btn.textContent = nSelected + ' selected (limit reached)';
+                btn.disabled = true;
+            } else {
+                var canSend = Math.max(0, dailyLimit - dailySentCount);
+                var toSend = Math.min(nSelected, canSend);
+                if (toSend < nSelected) {
+                    btn.textContent = 'Send ' + toSend + ' of ' + nSelected + ' selected (daily limit)';
+                } else {
+                    btn.textContent = 'Send ' + nSelected + ' Selected Email' + (nSelected === 1 ? '' : 's') + ' Now';
+                }
+                btn.disabled = operationRunning;
+            }
+        }
+
+        function updateSelectAllState(leads) {
+            var sa = $('selectAllReady');
+            if (!sa) return;
+            if (!leads || leads.length === 0) { sa.checked = false; sa.indeterminate = false; return; }
+            var allChecked = leads.every(function(l) { return selectedLeadIds.has(String(l.id)); });
+            var someChecked = leads.some(function(l) { return selectedLeadIds.has(String(l.id)); });
+            sa.checked = allChecked;
+            sa.indeterminate = !allChecked && someChecked;
+        }
+
+        function updateSelectedCountLabel() {
+            var el = $('readySelectedCount');
+            if (!el) return;
+            var n = selectedLeadIds.size;
+            el.textContent = n > 0 ? n + ' selected' : '';
         }
 
         function attachReadyHandlers() {
+            $('leadsReadyBody').querySelectorAll('.lead-cb').forEach(function(cb) {
+                cb.onchange = function() {
+                    var id = this.getAttribute('data-id');
+                    if (this.checked) selectedLeadIds.add(id);
+                    else selectedLeadIds.delete(id);
+                    updateSendBtn();
+                    updateSelectAllState(getReadyLeads());
+                    updateSelectedCountLabel();
+                };
+            });
             $('leadsReadyBody').querySelectorAll('.btn-preview').forEach(function(btn) {
                 btn.onclick = function(e) { e.stopPropagation(); var id = this.getAttribute('data-id'); var ex = document.querySelector('.expand-' + id); if (ex) { var vis = ex.style.display !== 'none'; document.querySelectorAll('.expand-row-pipeline').forEach(function(r) { r.style.display = 'none'; }); ex.style.display = vis ? 'none' : 'table-row'; } };
             });
@@ -699,6 +789,17 @@
         /* Search/filter */
         $('pipelineSearch').oninput = function() { readyPage = 1; sentPage = 1; renderLeads(); };
         $('pipelineTradeFilter').onchange = function() { readyPage = 1; sentPage = 1; renderLeads(); };
+        $('readyTradeFilter').onchange = function() { readyPage = 1; selectedLeadIds.clear(); renderLeads(); };
+        $('selectAllReady').onchange = function() {
+            var leads = getReadyLeads();
+            if (this.checked) {
+                leads.forEach(function(l) { selectedLeadIds.add(String(l.id)); });
+            } else {
+                leads.forEach(function(l) { selectedLeadIds.delete(String(l.id)); });
+            }
+            renderReadyTable(leads);
+            updateSendBtn();
+        };
 
         /* Run single trade discovery + audit + email */
         async function runPipeline(trade, city, target) {
@@ -802,18 +903,21 @@
         var sendProgressInterval = null;
         $('sendAllNowBtn').onclick = async function() {
             if (dailySentCount >= dailyLimit) { alert('Daily limit reached.'); return; }
-            var ready = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; });
-            if (!ready.length) return;
+            if (selectedLeadIds.size === 0) { alert('No leads selected.'); return; }
+            var ids = Array.from(selectedLeadIds);
             setOperationState(true);
             var btn = $('sendAllNowBtn');
             btn.textContent = 'Sending... 0 of ?';
-            setBanner('busy', 'Sending emails...');
+            setBanner('busy', 'Sending selected emails...');
             setProgress(0);
             try {
-                var r = await fetch(API + '/api/leads/autopilot/send-ready', { method: 'POST', headers: h() });
+                var r = await fetch(API + '/api/leads/autopilot/send-selected', {
+                    method: 'POST', headers: h(),
+                    body: JSON.stringify({ lead_ids: ids.map(function(id) { return parseInt(id, 10); }) })
+                });
                 var data = await r.json().catch(function() { return {}; });
                 if (!data.ok || !(data.to_send > 0)) {
-                    btn.textContent = 'Send';
+                    btn.textContent = 'Select emails to send';
                     setOperationState(false);
                     updateIdleBanner();
                     return;
@@ -839,6 +943,7 @@
                         setProgress(totalToSend ? (sentSoFar / totalToSend) * 100 : 0);
                         if (completed) {
                             clearInterval(sendProgressInterval); sendProgressInterval = null;
+                            selectedLeadIds.clear();
                             await loadLeads();
                             setOperationState(false);
                             flashSuccess('Sent ' + sentSoFar + ' emails!');
