@@ -5014,45 +5014,9 @@ def _run_send_ready_background(rows: list, resend_key: str, limit: int, today_se
 
 @app.post("/api/leads/autopilot/send-ready")
 def api_leads_autopilot_send_ready(authorization: str = Header(default="")):
-    """Start sending ready leads via Resend in background. Returns immediately. Respects DAILY_EMAIL_LIMIT. Admin-only."""
-    global _send_ready_in_progress
+    """Deprecated: use /api/leads/autopilot/send-selected instead."""
     _check_admin_auth(authorization)
-    resend_key = (os.getenv("RESEND_API_KEY") or "").strip()
-    if not resend_key:
-        raise HTTPException(
-            status_code=500,
-            detail="RESEND_API_KEY must be set",
-        )
-    with _send_ready_lock:
-        if _send_ready_in_progress:
-            return {"ok": False, "message": "Already sending"}
-        limit = _daily_email_limit()
-        with get_conn() as conn:
-            today_count_row = conn.execute(
-                """SELECT COUNT(*) FROM leads
-                   WHERE status = 'emailed'
-                   AND (updated_at AT TIME ZONE 'Australia/Brisbane')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Australia/Brisbane')::date"""
-            ).fetchone()
-        today_sent = today_count_row[0] if today_count_row else 0
-        with get_conn() as conn:
-            rows = conn.execute(
-                """SELECT id, business_name, email, email_subject, email_body
-                   FROM leads
-                   WHERE status = 'ready' AND email IS NOT NULL AND email != ''
-                   ORDER BY COALESCE(audit_score, 0) DESC, id"""
-            ).fetchall()
-        to_send = 0
-        for row in rows:
-            if today_sent + to_send >= limit:
-                break
-            if (row[2] or "").strip():
-                to_send += 1
-        if not rows:
-            return {"ok": True, "message": "No ready leads", "to_send": 0}
-        _send_ready_in_progress = True
-    thread = threading.Thread(target=_run_send_ready_background, args=(list(rows), resend_key, limit, today_sent), daemon=True)
-    thread.start()
-    return {"ok": True, "message": "Sending started", "to_send": to_send}
+    return {"ok": False, "message": "Use /api/leads/autopilot/send-selected with lead_ids instead", "to_send": 0}
 
 
 class SendSelectedBody(BaseModel):
@@ -5061,7 +5025,7 @@ class SendSelectedBody(BaseModel):
 
 @app.post("/api/leads/autopilot/send-selected")
 def api_leads_autopilot_send_selected(body: SendSelectedBody, authorization: str = Header(default="")):
-    """Send only the selected lead IDs. Respects daily limit. Sends in order provided (caller sorts by audit score)."""
+    """Send only the selected lead IDs. Respects daily limit. Sends in audit-score order."""
     global _send_ready_in_progress
     _check_admin_auth(authorization)
     resend_key = (os.getenv("RESEND_API_KEY") or "").strip()
@@ -5070,6 +5034,7 @@ def api_leads_autopilot_send_selected(body: SendSelectedBody, authorization: str
     ids = [int(i) for i in body.lead_ids if i is not None]
     if not ids:
         return {"ok": True, "message": "No leads selected", "to_send": 0}
+    _autopilot_log("send", f"Send-selected called with {len(ids)} IDs: {ids[:20]}{'...' if len(ids) > 20 else ''}")
     with _send_ready_lock:
         if _send_ready_in_progress:
             return {"ok": False, "message": "Already sending"}
@@ -5090,6 +5055,8 @@ def api_leads_autopilot_send_selected(body: SendSelectedBody, authorization: str
                    ORDER BY COALESCE(audit_score, 0) DESC, id""",
                 tuple(ids),
             ).fetchall()
+        matched_ids = [row[0] for row in rows]
+        _autopilot_log("send", f"Matched {len(rows)} ready leads from selection: {matched_ids[:20]}{'...' if len(matched_ids) > 20 else ''}")
         to_send = 0
         for row in rows:
             if today_sent + to_send >= limit:
