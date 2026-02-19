@@ -330,62 +330,6 @@
       "parking": "free parking"
     }
   },
-  "lawyer": {
-    "display_name": "Law Firm",
-    "faqs": [
-      {
-        "question": "Do you offer a free initial consultation?",
-        "answer": "${free_consult_answer}"
-      },
-      {
-        "question": "What areas of law do you practice?",
-        "answer": "We practice in ${practice_areas}."
-      },
-      {
-        "question": "How much do you charge?",
-        "answer": "Our fees depend on the type of matter. ${fee_structure} We always provide a cost estimate before starting work so you know what to expect."
-      },
-      {
-        "question": "Do you do legal aid?",
-        "answer": "${legal_aid_answer}"
-      },
-      {
-        "question": "How do I book an appointment?",
-        "answer": "Call us on ${phone}, book online through our website, or message us here. We'll get back to you within one business day."
-      },
-      {
-        "question": "What are your opening hours?",
-        "answer": "We're open ${hours}. After hours appointments available by arrangement."
-      },
-      {
-        "question": "How long will my matter take?",
-        "answer": "Timeframes vary depending on the complexity of your matter and whether the other party cooperates. We'll give you a realistic timeline at your first appointment and keep you updated throughout."
-      },
-      {
-        "question": "Do you offer payment plans?",
-        "answer": "${payment_plan_answer}"
-      },
-      {
-        "question": "Can you help with an urgent matter?",
-        "answer": "Yes, we handle urgent matters including AVOs, bail applications, and urgent family law matters. Call us on ${phone} and let us know it's urgent."
-      },
-      {
-        "question": "Where are you located?",
-        "answer": "We're located at ${address}. There is ${parking} available nearby."
-      }
-    ],
-    "variables": {
-      "free_consult_answer": "We offer a free 15 minute phone consultation so we can understand your situation and let you know how we can help. No obligation.",
-      "practice_areas": "family law, criminal law, property and conveyancing, wills and estates, commercial law, and employment law",
-      "fee_structure": "Simple matters like wills start from $350. Conveyancing from $990. Hourly rates for litigation matters are $350 to $500 plus GST.",
-      "legal_aid_answer": "We accept legal aid referrals for eligible matters. Contact Legal Aid Queensland to check your eligibility, or ask us and we can help you find out.",
-      "phone": "0437 037 584",
-      "hours": "Monday to Friday 8:30am to 5:30pm",
-      "payment_plan_answer": "Yes, we offer flexible payment plans for larger matters. We'll discuss options at your first appointment.",
-      "address": "[Your Address]",
-      "parking": "free parking"
-    }
-  },
   "vet": {
     "display_name": "Veterinary Clinic",
     "faqs": [

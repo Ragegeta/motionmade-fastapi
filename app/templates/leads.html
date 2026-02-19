@@ -118,7 +118,6 @@
         .badge-dentist { background: #fce7f3; color: #9d174d; }
         .badge-physio { background: #d1fae5; color: #065f46; }
         .badge-accountant { background: #e0e7ff; color: #3730a3; }
-        .badge-lawyer { background: #fef9c3; color: #854d0e; }
         .badge-vet { background: #ffe4e6; color: #9f1239; }
         .score-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
         .score-high { background: #dcfce7; color: #166534; }
@@ -188,7 +187,10 @@
     </style>
 </head>
 <body>
-    <header><span class="logo">MotionMade Leads</span></header>
+    <header>
+        <span class="logo">MotionMade Leads</span>
+        <p style="font-size:13px;color:#6b7280;margin-top:2px;">Find local businesses, write personalised emails, and send them automatically.</p>
+    </header>
     <div class="container">
         <div class="auth-section" id="authSection">
             <input type="password" id="adminToken" placeholder="Admin token" />
@@ -230,7 +232,6 @@
                                 <button type="button" class="btn-trade professional" data-trade="Dentist">Dentist</button>
                                 <button type="button" class="btn-trade professional" data-trade="Physiotherapist">Physio</button>
                                 <button type="button" class="btn-trade professional" data-trade="Accountant">Accountant</button>
-                                <button type="button" class="btn-trade professional" data-trade="Lawyer">Lawyer</button>
                                 <button type="button" class="btn-trade professional" data-trade="Vet">Vet</button>
                             </div>
                         </div>
@@ -298,7 +299,6 @@
                     <option value="Dentist">Dentist</option>
                     <option value="Physiotherapist">Physiotherapist</option>
                     <option value="Accountant">Accountant</option>
-                    <option value="Lawyer">Lawyer</option>
                     <option value="Vet">Vet</option>
                 </select>
             </div>
@@ -374,7 +374,7 @@
         var sentPage = 1;
         var PAGE_SIZE = 25;
         var TRADES = ['Bond Cleaning', 'House Cleaning', 'Plumber'];
-        var PRO_TRADES = ['Dentist', 'Physiotherapist', 'Accountant', 'Lawyer', 'Vet'];
+        var PRO_TRADES = ['Dentist', 'Physiotherapist', 'Accountant', 'Vet'];
         var ALL_TRADES = TRADES.concat(PRO_TRADES);
         var dailyLimitResetTimerInterval = null;
 
@@ -484,7 +484,6 @@
             else if (tl.indexOf('dentist') >= 0 || tl.indexOf('dental') >= 0) cls += 'badge-dentist';
             else if (tl.indexOf('physio') >= 0) cls += 'badge-physio';
             else if (tl.indexOf('accountant') >= 0 || tl.indexOf('accounting') >= 0) cls += 'badge-accountant';
-            else if (tl.indexOf('lawyer') >= 0 || tl.indexOf('law') >= 0 || tl.indexOf('solicitor') >= 0) cls += 'badge-lawyer';
             else if (tl.indexOf('vet') >= 0) cls += 'badge-vet';
             else cls += 'badge-plumber';
             return '<span class="' + cls + '">' + esc(t) + '</span>';

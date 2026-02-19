@@ -4109,6 +4109,25 @@ def api_leads_wipe(authorization: str = Header(default="")):
     return {"ok": True, "deleted_leads": deleted_leads, "deleted_logs": deleted_logs}
 
 
+@app.post("/api/leads/delete-by-trade")
+def api_leads_delete_by_trade(
+    body: dict,
+    authorization: str = Header(default=""),
+):
+    """Delete all leads for a specific trade type. Admin-only."""
+    _check_admin_auth(authorization)
+    trade = (body.get("trade_type") or "").strip()
+    if not trade:
+        raise HTTPException(status_code=400, detail="trade_type required")
+    with get_conn() as conn:
+        cur = conn.execute("SELECT COUNT(*) FROM leads WHERE trade_type = %s", (trade,))
+        count = (cur.fetchone() or (0,))[0]
+        conn.execute("DELETE FROM leads WHERE trade_type = %s", (trade,))
+        conn.execute("DELETE FROM discovery_searches WHERE trade_type = %s", (trade,))
+        conn.commit()
+    return {"ok": True, "deleted": count, "trade_type": trade}
+
+
 @app.get("/api/lead/{lead_id}")
 def api_lead_get(
     lead_id: int,
@@ -4176,8 +4195,6 @@ def _discovery_query_variations(trade: str, suburb: str) -> list[str]:
         return [f"physiotherapist {s}", f"physio clinic {s}", f"physiotherapy {s}"]
     if "accountant" in t or "accounting" in t:
         return [f"accountant {s}", f"accounting firm {s}", f"tax accountant {s}"]
-    if "lawyer" in t or "law" in t or "solicitor" in t:
-        return [f"lawyer {s}", f"law firm {s}", f"solicitor {s}"]
     if "vet" in t or "veterinar" in t:
         return [f"veterinarian {s}", f"vet clinic {s}", f"animal hospital {s}"]
     return [f"{trade} {s}"]
@@ -4697,15 +4714,6 @@ def _build_leads_email_prompt(
             "AI assistant for [Business Name]",
             "[Business Name] could handle more client enquiries",
             "built something for Brisbane accounting firms",
-        ]
-    elif "lawyer" in trade_lower or "law" in trade_lower or "solicitor" in trade_lower:
-        trade_angle = "Law firms: most people looking for a lawyer google at night when something's gone wrong. If your site can't answer their basic questions, they call the next firm on the list. People asking if you offer free consultations, what areas of law you practice, how much you charge, do you do legal aid."
-        pain_points = "free consultations, areas of law, how much you charge, do you do legal aid"
-        price_line = "$149/month after the trial"
-        subject_examples = [
-            "AI front desk for [Business Name]",
-            "[Business Name] is losing enquiries after hours",
-            "built something for Brisbane law firms",
         ]
     elif "vet" in trade_lower or "veterinar" in trade_lower:
         trade_angle = "Vet clinics: a panicking pet owner at 10pm isn't going to wait until morning. If your website can answer their question, they book with you instead of driving to the emergency vet. Pet owners asking about emergency hours, vaccination costs, do you treat their animal type, how to book."
