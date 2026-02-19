@@ -711,7 +711,7 @@
             tenantPhone = (me.contact_phone || '').trim();
             document.getElementById('greeting').textContent = "G'day, " + displayName;
             document.getElementById('tenantName').textContent = tenantName;
-            var embedCode = '<script src="https://motionmade-fastapi.onrender.com/widget.js"\n  data-tenant="' + escapeHtml(tenantId) + '"\n  data-name="' + escapeHtml(tenantName) + '"' + (tenantPhone ? '\n  data-phone="' + escapeHtml(tenantPhone) + '"' : '') + '\n  data-color="#2563EB"\n  data-api="https://motionmade-fastapi.onrender.com"><\/script>';
+            var embedCode = '<script src="https://motionmade-fastapi.onrender.com/widget.js?v=6"\n  data-tenant="' + escapeHtml(tenantId) + '"\n  data-name="' + escapeHtml(tenantName) + '"' + (tenantPhone ? '\n  data-phone="' + escapeHtml(tenantPhone) + '"' : '') + '\n  data-color="#2563EB"\n  data-api="https://motionmade-fastapi.onrender.com"><\/script>';
             document.getElementById('embedSnippet').textContent = embedCode;
             return loadSummary();
         }).then(function (summary) {

@@ -157,6 +157,7 @@ def serve_widget_js():
         headers={
             "Cache-Control": "no-cache, no-store, must-revalidate",
             "Pragma": "no-cache",
+            "Expires": "0",
         },
     )
 

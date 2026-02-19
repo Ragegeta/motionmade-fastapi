@@ -334,8 +334,8 @@ function updateInstallSnippet() {
     const tenantId = (detail && detail.getAttribute('data-tenant-id')) || '';
     const phoneEl = document.getElementById('installContactPhone');
     const phone = (phoneEl && phoneEl.value.trim()) || (detail && detail.getAttribute('data-tenant-phone')) || '';
-    const floatSnippet = '<!-- MotionMade AI - Instant Answers for ' + escapeHtml(name) + ' -->\n<script src="' + escapeHtml(apiBase) + '/widget.js"\n  data-tenant="' + escapeHtml(tenantId) + '"\n  data-name="' + escapeHtml(name) + '"\n  data-phone="' + escapeHtml(phone) + '"\n  data-color="#2563EB"\n  data-mode="float"\n  data-api="' + escapeHtml(apiBase) + '"><\/script>';
-    const inlineSnippet = '<!-- MotionMade AI - Inline widget for ' + escapeHtml(name) + ' -->\n<div id="motionmade-widget"><\/div>\n<script src="' + escapeHtml(apiBase) + '/widget.js"\n  data-tenant="' + escapeHtml(tenantId) + '"\n  data-name="' + escapeHtml(name) + '"\n  data-phone="' + escapeHtml(phone) + '"\n  data-color="#2563EB"\n  data-mode="inline"\n  data-api="' + escapeHtml(apiBase) + '"><\/script>';
+    const floatSnippet = '<!-- MotionMade AI - Instant Answers for ' + escapeHtml(name) + ' -->\n<script src="' + escapeHtml(apiBase) + '/widget.js?v=6"\n  data-tenant="' + escapeHtml(tenantId) + '"\n  data-name="' + escapeHtml(name) + '"\n  data-phone="' + escapeHtml(phone) + '"\n  data-color="#2563EB"\n  data-mode="float"\n  data-api="' + escapeHtml(apiBase) + '"><\/script>';
+    const inlineSnippet = '<!-- MotionMade AI - Inline widget for ' + escapeHtml(name) + ' -->\n<div id="motionmade-widget"><\/div>\n<script src="' + escapeHtml(apiBase) + '/widget.js?v=6"\n  data-tenant="' + escapeHtml(tenantId) + '"\n  data-name="' + escapeHtml(name) + '"\n  data-phone="' + escapeHtml(phone) + '"\n  data-color="#2563EB"\n  data-mode="inline"\n  data-api="' + escapeHtml(apiBase) + '"><\/script>';
     const elFloat = document.getElementById('installSnippet');
     const elInline = document.getElementById('installSnippetInline');
     if (elFloat) elFloat.textContent = floatSnippet;
@@ -860,8 +860,8 @@ async function wizardSaveAndGoLive() {
         document.getElementById('wizardStep3').classList.add('active');
         document.getElementById('wizLiveTitle').textContent = '✓ ' + escapeHtml(wizardBusinessName) + ' is live!';
         loadWizardSuggested();
-        var floatSnippet = '<!-- MotionMade AI - Instant Answers for ' + escapeHtml(wizardBusinessName) + ' -->\n<script src="' + escapeHtml(API_BASE) + '/widget.js"\n  data-tenant="' + escapeHtml(wizardTenantId) + '"\n  data-name="' + escapeHtml(wizardBusinessName) + '"\n  data-phone="' + escapeHtml(wizardContactPhone) + '"\n  data-color="#2563EB"\n  data-mode="float"\n  data-api="' + escapeHtml(API_BASE) + '"><\/script>';
-        var inlineSnippet = '<!-- MotionMade AI - Inline widget -->\n<div id="motionmade-widget"><\/div>\n<script src="' + escapeHtml(API_BASE) + '/widget.js"\n  data-tenant="' + escapeHtml(wizardTenantId) + '"\n  data-name="' + escapeHtml(wizardBusinessName) + '"\n  data-phone="' + escapeHtml(wizardContactPhone) + '"\n  data-color="#2563EB"\n  data-mode="inline"\n  data-api="' + escapeHtml(API_BASE) + '"><\/script>';
+        var floatSnippet = '<!-- MotionMade AI - Instant Answers for ' + escapeHtml(wizardBusinessName) + ' -->\n<script src="' + escapeHtml(API_BASE) + '/widget.js?v=6"\n  data-tenant="' + escapeHtml(wizardTenantId) + '"\n  data-name="' + escapeHtml(wizardBusinessName) + '"\n  data-phone="' + escapeHtml(wizardContactPhone) + '"\n  data-color="#2563EB"\n  data-mode="float"\n  data-api="' + escapeHtml(API_BASE) + '"><\/script>';
+        var inlineSnippet = '<!-- MotionMade AI - Inline widget -->\n<div id="motionmade-widget"><\/div>\n<script src="' + escapeHtml(API_BASE) + '/widget.js?v=6"\n  data-tenant="' + escapeHtml(wizardTenantId) + '"\n  data-name="' + escapeHtml(wizardBusinessName) + '"\n  data-phone="' + escapeHtml(wizardContactPhone) + '"\n  data-color="#2563EB"\n  data-mode="inline"\n  data-api="' + escapeHtml(API_BASE) + '"><\/script>';
         document.getElementById('wizEmbedCode').textContent = floatSnippet;
         var elInline = document.getElementById('wizEmbedCodeInline');
         if (elInline) elInline.textContent = inlineSnippet;
