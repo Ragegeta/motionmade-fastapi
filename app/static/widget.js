@@ -49,7 +49,7 @@
 
     /* Inline overrides */
     '#mm-widget-root.mm-inline .mm-panel{position:relative;bottom:auto;right:auto;width:100%;max-width:520px;max-height:none;overflow:visible;margin:0 auto;box-shadow:0 1px 4px rgba(0,0,0,0.08);border:1px solid #e5e7eb;transform:none;opacity:1;pointer-events:auto;border-radius:14px}',
-    '#mm-widget-root.mm-inline .mm-chat{overflow:visible;flex:none;max-height:none}',
+    '#mm-widget-root.mm-inline .mm-body{overflow:visible;flex:none;max-height:none}',
     '#mm-widget-root.mm-inline .mm-hdr .mm-close{display:none}',
 
     /* Header */
@@ -59,32 +59,38 @@
     '#mm-widget-root .mm-close{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:22px;line-height:1;padding:4px;transition:color 0.15s}',
     '#mm-widget-root .mm-close:hover{color:#fff}',
 
-    /* Chat area */
-    '#mm-widget-root .mm-chat{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:#d1d5db transparent}',
-    '#mm-widget-root .mm-chat::-webkit-scrollbar{width:4px}',
-    '#mm-widget-root .mm-chat::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:2px}',
+    /* Body */
+    '#mm-widget-root .mm-body{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:#d1d5db transparent}',
+    '#mm-widget-root .mm-body::-webkit-scrollbar{width:4px}',
+    '#mm-widget-root .mm-body::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:2px}',
 
-    /* Messages */
-    '#mm-widget-root .mm-msg{max-width:85%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word;animation:mm-msgIn 0.3s cubic-bezier(0.22,1,0.36,1) both}',
-    '#mm-widget-root .mm-msg.mm-ai{align-self:flex-start;background:#f3f4f6;color:#1f2937;border-bottom-left-radius:4px}',
-    '#mm-widget-root .mm-msg.mm-user{align-self:flex-end;background:var(--mm-color);color:#fff;border-bottom-right-radius:4px}',
-    '@keyframes mm-msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}',
+    /* Greeting */
+    '#mm-widget-root .mm-greeting{font-size:14px;color:#475569;line-height:1.55;animation:mm-fadeIn 0.3s ease both}',
+    '@keyframes mm-fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}',
+
+    /* Quick replies */
+    '#mm-widget-root .mm-quick-wrap{display:flex;flex-wrap:wrap;gap:6px}',
+    '#mm-widget-root .mm-quick{padding:7px 13px;border-radius:20px;font-size:13px;cursor:pointer;background:#fff;color:var(--mm-color);border:1.5px solid rgba(var(--mm-color-rgb),0.3);font-family:inherit;transition:all 0.15s;line-height:1.3}',
+    '#mm-widget-root .mm-quick:hover{background:rgba(var(--mm-color-rgb),0.08);border-color:var(--mm-color)}',
+
+    /* Result area */
+    '#mm-widget-root .mm-result{animation:mm-fadeIn 0.3s ease both}',
+    '#mm-widget-root .mm-you-asked{font-size:12px;color:#94a3b8;margin-bottom:8px}',
+    '#mm-widget-root .mm-you-asked q{font-style:normal;color:#475569;font-weight:500}',
+    '#mm-widget-root .mm-answer{padding:12px 14px;background:#f3f4f6;border-radius:12px;font-size:14px;line-height:1.6;color:#1f2937;white-space:pre-wrap;word-break:break-word;border-left:3px solid var(--mm-color)}',
+    '#mm-widget-root .mm-ask-again{margin-top:10px;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;background:none;color:var(--mm-color);border:1.5px solid rgba(var(--mm-color-rgb),0.3);font-family:inherit;transition:all 0.15s;font-weight:500}',
+    '#mm-widget-root .mm-ask-again:hover{background:rgba(var(--mm-color-rgb),0.08);border-color:var(--mm-color)}',
 
     /* Typing indicator */
-    '#mm-widget-root .mm-typing{align-self:flex-start;display:flex;gap:4px;padding:12px 16px;background:#f3f4f6;border-radius:14px;border-bottom-left-radius:4px}',
+    '#mm-widget-root .mm-typing{display:flex;gap:4px;padding:12px 16px;background:#f3f4f6;border-radius:12px;align-self:flex-start;border-left:3px solid var(--mm-color)}',
     '#mm-widget-root .mm-typing span{width:7px;height:7px;background:#94a3b8;border-radius:50%;animation:mm-dot 1.4s ease-in-out infinite}',
     '#mm-widget-root .mm-typing span:nth-child(2){animation-delay:0.16s}',
     '#mm-widget-root .mm-typing span:nth-child(3){animation-delay:0.32s}',
     '@keyframes mm-dot{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-6px);opacity:1}}',
 
-    /* Quick replies */
-    '#mm-widget-root .mm-quick-wrap{display:flex;flex-wrap:wrap;gap:6px;padding:0 2px}',
-    '#mm-widget-root .mm-quick{padding:7px 13px;border-radius:20px;font-size:13px;cursor:pointer;background:#fff;color:var(--mm-color);border:1.5px solid rgba(var(--mm-color-rgb),0.3);font-family:inherit;transition:all 0.15s;line-height:1.3}',
-    '#mm-widget-root .mm-quick:hover{background:rgba(var(--mm-color-rgb),0.08);border-color:var(--mm-color)}',
-
     /* Input area */
-    '#mm-widget-root .mm-input-area{padding:12px 14px;border-top:1px solid #f1f5f9;display:flex;gap:8px;align-items:flex-end;flex-shrink:0}',
-    '#mm-widget-root .mm-input{flex:1;min-height:40px;max-height:100px;padding:9px 14px;font-size:14px;border:1.5px solid #e2e8f0;border-radius:22px;background:#f8fafc;color:#1f2937;resize:none;outline:none;font-family:inherit;line-height:1.4;transition:border-color 0.15s,box-shadow 0.15s}',
+    '#mm-widget-root .mm-input-area{padding:12px 14px;border-top:1px solid #f1f5f9;display:flex;gap:8px;align-items:center;flex-shrink:0}',
+    '#mm-widget-root .mm-input{flex:1;height:40px;padding:9px 14px;font-size:14px;border:1.5px solid #e2e8f0;border-radius:22px;background:#f8fafc;color:#1f2937;outline:none;font-family:inherit;line-height:1.4;transition:border-color 0.15s,box-shadow 0.15s}',
     '#mm-widget-root .mm-input:focus{border-color:var(--mm-color);box-shadow:0 0 0 3px rgba(var(--mm-color-rgb),0.1);background:#fff}',
     '#mm-widget-root .mm-input::placeholder{color:#94a3b8}',
     '#mm-widget-root .mm-send{width:38px;height:38px;border:none;border-radius:50%;background:var(--mm-color);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.15s,opacity 0.15s;flex-shrink:0;padding:0}',
@@ -104,14 +110,14 @@
     '}',
 
     /* Error */
-    '#mm-widget-root .mm-err{color:#dc2626;font-size:13px;padding:8px 14px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca;align-self:flex-start}'
+    '#mm-widget-root .mm-err{color:#dc2626;font-size:13px;padding:8px 14px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca}'
   ].join('\n');
   root.appendChild(sheet);
 
   var open = false;
   var suggested = [];
   var apiLoadFailed = false;
-  var chatEl, inputEl, sendBtn;
+  var bodyEl, inputEl, sendBtn;
   var hasGreeted = false;
 
   function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -119,70 +125,125 @@
     return phone ? ("Couldn't load right now. Call " + phone + " instead.") : "Couldn't load right now. Try again later.";
   }
 
-  function scrollToBottom() {
-    if (chatEl) setTimeout(function () { chatEl.scrollTop = chatEl.scrollHeight; }, 50);
-  }
-
-  function addMessage(text, type) {
-    var div = document.createElement('div');
-    div.className = 'mm-msg ' + (type === 'user' ? 'mm-user' : 'mm-ai');
-    div.textContent = text;
-    chatEl.appendChild(div);
-    scrollToBottom();
-  }
-
-  function showTyping() {
-    var div = document.createElement('div');
-    div.className = 'mm-typing';
-    div.id = 'mm-typing';
-    div.innerHTML = '<span></span><span></span><span></span>';
-    chatEl.appendChild(div);
-    scrollToBottom();
-  }
-
-  function hideTyping() {
-    var el = chatEl.querySelector('#mm-typing');
-    if (el) el.remove();
-  }
-
-  function showQuickReplies(questions) {
-    var wrap = document.createElement('div');
-    wrap.className = 'mm-quick-wrap';
-    wrap.id = 'mm-quick-wrap';
-    questions.forEach(function (q) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'mm-quick';
-      btn.textContent = q;
-      btn.onclick = function () {
-        removeQuickReplies();
-        sendQuestion(q);
-      };
-      wrap.appendChild(btn);
-    });
-    chatEl.appendChild(wrap);
-    scrollToBottom();
-  }
-
-  function removeQuickReplies() {
-    var el = chatEl.querySelector('#mm-quick-wrap');
-    if (el) el.remove();
+  function resetToGreeting() {
+    bodyEl.innerHTML = '';
+    var greet = document.createElement('div');
+    greet.className = 'mm-greeting';
+    greet.textContent = greeting;
+    bodyEl.appendChild(greet);
+    if (suggested.length > 0) {
+      var wrap = document.createElement('div');
+      wrap.className = 'mm-quick-wrap';
+      suggested.slice(0, 4).forEach(function (q) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mm-quick';
+        btn.textContent = q;
+        btn.onclick = function () { askQuestion(q); };
+        wrap.appendChild(btn);
+      });
+      bodyEl.appendChild(wrap);
+    }
+    if (inputEl) { inputEl.value = ''; inputEl.disabled = false; }
+    if (sendBtn) sendBtn.disabled = false;
   }
 
   function showGreeting() {
     if (hasGreeted) return;
     hasGreeted = true;
-    addMessage(greeting, 'ai');
-    if (suggested.length > 0) {
-      showQuickReplies(suggested.slice(0, 4));
-    }
+    resetToGreeting();
+  }
+
+  function askQuestion(text) {
+    bodyEl.innerHTML = '';
+    if (inputEl) { inputEl.value = ''; inputEl.disabled = true; }
+    if (sendBtn) sendBtn.disabled = true;
+
+    var youAsked = document.createElement('div');
+    youAsked.className = 'mm-you-asked';
+    youAsked.innerHTML = 'You asked: <q>' + escapeHtml(text) + '</q>';
+    bodyEl.appendChild(youAsked);
+
+    var typing = document.createElement('div');
+    typing.className = 'mm-typing';
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    bodyEl.appendChild(typing);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', apiBase + '/api/v2/generate-quote-reply', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onload = function () {
+      typing.remove();
+      if (inputEl) inputEl.disabled = false;
+      if (sendBtn) sendBtn.disabled = false;
+
+      var result = document.createElement('div');
+      result.className = 'mm-result';
+
+      if (xhr.status === 200) {
+        try {
+          var data = JSON.parse(xhr.responseText);
+          var ans = (data.replyText || '').trim();
+          if (ans) {
+            var ansEl = document.createElement('div');
+            ansEl.className = 'mm-answer';
+            ansEl.textContent = ans;
+            result.appendChild(ansEl);
+          } else {
+            var errEl = document.createElement('div');
+            errEl.className = 'mm-err';
+            errEl.textContent = 'Sorry, I couldn\'t find an answer. Please call ' + (phone || 'the business') + ' directly.';
+            result.appendChild(errEl);
+          }
+        } catch (e) {
+          var errEl2 = document.createElement('div');
+          errEl2.className = 'mm-err';
+          errEl2.textContent = 'Something went wrong. Please try again.';
+          result.appendChild(errEl2);
+        }
+      } else {
+        var errEl3 = document.createElement('div');
+        errEl3.className = 'mm-err';
+        errEl3.textContent = networkErrorMessage();
+        result.appendChild(errEl3);
+      }
+
+      var againBtn = document.createElement('button');
+      againBtn.type = 'button';
+      againBtn.className = 'mm-ask-again';
+      againBtn.textContent = 'Ask another question';
+      againBtn.onclick = function () { resetToGreeting(); if (inputEl) inputEl.focus(); };
+      result.appendChild(againBtn);
+
+      bodyEl.appendChild(result);
+      if (inputEl) inputEl.focus();
+    };
+    xhr.onerror = function () {
+      typing.remove();
+      if (inputEl) inputEl.disabled = false;
+      if (sendBtn) sendBtn.disabled = false;
+      var result = document.createElement('div');
+      result.className = 'mm-result';
+      var errEl = document.createElement('div');
+      errEl.className = 'mm-err';
+      errEl.textContent = networkErrorMessage();
+      result.appendChild(errEl);
+      var againBtn = document.createElement('button');
+      againBtn.type = 'button';
+      againBtn.className = 'mm-ask-again';
+      againBtn.textContent = 'Ask another question';
+      againBtn.onclick = function () { resetToGreeting(); if (inputEl) inputEl.focus(); };
+      result.appendChild(againBtn);
+      bodyEl.appendChild(result);
+    };
+    xhr.send(JSON.stringify({ tenantId: tenant, customerMessage: text }));
   }
 
   function renderButton() {
     var btn = document.createElement('button');
     btn.className = 'mm-btn';
     btn.type = 'button';
-    btn.setAttribute('aria-label', 'Chat with us');
+    btn.setAttribute('aria-label', 'Got a question?');
     btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/><path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>';
     btn.onclick = function () {
       open = !open;
@@ -204,7 +265,7 @@
 
     var hdr = document.createElement('div');
     hdr.className = 'mm-hdr';
-    hdr.innerHTML = '<div class="mm-hdr-info"><h3>' + escapeHtml(name) + '</h3><div class="mm-sub">Ask us anything</div></div>';
+    hdr.innerHTML = '<div class="mm-hdr-info"><h3>' + escapeHtml(name) + '</h3><div class="mm-sub">Get instant answers</div></div>';
     var closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'mm-close';
@@ -219,26 +280,22 @@
     hdr.appendChild(closeBtn);
     panel.appendChild(hdr);
 
-    chatEl = document.createElement('div');
-    chatEl.className = 'mm-chat';
-    panel.appendChild(chatEl);
+    bodyEl = document.createElement('div');
+    bodyEl.className = 'mm-body';
+    panel.appendChild(bodyEl);
 
     var inputArea = document.createElement('div');
     inputArea.className = 'mm-input-area';
-    inputEl = document.createElement('textarea');
+    inputEl = document.createElement('input');
+    inputEl.type = 'text';
     inputEl.className = 'mm-input';
-    inputEl.placeholder = 'Type your question...';
-    inputEl.setAttribute('aria-label', 'Type your question');
-    inputEl.rows = 1;
+    inputEl.placeholder = 'Ask a question...';
+    inputEl.setAttribute('aria-label', 'Ask a question');
     inputEl.onkeydown = function (e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter') {
         e.preventDefault();
         doSend();
       }
-    };
-    inputEl.oninput = function () {
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 100) + 'px';
     };
     sendBtn = document.createElement('button');
     sendBtn.type = 'button';
@@ -262,43 +319,7 @@
   function doSend() {
     var text = (inputEl.value || '').trim();
     if (!text) return;
-    sendQuestion(text);
-  }
-
-  function sendQuestion(text) {
-    inputEl.value = '';
-    inputEl.style.height = 'auto';
-    sendBtn.disabled = true;
-    removeQuickReplies();
-    addMessage(text, 'user');
-    showTyping();
-
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', apiBase + '/api/v2/generate-quote-reply', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onload = function () {
-      hideTyping();
-      sendBtn.disabled = false;
-      if (xhr.status === 200) {
-        try {
-          var data = JSON.parse(xhr.responseText);
-          var ans = (data.replyText || '').trim();
-          if (ans) addMessage(ans, 'ai');
-          else addMessage('Sorry, I couldn\'t find an answer. Please call ' + (phone || 'the business') + ' directly.', 'ai');
-        } catch (e) {
-          addMessage('Something went wrong. Please try again.', 'ai');
-        }
-      } else {
-        addMessage(networkErrorMessage(), 'ai');
-      }
-      if (inputEl) inputEl.focus();
-    };
-    xhr.onerror = function () {
-      hideTyping();
-      sendBtn.disabled = false;
-      addMessage(networkErrorMessage(), 'ai');
-    };
-    xhr.send(JSON.stringify({ tenantId: tenant, customerMessage: text }));
+    askQuestion(text);
   }
 
   function fetchSuggested() {
