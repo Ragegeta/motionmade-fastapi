@@ -44,7 +44,7 @@
     '#mm-widget-root .mm-btn.mm-open svg{transform:rotate(90deg) scale(0.9)}',
 
     /* Panel */
-    '#mm-widget-root .mm-panel{position:fixed;bottom:86px;right:20px;width:min(380px,calc(100vw - 32px));max-height:min(520px,calc(100vh - 110px));z-index:99997;background:#fff;border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,0.15),0 2px 8px rgba(0,0,0,0.08);display:flex;flex-direction:column;overflow:hidden;transform:translateY(16px) scale(0.96);opacity:0;pointer-events:none;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1),opacity 0.25s ease}',
+    '#mm-widget-root .mm-panel{position:fixed;bottom:86px;right:20px;width:min(400px,calc(100vw - 32px));max-height:min(520px,calc(100vh - 110px));z-index:99997;background:#fff;border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,0.15),0 2px 8px rgba(0,0,0,0.08);display:flex;flex-direction:column;overflow:hidden;transform:translateY(16px) scale(0.96);opacity:0;pointer-events:none;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1),opacity 0.25s ease}',
     '#mm-widget-root .mm-panel.mm-visible{transform:translateY(0) scale(1);opacity:1;pointer-events:auto}',
 
     /* Inline overrides */
@@ -60,25 +60,25 @@
     '#mm-widget-root .mm-close:hover{color:#fff}',
 
     /* Body */
-    '#mm-widget-root .mm-body{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:#d1d5db transparent}',
+    '#mm-widget-root .mm-body{flex:1;overflow-y:auto;padding:20px 18px;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin;scrollbar-color:#d1d5db transparent}',
     '#mm-widget-root .mm-body::-webkit-scrollbar{width:4px}',
     '#mm-widget-root .mm-body::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:2px}',
 
     /* Greeting */
-    '#mm-widget-root .mm-greeting{font-size:14px;color:#475569;line-height:1.55;animation:mm-fadeIn 0.3s ease both}',
+    '#mm-widget-root .mm-greeting{font-size:15px;color:#475569;line-height:1.6;animation:mm-fadeIn 0.3s ease both}',
     '@keyframes mm-fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}',
 
     /* Quick replies */
-    '#mm-widget-root .mm-quick-wrap{display:flex;flex-wrap:wrap;gap:6px}',
-    '#mm-widget-root .mm-quick{padding:7px 13px;border-radius:20px;font-size:13px;cursor:pointer;background:#fff;color:var(--mm-color);border:1.5px solid rgba(var(--mm-color-rgb),0.3);font-family:inherit;transition:all 0.15s;line-height:1.3}',
+    '#mm-widget-root .mm-quick-wrap{display:flex;flex-wrap:wrap;gap:10px}',
+    '#mm-widget-root .mm-quick{padding:9px 16px;border-radius:20px;font-size:14px;cursor:pointer;background:#fff;color:var(--mm-color);border:1.5px solid rgba(var(--mm-color-rgb),0.3);font-family:inherit;transition:all 0.15s;line-height:1.35}',
     '#mm-widget-root .mm-quick:hover{background:rgba(var(--mm-color-rgb),0.08);border-color:var(--mm-color)}',
 
     /* Result area */
     '#mm-widget-root .mm-result{animation:mm-fadeIn 0.3s ease both}',
     '#mm-widget-root .mm-you-asked{font-size:12px;color:#94a3b8;margin-bottom:8px}',
     '#mm-widget-root .mm-you-asked q{font-style:normal;color:#475569;font-weight:500}',
-    '#mm-widget-root .mm-answer{padding:12px 14px;background:#f3f4f6;border-radius:12px;font-size:14px;line-height:1.6;color:#1f2937;white-space:pre-wrap;word-break:break-word;border-left:3px solid var(--mm-color)}',
-    '#mm-widget-root .mm-ask-again{margin-top:10px;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;background:none;color:var(--mm-color);border:1.5px solid rgba(var(--mm-color-rgb),0.3);font-family:inherit;transition:all 0.15s;font-weight:500}',
+    '#mm-widget-root .mm-answer{padding:16px 18px;background:#f3f4f6;border-radius:12px;font-size:16px;line-height:1.65;color:#1f2937;white-space:pre-wrap;word-break:break-word;border-left:3px solid var(--mm-color)}',
+    '#mm-widget-root .mm-ask-again{margin-top:18px;padding:10px 18px;border-radius:8px;font-size:14px;cursor:pointer;background:none;color:var(--mm-color);border:1.5px solid rgba(var(--mm-color-rgb),0.3);font-family:inherit;transition:all 0.15s;font-weight:500}',
     '#mm-widget-root .mm-ask-again:hover{background:rgba(var(--mm-color-rgb),0.08);border-color:var(--mm-color)}',
 
     /* Typing indicator */
@@ -89,11 +89,11 @@
     '@keyframes mm-dot{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-6px);opacity:1}}',
 
     /* Input area */
-    '#mm-widget-root .mm-input-area{padding:12px 14px;border-top:1px solid #f1f5f9;display:flex;gap:8px;align-items:center;flex-shrink:0}',
-    '#mm-widget-root .mm-input{flex:1;height:40px;padding:9px 14px;font-size:14px;border:1.5px solid #e2e8f0;border-radius:22px;background:#f8fafc;color:#1f2937;outline:none;font-family:inherit;line-height:1.4;transition:border-color 0.15s,box-shadow 0.15s}',
+    '#mm-widget-root .mm-input-area{padding:14px 18px;border-top:1px solid #f1f5f9;display:flex;gap:10px;align-items:center;flex-shrink:0}',
+    '#mm-widget-root .mm-input{flex:1;height:48px;padding:13px 16px;font-size:15px;border:1.5px solid #e2e8f0;border-radius:24px;background:#f8fafc;color:#1f2937;outline:none;font-family:inherit;line-height:1.4;transition:border-color 0.15s,box-shadow 0.15s}',
     '#mm-widget-root .mm-input:focus{border-color:var(--mm-color);box-shadow:0 0 0 3px rgba(var(--mm-color-rgb),0.1);background:#fff}',
     '#mm-widget-root .mm-input::placeholder{color:#94a3b8}',
-    '#mm-widget-root .mm-send{width:38px;height:38px;border:none;border-radius:50%;background:var(--mm-color);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.15s,opacity 0.15s;flex-shrink:0;padding:0}',
+    '#mm-widget-root .mm-send{width:44px;height:44px;border:none;border-radius:50%;background:var(--mm-color);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.15s,opacity 0.15s;flex-shrink:0;padding:0}',
     '#mm-widget-root .mm-send:hover{transform:scale(1.06)}',
     '#mm-widget-root .mm-send:disabled{opacity:0.4;cursor:not-allowed;transform:none}',
     '#mm-widget-root .mm-send svg{width:18px;height:18px;fill:currentColor}',
