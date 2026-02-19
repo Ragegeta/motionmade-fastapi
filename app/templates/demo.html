@@ -6,105 +6,58 @@
     <title>MotionMade demo – __BUSINESS_NAME__</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --surface-cool: #F0F3F8;
-            --card-border: #D8DFE9;
+            --bg: #f8fafc;
+            --surface: #fff;
+            --border: #e2e8f0;
             --accent: #2563EB;
-            --text-primary: #0B1222;
-            --text-muted: #6B7A94;
+            --text: #0f172a;
+            --text-muted: #94a3b8;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--surface-cool);
-            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             font-size: 16px;
             line-height: 1.5;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            -webkit-font-smoothing: antialiased;
         }
         .demo-header {
-            background: #fff;
-            border-bottom: 1px solid var(--card-border);
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
             padding: 24px;
             text-align: center;
         }
-        .demo-logo {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--accent);
-            margin-bottom: 8px;
-        }
-        .demo-business-name {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        .demo-subtitle {
-            font-size: 15px;
-            color: var(--text-muted);
-            margin-top: 6px;
-        }
-        .demo-main {
-            flex: 1;
-            max-width: 720px;
-            margin: 0 auto;
-            width: 100%;
-            padding: 32px 24px 24px;
-        }
-        .widget-card {
-            background: #fff;
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 24px;
-            min-height: 320px;
-        }
-        .widget-card h2 {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 16px;
-        }
-        #motionmade-widget {
-            min-height: 260px;
-        }
-        .demo-cta {
-            background: #fff;
-            border-top: 1px solid var(--card-border);
-            padding: 24px;
-            text-align: center;
-        }
-        .demo-cta-inner {
-            max-width: 560px;
-            margin: 0 auto;
-            font-size: 15px;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-        .demo-cta-inner a {
-            color: var(--accent);
-            font-weight: 600;
-            text-decoration: none;
-        }
-        .demo-cta-inner a:hover {
-            text-decoration: underline;
-        }
+        .demo-logo { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 8px; letter-spacing: -0.02em; }
+        .demo-business-name { font-size: 26px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+        .demo-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 6px; }
+        .demo-main { flex: 1; max-width: 720px; margin: 0 auto; width: 100%; padding: 32px 24px 24px; }
+        .widget-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; min-height: 320px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .widget-card h2 { font-size: 15px; font-weight: 600; color: var(--text-muted); margin-bottom: 16px; }
+        #motionmade-widget { min-height: 260px; }
+        .demo-cta { background: var(--surface); border-top: 1px solid var(--border); padding: 24px; text-align: center; }
+        .demo-cta-inner { max-width: 560px; margin: 0 auto; font-size: 14px; color: var(--text-muted); }
+        .demo-cta-inner a { color: var(--accent); font-weight: 600; text-decoration: none; }
+        .demo-cta-inner a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
     <header class="demo-header">
-        <div class="demo-logo">MotionMade</div>
+        <div class="demo-logo">MotionMade AI</div>
         <h1 class="demo-business-name">__BUSINESS_NAME__</h1>
-        <p class="demo-subtitle">Try asking a question below – answers are powered by this business’s info.</p>
+        <p class="demo-subtitle">Ask a question below — answers are powered by this business's info.</p>
     </header>
     <main class="demo-main">
         <div class="widget-card">
-            <h2>Ask a question</h2>
+            <h2>Try it out</h2>
             <div id="motionmade-widget"></div>
-            <script src="__BASE_URL__/widget.js"
+            <script src="__BASE_URL__/widget.js?v=4"
                 data-tenant="__TENANT_ID__"
                 data-name="__BUSINESS_NAME__"
                 data-api="__BASE_URL__"
@@ -114,7 +67,7 @@
     </main>
     <footer class="demo-cta">
         <p class="demo-cta-inner">
-            This is a free preview of MotionMade for <strong>__BUSINESS_NAME__</strong>. Want this on your website? <a href="https://motionmade.com.au" target="_blank" rel="noopener">Get started at motionmade.com.au</a>
+            This is a free preview of MotionMade for <strong>__BUSINESS_NAME__</strong>. Want this on your website? <a href="https://motionmadebne.com.au" target="_blank" rel="noopener">Get started at motionmadebne.com.au</a>
         </p>
     </footer>
 </body>

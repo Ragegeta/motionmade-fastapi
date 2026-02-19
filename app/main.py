@@ -3066,10 +3066,10 @@ def owner_list_faqs(owner: dict = Depends(get_current_owner)):
     tenant_id = owner["tenant_id"]
     with get_conn() as conn:
         rows = conn.execute(
-            "SELECT id, question, answer FROM faq_items WHERE tenant_id = %s AND is_staged = false ORDER BY id",
+            "SELECT id, question, answer, enabled FROM faq_items WHERE tenant_id = %s AND is_staged = false ORDER BY id",
             (tenant_id,),
         ).fetchall()
-    faqs = [{"id": r[0], "question": r[1], "answer": r[2]} for r in rows]
+    faqs = [{"id": r[0], "question": r[1], "answer": r[2], "enabled": r[3] if len(r) > 3 else True} for r in rows]
     return {"faqs": faqs, "count": len(faqs)}
 
 
@@ -3125,6 +3125,106 @@ def owner_list_suggestions(owner: dict = Depends(get_current_owner)):
         for r in rows
     ]
     return {"suggestions": suggestions}
+
+
+# ---------- Owner FAQ CRUD (direct editing from dashboard) ----------
+class FaqUpdateBody(BaseModel):
+    question: Optional[str] = None
+    answer: Optional[str] = None
+    enabled: Optional[bool] = None
+
+
+@app.put("/owner/faqs/{faq_id}")
+def owner_update_faq(faq_id: int, body: FaqUpdateBody, owner: dict = Depends(get_current_owner)):
+    """Owner can edit an existing FAQ's question, answer, or enabled status."""
+    tenant_id = owner["tenant_id"]
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM faq_items WHERE id = %s AND tenant_id = %s AND is_staged = false",
+            (faq_id, tenant_id),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="FAQ not found")
+        sets = []
+        params = []
+        if body.question is not None:
+            sets.append("question = %s")
+            params.append(body.question.strip())
+        if body.answer is not None:
+            sets.append("answer = %s")
+            params.append(body.answer.strip())
+        if body.enabled is not None:
+            sets.append("enabled = %s")
+            params.append(body.enabled)
+        if not sets:
+            return {"ok": True}
+        sets.append("updated_at = now()")
+        params.extend([faq_id, tenant_id])
+        conn.execute(
+            "UPDATE faq_items SET " + ", ".join(sets) + " WHERE id = %s AND tenant_id = %s",
+            params,
+        )
+        conn.commit()
+    return {"ok": True, "faq_id": faq_id}
+
+
+class FaqCreateBody(BaseModel):
+    question: str
+    answer: str
+
+
+@app.post("/owner/faqs")
+def owner_create_faq(body: FaqCreateBody, owner: dict = Depends(get_current_owner)):
+    """Owner adds a new FAQ directly (goes live immediately)."""
+    tenant_id = owner["tenant_id"]
+    question = (body.question or "").strip()
+    answer = (body.answer or "").strip()
+    if not question or not answer:
+        raise HTTPException(status_code=400, detail="Question and answer required")
+    with get_conn() as conn:
+        row = conn.execute(
+            """INSERT INTO faq_items (tenant_id, question, answer, is_staged, enabled, updated_at)
+               VALUES (%s, %s, %s, false, true, now()) RETURNING id""",
+            (tenant_id, question, answer),
+        ).fetchone()
+        conn.commit()
+    return {"ok": True, "faq_id": row[0]}
+
+
+@app.delete("/owner/faqs/{faq_id}")
+def owner_delete_faq(faq_id: int, owner: dict = Depends(get_current_owner)):
+    """Owner deletes a FAQ."""
+    tenant_id = owner["tenant_id"]
+    with get_conn() as conn:
+        conn.execute(
+            "DELETE FROM faq_items WHERE id = %s AND tenant_id = %s",
+            (faq_id, tenant_id),
+        )
+        conn.commit()
+    return {"ok": True}
+
+
+@app.get("/owner/queries/hourly")
+def owner_queries_hourly(
+    owner: dict = Depends(get_current_owner),
+    days: int = 7,
+):
+    """Hourly breakdown of queries for peak-hours chart."""
+    tenant_id = owner["tenant_id"]
+    days = max(1, min(90, days))
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT EXTRACT(HOUR FROM created_at)::integer AS h, COUNT(*) AS c
+               FROM query_log
+               WHERE tenant_id = %s AND created_at > now() - (%s::text || ' days')::interval
+               GROUP BY EXTRACT(HOUR FROM created_at)
+               ORDER BY h""",
+            (tenant_id, str(days)),
+        ).fetchall()
+    hourly = {int(r[0]): int(r[1]) for r in rows}
+    result = [{"hour": h, "count": hourly.get(h, 0)} for h in range(24)]
+    peak_hour = max(result, key=lambda x: x["count"])
+    return {"hourly": result, "peak_hour": peak_hour["hour"], "peak_count": peak_hour["count"]}
 
 
 @app.get("/owner/queries")

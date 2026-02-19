@@ -6,290 +6,188 @@
     <title>MotionMade AI – Your Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
     <style>
         :root {
-            --surface-cool: #F0F3F8;
-            --card-border: #D8DFE9;
+            --bg: #f8fafc;
+            --surface: #fff;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
             --accent: #2563EB;
-            --text-primary: #0B1222;
-            --text-muted: #6B7A94;
+            --accent-dark: #1e40af;
+            --text: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --green: #059669;
+            --green-bg: #ecfdf5;
+            --orange: #d97706;
+            --orange-bg: #fffbeb;
+            --red: #dc2626;
+            --red-bg: #fef2f2;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--surface-cool);
-            color: var(--text-primary);
-            font-size: 16px;
-            line-height: 1.5;
-        }
-        .container { max-width: 800px; margin: 0 auto; padding: 24px; }
-        @media (max-width: 480px) { .container { padding: 16px; } }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 960px; margin: 0 auto; padding: 24px; }
+        .hidden { display: none !important; }
 
-        .dash-header {
-            background: var(--surface-cool);
-            border-bottom: 1px solid var(--card-border);
-            padding: 16px 0 24px;
-            margin-bottom: 24px;
-        }
-        .dash-header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .dash-logo { font-size: 16px; font-weight: 600; color: var(--accent); }
-        .logout-btn {
-            padding: 10px 18px;
-            min-height: 44px;
-            min-width: 44px;
-            background: #fff;
-            color: var(--text-primary);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .logout-btn:hover { background: #fff; border-color: var(--accent); color: var(--accent); }
-        .dash-greeting { font-size: 26px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+        /* Header */
+        .dash-header { padding: 20px 0 28px; margin-bottom: 0; }
+        .dash-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .dash-logo { font-size: 16px; font-weight: 700; color: var(--accent); letter-spacing: -0.02em; }
+        .logout-btn { padding: 8px 16px; background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.15s; }
+        .logout-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .dash-greeting { font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 2px; letter-spacing: -0.02em; }
         .dash-tenant { font-size: 14px; color: var(--text-muted); }
 
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        @media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
-        .card {
-            background: #fff;
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 20px;
-            min-height: 100px;
-            display: flex;
-            flex-direction: column;
-        }
-        .card .label { font-size: 14px; color: var(--text-muted); margin-bottom: 6px; }
-        .card .value { font-size: 36px; font-weight: 700; color: var(--text-primary); line-height: 1.1; }
-        .card .trend { font-size: 14px; margin-top: 4px; }
-        .card .trend.up { color: #059669; }
-        .card .trend.down { color: #dc2626; }
-        .card.clickable { cursor: pointer; }
+        /* Navigation tabs */
+        .nav-tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
+        .nav-tab { padding: 9px 20px; border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: none; color: var(--text-secondary); font-family: inherit; transition: all 0.15s; }
+        .nav-tab:hover { color: var(--text); background: var(--bg); }
+        .nav-tab.active { background: var(--accent); color: #fff; box-shadow: 0 1px 3px rgba(37,99,235,0.3); }
+
+        /* Tab panels */
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Cards */
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+        .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+        .stat-value { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
+        .stat-value.green { color: var(--green); }
+        .stat-value.orange { color: var(--orange); }
+        .stat-trend { font-size: 13px; margin-top: 4px; font-weight: 500; }
+        .stat-trend.up { color: var(--green); }
+        .stat-trend.down { color: var(--red); }
+        .stat-detail { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .card.clickable { cursor: pointer; transition: border-color 0.15s; }
         .card.clickable:hover { border-color: var(--accent); }
-        .card.unanswered-highlight .value { color: #ea580c; }
 
-        .chart-wrap {
-            background: #fff;
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        .chart-wrap h2 { font-size: 18px; color: var(--text-primary); margin-bottom: 16px; }
-        .period-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-        .period-tabs button {
-            padding: 10px 18px;
-            min-height: 44px;
-            border: 1px solid var(--card-border);
-            background: #fff;
-            border-radius: 999px;
-            font-size: 14px;
-            color: var(--text-primary);
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .period-tabs button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-        .period-tabs button:not(.active):hover { background: var(--surface-cool); }
-        .chart-container { position: relative; height: 260px; min-height: 200px; }
-        .chart-insight { font-size: 14px; color: var(--text-muted); margin-top: 16px; }
+        /* Charts */
+        .chart-section { margin-bottom: 20px; }
+        .chart-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+        .period-tabs { display: flex; gap: 4px; }
+        .period-tab { padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; background: var(--surface); color: var(--text-secondary); font-family: inherit; transition: all 0.15s; }
+        .period-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .period-tab:hover:not(.active) { background: var(--bg); }
+        .chart-container { position: relative; height: 240px; }
+        .chart-insight { font-size: 13px; color: var(--text-muted); margin-top: 10px; }
+        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
 
-        .queries-section { margin-bottom: 24px; }
-        .queries-section h2 {
-            font-size: 18px;
-            color: var(--text-primary);
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-        }
-        .queries-toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .queries-tabs {
-            display: flex;
-            gap: 4px;
-        }
-        .queries-tabs button {
-            padding: 10px 16px;
-            min-height: 44px;
-            border: none;
-            border-bottom: 3px solid transparent;
-            background: transparent;
-            font-size: 14px;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .queries-tabs button.active { color: var(--accent); font-weight: 600; border-bottom-color: var(--accent); }
-        .queries-tabs button:hover:not(.active) { color: var(--text-primary); }
-        .export-link {
-            font-size: 14px;
-            color: var(--accent);
-            text-decoration: none;
-            margin-left: auto;
-        }
+        /* Query list */
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+        .section-header h3 { font-size: 16px; font-weight: 600; }
+        .filter-tabs { display: flex; gap: 2px; }
+        .filter-tab { padding: 7px 14px; border: none; background: none; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text-muted); font-family: inherit; border-bottom: 2px solid transparent; transition: all 0.15s; }
+        .filter-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .filter-tab:hover:not(.active) { color: var(--text); }
+        .export-link { font-size: 13px; color: var(--accent); text-decoration: none; font-weight: 500; }
         .export-link:hover { text-decoration: underline; }
 
-        .query-list { background: #fff; border: 1px solid var(--card-border); border-radius: 8px; overflow: hidden; }
-        .query-card {
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--card-border);
-            border-left: 4px solid transparent;
-        }
+        .query-list { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); }
+        .query-card { padding: 14px 18px; border-bottom: 1px solid var(--border-light); border-left: 3px solid transparent; transition: background 0.1s; }
         .query-card:last-child { border-bottom: none; }
-        .query-card.answered { border-left-color: #059669; }
-        .query-card.unanswered { border-left-color: #ea580c; }
-        .query-card .q-text { font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
-        .query-card .q-text::before, .query-card .q-text::after { content: '"'; color: var(--text-muted); }
-        .query-card .answer-block { margin-bottom: 10px; }
-        .query-card .answer-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
-        .query-card .answer-text { font-size: 14px; color: var(--text-primary); line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
-        .query-card .answer-text.truncated { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .query-card .show-full-btn { font-size: 13px; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; margin-top: 4px; font-family: inherit; }
-        .query-card .show-full-btn:hover { text-decoration: underline; }
-        .query-card .match-line {
-            font-size: 14px;
-            color: var(--text-muted);
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 6px;
-        }
-        .query-card .match-line .status { margin-left: auto; }
-        .query-card .match-line .badge { font-size: 12px; color: #ea580c; }
-        .query-card .time { font-size: 13px; color: var(--text-muted); margin-top: 8px; }
-        .add-faq-btn {
-            margin-top: 8px;
-            padding: 6px 12px;
-            font-size: 13px;
-            background: transparent;
-            color: var(--accent);
-            border: 1px solid var(--accent);
-            border-radius: 6px;
-            cursor: pointer;
-            font-family: inherit;
-        }
+        .query-card:hover { background: var(--bg); }
+        .query-card.answered { border-left-color: var(--green); }
+        .query-card.unanswered { border-left-color: var(--orange); }
+        .q-text { font-weight: 600; color: var(--text); margin-bottom: 6px; font-size: 14px; }
+        .q-text::before, .q-text::after { content: '"'; color: var(--text-muted); }
+        .answer-block { margin-bottom: 8px; }
+        .answer-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; font-weight: 600; }
+        .answer-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+        .answer-text.truncated { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .show-full-btn { font-size: 12px; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; margin-top: 4px; font-family: inherit; font-weight: 500; }
+        .show-full-btn:hover { text-decoration: underline; }
+        .match-line { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .match-line .badge { font-size: 11px; color: var(--orange); font-weight: 600; }
+        .query-time { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+        .add-faq-btn { margin-top: 8px; padding: 5px 12px; font-size: 12px; background: none; color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.15s; }
         .add-faq-btn:hover { background: var(--accent); color: #fff; }
-        .query-empty {
-            padding: 32px 24px;
-            text-align: center;
-            color: var(--text-muted);
-        }
-        .query-empty p { margin-bottom: 8px; }
-        .show-more-wrap { text-align: center; padding: 16px; }
-        .show-more-btn {
-            padding: 10px 24px;
-            min-height: 44px;
-            background: #fff;
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            font-size: 14px;
-            color: var(--accent);
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .show-more-btn:hover { background: var(--surface-cool); }
+        .query-empty { padding: 40px 24px; text-align: center; color: var(--text-muted); font-size: 14px; }
+        .show-more-wrap { text-align: center; padding: 14px; }
+        .show-more-btn { padding: 8px 24px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; cursor: pointer; background: var(--surface); color: var(--accent); font-family: inherit; font-weight: 500; transition: all 0.15s; }
+        .show-more-btn:hover { background: var(--bg); }
 
-        .suggest-section {
-            background: #fff;
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        .suggest-section h2 { font-size: 18px; color: var(--text-primary); margin-bottom: 8px; }
-        .suggest-section .intro { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
-        .suggest-section .form-group { margin-bottom: 16px; }
-        .suggest-section .form-group label { display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; font-size: 14px; }
-        .suggest-section .form-group input,
-        .suggest-section .form-group textarea {
-            width: 100%;
-            max-width: 480px;
-            padding: 12px 14px;
-            min-height: 44px;
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            font-size: 15px;
-            font-family: inherit;
-        }
-        .suggest-section .form-group textarea { min-height: 80px; resize: vertical; }
-        .suggest-section .submit-btn {
-            padding: 12px 24px;
-            min-height: 44px;
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .suggest-section .submit-btn:hover { background: #1d4ed8; }
-        .suggest-section .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .suggest-error { color: #dc2626; font-size: 14px; margin-top: 10px; }
-        .suggest-success { color: #059669; font-size: 14px; margin-top: 10px; }
+        /* FAQ management */
+        .faq-list-section { margin-bottom: 20px; }
+        .faq-item-card { display: flex; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--border-light); align-items: flex-start; }
+        .faq-item-card:last-child { border-bottom: none; }
+        .faq-item-card:hover { background: var(--bg); }
+        .faq-toggle { width: 40px; height: 22px; border-radius: 11px; border: none; cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0; margin-top: 2px; padding: 0; }
+        .faq-toggle.on { background: var(--green); }
+        .faq-toggle.off { background: #cbd5e1; }
+        .faq-toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+        .faq-toggle.on::after { transform: translateX(18px); }
+        .faq-content { flex: 1; min-width: 0; }
+        .faq-q { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 4px; }
+        .faq-a { font-size: 13px; color: var(--text-secondary); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .faq-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .faq-action-btn { padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; cursor: pointer; background: var(--surface); color: var(--text-secondary); font-family: inherit; transition: all 0.12s; }
+        .faq-action-btn:hover { background: var(--bg); border-color: var(--text-muted); }
+        .faq-action-btn.delete { color: var(--red); border-color: #fecaca; }
+        .faq-action-btn.delete:hover { background: var(--red-bg); }
 
-        footer {
-            text-align: center;
-            padding: 24px 0;
-            border-top: 1px solid var(--card-border);
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-        footer a { color: var(--accent); }
+        /* Add FAQ form */
+        .add-faq-form { padding: 18px; border-top: 1px solid var(--border); background: var(--bg); }
+        .add-faq-form .form-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .add-faq-form input, .add-faq-form textarea { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--surface); transition: border-color 0.15s; }
+        .add-faq-form input:focus, .add-faq-form textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+        .add-faq-form textarea { resize: vertical; min-height: 60px; }
+        .btn-add-faq { padding: 8px 20px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; font-family: inherit; transition: background 0.15s; }
+        .btn-add-faq:hover { background: var(--accent-dark); }
+        .btn-add-faq:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        #dashboardError {
-            background: #fef2f2;
-            color: #dc2626;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .loading { opacity: 0.7; pointer-events: none; }
-        .spinner-wrap {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 100;
-            display: none;
-        }
+        /* Edit modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-box { background: var(--surface); border-radius: 14px; width: 90%; max-width: 480px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+        .modal-box h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+        .modal-box .form-group { margin-bottom: 14px; }
+        .modal-box .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+        .modal-box input, .modal-box textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; color: var(--text); }
+        .modal-box input:focus, .modal-box textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+        .modal-box textarea { resize: vertical; min-height: 80px; }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+        .btn-modal { padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+        .btn-modal.primary { background: var(--accent); color: #fff; border: none; }
+        .btn-modal.primary:hover { background: var(--accent-dark); }
+        .btn-modal.secondary { background: var(--bg); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-modal.secondary:hover { background: var(--border-light); }
+
+        /* Notification prefs */
+        .pref-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border-light); }
+        .pref-row:last-child { border-bottom: none; }
+        .pref-label { font-size: 14px; font-weight: 500; color: var(--text); }
+        .pref-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        /* Spinner */
+        .spinner-wrap { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; display: none; }
         .spinner-wrap.visible { display: block; }
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid var(--card-border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
+        .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Error */
+        #dashboardError { background: var(--red-bg); color: var(--red); padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; font-size: 14px; border: 1px solid #fecaca; }
+
+        /* Footer */
+        footer { text-align: center; padding: 24px 0; color: var(--text-muted); font-size: 13px; }
+        footer a { color: var(--accent); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container { padding: 16px; }
+            .cards-grid { grid-template-columns: 1fr; }
+            .charts-row { grid-template-columns: 1fr; }
+            .stat-value { font-size: 26px; }
+            .nav-tabs { overflow-x: auto; flex-wrap: nowrap; }
+            .nav-tab { white-space: nowrap; }
+        }
     </style>
 </head>
 <body>
-    <div class="spinner-wrap" id="spinnerWrap" aria-hidden="true">
-        <div class="spinner"></div>
-    </div>
+    <div class="spinner-wrap" id="spinnerWrap"><div class="spinner"></div></div>
     <div class="container">
         <div id="dashboardError" style="display: none;"></div>
 
@@ -298,494 +196,599 @@
                 <span class="dash-logo">MotionMade AI</span>
                 <button type="button" class="logout-btn" id="logoutBtn">Log out</button>
             </div>
-            <h1 class="dash-greeting" id="greeting">G'day 👋</h1>
-            <p class="dash-tenant" id="tenantName">–</p>
+            <h1 class="dash-greeting" id="greeting">G'day</h1>
+            <p class="dash-tenant" id="tenantName"></p>
         </header>
 
-        <!-- Empty state: no queries yet -->
-        <div id="emptyState" class="chart-wrap" style="display: none;">
-            <div class="query-empty">
-                <p><strong>No customer questions yet.</strong></p>
-                <p>Once the widget is installed on your website, you'll see every question customers ask here.</p>
-            </div>
+        <div id="emptyState" class="card" style="display:none;text-align:center;padding:48px 24px;">
+            <p style="font-size:16px;font-weight:600;margin-bottom:8px;">No customer questions yet.</p>
+            <p style="color:var(--text-muted);font-size:14px;">Once the widget is installed on your website, every question customers ask will appear here.</p>
         </div>
 
-        <!-- Main dashboard (stats + chart + queries) -->
-        <div id="mainDashboard" style="display: none;">
-            <div class="cards">
-                <div class="card">
-                    <div class="label">This week</div>
-                    <div class="value" id="statWeek">0</div>
-                    <div class="trend" id="statTrend"></div>
+        <div id="mainDashboard" style="display:none;">
+            <nav class="nav-tabs">
+                <button type="button" class="nav-tab active" data-tab="analytics">Analytics</button>
+                <button type="button" class="nav-tab" data-tab="questions">Questions</button>
+                <button type="button" class="nav-tab" data-tab="faqs">Manage FAQs</button>
+                <button type="button" class="nav-tab" data-tab="settings">Settings</button>
+            </nav>
+
+            <!-- Analytics tab -->
+            <div class="tab-panel active" id="tab-analytics">
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="stat-label">This week</div>
+                        <div class="stat-value" id="statWeek">0</div>
+                        <div class="stat-trend" id="statTrend"></div>
+                    </div>
+                    <div class="card">
+                        <div class="stat-label">Today</div>
+                        <div class="stat-value" id="statToday">0</div>
+                    </div>
+                    <div class="card clickable" id="cardUnanswered">
+                        <div class="stat-label">Unanswered</div>
+                        <div class="stat-value orange" id="statUnanswered">0</div>
+                        <div class="stat-detail">Needs your attention</div>
+                    </div>
                 </div>
-                <div class="card">
-                    <div class="label">Today</div>
-                    <div class="value" id="statToday">0</div>
+
+                <div class="card chart-section">
+                    <div class="chart-header">
+                        <h3>Daily questions</h3>
+                        <div class="period-tabs">
+                            <button type="button" data-period="7d" class="period-tab active">7d</button>
+                            <button type="button" data-period="30d" class="period-tab">30d</button>
+                            <button type="button" data-period="90d" class="period-tab">90d</button>
+                        </div>
+                    </div>
+                    <div class="chart-container"><canvas id="dailyChart"></canvas></div>
+                    <p class="chart-insight" id="busiestInsight"></p>
                 </div>
-                <div class="card clickable unanswered-highlight" id="cardUnanswered">
-                    <div class="label">Unanswered</div>
-                    <div class="value" id="statUnanswered">0</div>
+
+                <div class="charts-row">
+                    <div class="card chart-section">
+                        <h3>Peak hours</h3>
+                        <div class="chart-container" style="height:200px;"><canvas id="hourlyChart"></canvas></div>
+                        <p class="chart-insight" id="peakInsight"></p>
+                    </div>
+                    <div class="card chart-section">
+                        <h3>Answer rate</h3>
+                        <div class="chart-container" style="height:200px;"><canvas id="answerRateChart"></canvas></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="chart-wrap">
-                <h2>Daily questions this week</h2>
-                <div class="period-tabs">
-                    <button type="button" data-period="7d" class="active">7d</button>
-                    <button type="button" data-period="30d">30d</button>
-                    <button type="button" data-period="90d">90d</button>
-                </div>
-                <div class="chart-container">
-                    <canvas id="dailyChart"></canvas>
-                </div>
-                <p class="chart-insight" id="busiestInsight"></p>
-            </div>
-
-            <section class="queries-section" id="queriesSection">
-                <h2>Recent customer questions</h2>
-                <div class="queries-toolbar">
-                    <div class="queries-tabs">
-                        <button type="button" id="tabAll" class="active">All questions (<span id="countAll">0</span>)</button>
-                        <button type="button" id="tabUnanswered">Unanswered (<span id="countUnanswered">0</span>)</button>
+            <!-- Questions tab -->
+            <div class="tab-panel" id="tab-questions">
+                <div class="section-header">
+                    <div class="filter-tabs">
+                        <button type="button" id="tabAll" class="filter-tab active">All (<span id="countAll">0</span>)</button>
+                        <button type="button" id="tabUnanswered" class="filter-tab">Unanswered (<span id="countUnanswered">0</span>)</button>
                     </div>
                     <a href="#" class="export-link" id="exportCsv">Export CSV</a>
                 </div>
                 <div class="query-list" id="queryList"></div>
-                <div class="show-more-wrap" id="showMoreWrap" style="display: none;">
+                <div class="show-more-wrap" id="showMoreWrap" style="display:none;">
                     <button type="button" class="show-more-btn" id="showMoreBtn">Show more</button>
                 </div>
-            </section>
+            </div>
+
+            <!-- FAQ management tab -->
+            <div class="tab-panel" id="tab-faqs">
+                <div class="section-header">
+                    <h3>Your FAQs</h3>
+                    <span style="font-size:13px;color:var(--text-muted);" id="faqCount">0 items</span>
+                </div>
+                <div class="card" style="padding:0;overflow:hidden;">
+                    <div id="faqListContainer"></div>
+                    <div class="add-faq-form" id="addFaqForm">
+                        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;">Add new FAQ</div>
+                        <div class="form-row">
+                            <input type="text" id="newFaqQ" placeholder="Question customers ask..." />
+                        </div>
+                        <div class="form-row">
+                            <textarea id="newFaqA" placeholder="Your answer..." rows="2"></textarea>
+                        </div>
+                        <button type="button" class="btn-add-faq" id="addFaqBtn">Add FAQ</button>
+                        <span id="addFaqMsg" style="font-size:12px;margin-left:10px;"></span>
+                    </div>
+                </div>
+                <div id="faqSuggestions" style="margin-top:20px;"></div>
+            </div>
+
+            <!-- Settings tab -->
+            <div class="tab-panel" id="tab-settings">
+                <div class="card">
+                    <h3 style="font-size:16px;font-weight:600;margin-bottom:16px;">Notification preferences</h3>
+                    <div class="pref-row">
+                        <div>
+                            <div class="pref-label">Unanswered question alerts</div>
+                            <div class="pref-desc">Get an email when the AI can't confidently answer a question</div>
+                        </div>
+                        <button type="button" class="faq-toggle on" id="prefUnanswered"></button>
+                    </div>
+                    <div class="pref-row">
+                        <div>
+                            <div class="pref-label">Daily summary email</div>
+                            <div class="pref-desc">Receive a daily recap of questions and activity</div>
+                        </div>
+                        <button type="button" class="faq-toggle on" id="prefDaily"></button>
+                    </div>
+                    <p style="font-size:12px;color:var(--text-muted);margin-top:14px;">Notification preferences are saved locally. Email notifications coming soon.</p>
+                </div>
+                <div class="card" style="margin-top:14px;">
+                    <h3 style="font-size:16px;font-weight:600;margin-bottom:12px;">Widget embed code</h3>
+                    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">Add this snippet to your website, just before the closing <code>&lt;/body&gt;</code> tag.</p>
+                    <pre id="embedSnippet" style="background:var(--bg);padding:14px;border-radius:8px;font-size:12px;overflow-x:auto;border:1px solid var(--border);white-space:pre-wrap;word-break:break-all;color:var(--text-secondary);"></pre>
+                    <button type="button" class="btn-add-faq" style="margin-top:10px;" id="copyEmbedBtn">Copy to clipboard</button>
+                </div>
+            </div>
         </div>
 
-        <div class="suggest-section" id="suggestSection">
-            <h2>Suggest a new question</h2>
-            <p class="intro">See something your customers keep asking that the widget can't answer? Suggest it below.</p>
-            <div class="form-group">
-                <label for="suggestQuestion">Question:</label>
-                <input type="text" id="suggestQuestion" placeholder="e.g. Do you do carpet cleaning?" />
+        <div class="card" id="suggestSection" style="margin-top:20px;">
+            <h3 style="font-size:16px;font-weight:600;margin-bottom:6px;">Suggest a new question</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">See something customers keep asking? Suggest it below and we'll review it.</p>
+            <div style="margin-bottom:10px;">
+                <input type="text" id="suggestQuestion" placeholder="e.g. Do you do carpet cleaning?" style="width:100%;max-width:440px;padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;" />
             </div>
-            <div class="form-group">
-                <label for="suggestAnswer">Answer (optional):</label>
-                <textarea id="suggestAnswer" rows="3" placeholder="e.g. Yes, carpet cleaning from $50 per room."></textarea>
+            <div style="margin-bottom:12px;">
+                <textarea id="suggestAnswer" rows="2" placeholder="Answer (optional)" style="width:100%;max-width:440px;padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;"></textarea>
             </div>
-            <button type="button" class="submit-btn" id="submitSuggestionBtn">Submit suggestion</button>
-            <div id="suggestError" class="suggest-error" style="display:none;"></div>
-            <div id="suggestSuccess" class="suggest-success" style="display:none;"></div>
+            <button type="button" class="btn-add-faq" id="submitSuggestionBtn">Submit suggestion</button>
+            <div id="suggestError" style="color:var(--red);font-size:13px;margin-top:8px;display:none;"></div>
+            <div id="suggestSuccess" style="color:var(--green);font-size:13px;margin-top:8px;display:none;"></div>
         </div>
 
         <footer>
             <p>Need help? Call Abbed — <a href="tel:+61437037584">0437 037 584</a></p>
         </footer>
     </div>
+
+    <!-- Edit FAQ modal -->
+    <div class="modal-overlay hidden" id="editFaqModal">
+        <div class="modal-box">
+            <h3>Edit FAQ</h3>
+            <div class="form-group">
+                <label>Question</label>
+                <input type="text" id="editFaqQ" />
+            </div>
+            <div class="form-group">
+                <label>Answer</label>
+                <textarea id="editFaqA" rows="4"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal secondary" id="editFaqCancel">Cancel</button>
+                <button type="button" class="btn-modal primary" id="editFaqSave">Save changes</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        (function () {
-            var token = localStorage.getItem('owner_token');
-            if (!token) {
-                window.location.href = '/dashboard/login';
+    (function () {
+        var token = localStorage.getItem('owner_token');
+        if (!token) { window.location.href = '/dashboard/login'; return; }
+
+        var currentPeriod = '7d';
+        var chart = null;
+        var hourlyChart = null;
+        var answerRateChart = null;
+        var tenantId = '';
+        var tenantName = '';
+        var tenantPhone = '';
+        var fallbacksOnly = false;
+        var queryOffset = 0;
+        var queryLimit = 15;
+        var matchCounts = {};
+        var periodDaysForQueries = 7;
+        var queriesTotal = 0;
+        var faqsCache = [];
+
+        function authHeaders() { return { 'Authorization': 'Bearer ' + token }; }
+        function jsonHeaders() { return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }; }
+
+        function showError(msg) { var el = document.getElementById('dashboardError'); el.textContent = msg; el.style.display = 'block'; }
+        function hideError() { document.getElementById('dashboardError').style.display = 'none'; }
+        function escapeHtml(s) { if (s == null) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        function formatTimestamp(iso) {
+            if (!iso) return '';
+            var d = new Date(iso); var now = new Date();
+            var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            var yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+            var dDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            var timeStr = d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true });
+            if (dDay.getTime() === today.getTime()) return 'Today, ' + timeStr;
+            if (dDay.getTime() === yesterday.getTime()) return 'Yesterday, ' + timeStr;
+            var weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate() - 7);
+            if (dDay > weekAgo) return d.toLocaleDateString('en-AU', { weekday: 'long' }) + ', ' + timeStr;
+            return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+
+        /* Tab navigation */
+        document.querySelectorAll('.nav-tab').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.nav-tab').forEach(function (b) { b.classList.remove('active'); });
+                document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
+                this.classList.add('active');
+                var tab = this.getAttribute('data-tab');
+                document.getElementById('tab-' + tab).classList.add('active');
+                if (tab === 'faqs') loadFaqs();
+            });
+        });
+
+        /* API calls */
+        function apiFetch(url, opts) {
+            return fetch(url, opts).then(function (res) {
+                if (res.status === 401) { localStorage.removeItem('owner_token'); window.location.href = '/dashboard/login'; throw new Error('Session expired'); }
+                return res;
+            });
+        }
+        function loadMe() { return apiFetch('/owner/me', { headers: authHeaders() }).then(function (r) { if (!r.ok) throw new Error('Failed'); return r.json(); }); }
+        function loadSummary() { return apiFetch('/owner/queries/summary', { headers: authHeaders() }).then(function (r) { if (!r.ok) throw new Error('Failed'); return r.json(); }); }
+        function loadDaily(period) { return apiFetch('/owner/queries/daily?period=' + (period || currentPeriod), { headers: authHeaders() }).then(function (r) { return r.ok ? r.json() : []; }); }
+        function loadHourly() { var days = currentPeriod === '7d' ? 7 : currentPeriod === '30d' ? 30 : 90; return apiFetch('/owner/queries/hourly?days=' + days, { headers: authHeaders() }).then(function (r) { return r.ok ? r.json() : { hourly: [] }; }); }
+        function loadQueries(offset) {
+            var params = 'days=' + periodDaysForQueries + '&limit=' + queryLimit + '&offset=' + offset;
+            if (fallbacksOnly) params += '&fallbacks_only=true';
+            return apiFetch('/owner/queries?' + params, { headers: authHeaders() }).then(function (r) { if (!r.ok) throw new Error('Failed'); return r.json(); });
+        }
+        function loadMatchCounts() { return apiFetch('/owner/queries/match-counts?days=' + periodDaysForQueries, { headers: authHeaders() }).then(function (r) { return r.ok ? r.json() : {}; }); }
+
+        /* Stats */
+        function renderStats(summary) {
+            document.getElementById('statWeek').textContent = summary.this_week || 0;
+            document.getElementById('statToday').textContent = summary.today || 0;
+            document.getElementById('statUnanswered').textContent = summary.unanswered_this_week || 0;
+            var trendEl = document.getElementById('statTrend');
+            var trend = summary.trend_vs_last_week;
+            if (trendEl && trend) {
+                var isUp = trend.indexOf('+') === 0;
+                trendEl.textContent = trend + ' vs last week';
+                trendEl.className = 'stat-trend ' + (isUp ? 'up' : 'down');
+            }
+            document.getElementById('countAll').textContent = summary.this_week || 0;
+            document.getElementById('countUnanswered').textContent = summary.unanswered_this_week || 0;
+        }
+
+        /* Daily chart */
+        function renderDailyChart(dailyData) {
+            if (chart) { chart.destroy(); chart = null; }
+            if (!dailyData || !dailyData.length) return;
+            var ctx = document.getElementById('dailyChart');
+            if (!ctx) return;
+            chart = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: dailyData.map(function (d) { return new Date(d.date).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric' }); }),
+                    datasets: [{ label: 'Questions', data: dailyData.map(function (d) { return d.count; }), backgroundColor: 'rgba(37,99,235,0.8)', borderRadius: 4, borderSkipped: false }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#f1f5f9' } }, x: { grid: { display: false }, ticks: { maxRotation: 45, font: { size: 11 } } } } }
+            });
+        }
+
+        /* Hourly chart */
+        function renderHourlyChart(hourlyData) {
+            if (hourlyChart) { hourlyChart.destroy(); hourlyChart = null; }
+            if (!hourlyData || !hourlyData.hourly) return;
+            var ctx = document.getElementById('hourlyChart');
+            if (!ctx) return;
+            var data = hourlyData.hourly;
+            var labels = data.map(function (d) { var h = d.hour; return h === 0 ? '12am' : h < 12 ? h + 'am' : h === 12 ? '12pm' : (h - 12) + 'pm'; });
+            var maxCount = Math.max.apply(null, data.map(function (d) { return d.count; }));
+            var colors = data.map(function (d) { return d.count >= maxCount * 0.8 && d.count > 0 ? 'rgba(37,99,235,0.9)' : 'rgba(37,99,235,0.25)'; });
+            hourlyChart = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ data: data.map(function (d) { return d.count; }), backgroundColor: colors, borderRadius: 2, borderSkipped: false }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#f1f5f9' } }, x: { grid: { display: false }, ticks: { maxRotation: 60, font: { size: 9 }, autoSkip: true, maxTicksLimit: 12 } } } }
+            });
+            var peakH = hourlyData.peak_hour;
+            var peakLabel = peakH === 0 ? '12am' : peakH < 12 ? peakH + 'am' : peakH === 12 ? '12pm' : (peakH - 12) + 'pm';
+            var insightEl = document.getElementById('peakInsight');
+            if (insightEl && hourlyData.peak_count > 0) insightEl.textContent = 'Peak time: ' + peakLabel + ' (' + hourlyData.peak_count + ' questions)';
+        }
+
+        /* Answer rate doughnut */
+        function renderAnswerRate(summary) {
+            if (answerRateChart) { answerRateChart.destroy(); answerRateChart = null; }
+            var ctx = document.getElementById('answerRateChart');
+            if (!ctx) return;
+            var answered = (summary.this_week || 0) - (summary.unanswered_this_week || 0);
+            var unanswered = summary.unanswered_this_week || 0;
+            if (answered + unanswered === 0) { answered = 1; unanswered = 0; }
+            answerRateChart = new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Answered', 'Unanswered'],
+                    datasets: [{ data: [answered, unanswered], backgroundColor: ['#059669', '#d97706'], borderWidth: 0, cutout: '70%' }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 16, font: { size: 12 } } },
+                        tooltip: { enabled: true }
+                    }
+                }
+            });
+        }
+
+        /* Query list */
+        function renderQueryList(queries, append) {
+            var list = document.getElementById('queryList');
+            if (!append) list.innerHTML = '';
+            if (queries.length === 0 && !append) {
+                list.innerHTML = '<div class="query-empty">No questions in this period.</div>';
+                document.getElementById('showMoreWrap').style.display = 'none';
                 return;
             }
-            var currentPeriod = '7d';
-            var currentDays = 7;
-            var chart = null;
-            var tenantId = '';
-            var tenantName = '';
-            var fallbacksOnly = false;
-            var queryOffset = 0;
-            var queryLimit = 15;
-            var matchCounts = {};
-            var periodDaysForQueries = 7;
-
-            function authHeaders() { return { 'Authorization': 'Bearer ' + token }; }
-
-            function showError(msg) {
-                var el = document.getElementById('dashboardError');
-                el.textContent = msg;
-                el.style.display = 'block';
-            }
-            function hideError() { document.getElementById('dashboardError').style.display = 'none'; }
-
-            function loadMe() {
-                return fetch('/owner/me', { headers: authHeaders() }).then(function (res) {
-                    if (res.status === 401) {
-                        localStorage.removeItem('owner_token');
-                        window.location.href = '/dashboard/login';
-                        throw new Error('Session expired');
-                    }
-                    if (!res.ok) throw new Error('Failed to load profile');
-                    return res.json();
-                });
-            }
-
-            function loadSummary() {
-                return fetch('/owner/queries/summary', { headers: authHeaders() }).then(function (res) {
-                    if (res.status === 401) {
-                        localStorage.removeItem('owner_token');
-                        window.location.href = '/dashboard/login';
-                        throw new Error('Session expired');
-                    }
-                    if (!res.ok) throw new Error('Failed to load summary');
-                    return res.json();
-                });
-            }
-
-            function loadDaily(period) {
-                return fetch('/owner/queries/daily?period=' + (period || currentPeriod), { headers: authHeaders() })
-                    .then(function (res) { return res.ok ? res.json() : []; });
-            }
-
-            function loadQueries(offset, append) {
-                var params = 'days=' + periodDaysForQueries + '&limit=' + queryLimit + '&offset=' + offset;
-                if (fallbacksOnly) params += '&fallbacks_only=true';
-                return fetch('/owner/queries?' + params, { headers: authHeaders() }).then(function (res) {
-                    if (res.status === 401) {
-                        localStorage.removeItem('owner_token');
-                        window.location.href = '/dashboard/login';
-                        throw new Error('Session expired');
-                    }
-                    if (!res.ok) throw new Error('Failed to load queries');
-                    return res.json();
-                });
-            }
-
-            function loadMatchCounts() {
-                return fetch('/owner/queries/match-counts?days=' + periodDaysForQueries, { headers: authHeaders() })
-                    .then(function (res) { return res.ok ? res.json() : {}; });
-            }
-
-            function formatTimestamp(iso) {
-                if (!iso) return '';
-                var d = new Date(iso);
-                var now = new Date();
-                var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                var yesterday = new Date(today);
-                yesterday.setDate(yesterday.getDate() - 1);
-                var dDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-                var timeStr = d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true });
-                if (dDay.getTime() === today.getTime()) return 'Today, ' + timeStr;
-                if (dDay.getTime() === yesterday.getTime()) return 'Yesterday, ' + timeStr;
-                var weekAgo = new Date(today);
-                weekAgo.setDate(weekAgo.getDate() - 7);
-                if (dDay > weekAgo)
-                    return d.toLocaleDateString('en-AU', { weekday: 'long' }) + ', ' + timeStr;
-                return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
-            }
-
-            function escapeHtml(s) {
-                if (s == null) return '';
-                var d = document.createElement('div');
-                d.textContent = s;
-                return d.innerHTML;
-            }
-
-            function renderStats(summary) {
-                var week = summary.this_week || 0;
-                var today = summary.today || 0;
-                var unanswered = summary.unanswered_this_week || 0;
-                document.getElementById('statWeek').textContent = week;
-                document.getElementById('statToday').textContent = today;
-                document.getElementById('statUnanswered').textContent = unanswered;
-                var trendEl = document.getElementById('statTrend');
-                var trend = summary.trend_vs_last_week;
-                if (trendEl) {
-                    if (trend) {
-                        var isUp = trend.indexOf('+') === 0;
-                        trendEl.textContent = trend + ' ' + (isUp ? '↑' : '↓');
-                        trendEl.className = 'trend ' + (isUp ? 'up' : 'down');
+            queries.forEach(function (q) {
+                var card = document.createElement('div');
+                card.className = 'query-card ' + (q.answered ? 'answered' : 'unanswered');
+                var matchText = q.matched_to ? ('Matched: ' + q.matched_to) : 'No match found';
+                var statusIcon = q.answered ? '&#10003;' : '&#10007;';
+                var countBadge = '';
+                if (q.answered && q.matched_to && matchCounts[q.matched_to] >= 5) countBadge = '<span class="badge">Asked ' + matchCounts[q.matched_to] + 'x</span>';
+                var answerHtml = '';
+                var answer = (q.answer || '').trim();
+                if (answer) {
+                    var truncated = answer.length > 200 || (answer.match(/\n/g) || []).length >= 3;
+                    if (truncated) {
+                        var uid = 'ans-' + q.id + '-' + Math.random().toString(36).slice(2, 8);
+                        answerHtml = '<div class="answer-block"><div class="answer-label">Answer</div><div class="answer-text truncated" id="' + uid + '">' + escapeHtml(answer.slice(0, 200)) + '...</div><div class="answer-full" style="display:none"></div><button type="button" class="show-full-btn" data-target="' + uid + '">Show full</button></div>';
                     } else {
-                        trendEl.textContent = '';
-                        trendEl.className = 'trend';
+                        answerHtml = '<div class="answer-block"><div class="answer-label">Answer</div><div class="answer-text">' + escapeHtml(answer) + '</div></div>';
                     }
                 }
-                document.getElementById('countAll').textContent = week;
-                document.getElementById('countUnanswered').textContent = unanswered;
-            }
+                var addBtn = q.answered ? '' : '<button type="button" class="add-faq-btn" data-question="' + escapeHtml(q.question).replace(/"/g, '&quot;') + '">Add FAQ</button>';
+                card.innerHTML = '<div class="q-text">' + escapeHtml(q.question) + '</div>' + answerHtml + '<div class="match-line"><span>' + escapeHtml(matchText) + '</span> ' + countBadge + '</div><div class="query-time">' + formatTimestamp(q.timestamp) + '</div>' + addBtn;
+                if (answer && truncated) { var fullEl = card.querySelector('.answer-full'); if (fullEl) fullEl.textContent = answer; }
+                list.appendChild(card);
+            });
+            document.getElementById('showMoreWrap').style.display = (queryOffset < queriesTotal) ? 'block' : 'none';
+        }
 
-            function renderChart(dailyData) {
-                var hasData = dailyData && dailyData.length > 0 && dailyData.some(function (d) { return d.count > 0; });
-                if (chart) { chart.destroy(); chart = null; }
-                var insightEl = document.getElementById('busiestInsight');
-                if (!hasData) {
-                    if (insightEl) insightEl.textContent = '';
-                    return;
-                }
-                var ctx = document.getElementById('dailyChart');
-                if (!ctx) return;
-                var labels = dailyData.map(function (d) {
-                    var dte = new Date(d.date);
-                    return dte.toLocaleDateString('en-AU', { weekday: 'short' });
-                });
-                var counts = dailyData.map(function (d) { return d.count; });
-                chart = new Chart(ctx.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Questions',
-                            data: counts,
-                            backgroundColor: '#2563EB',
-                            borderColor: '#2563EB',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { precision: 0 } },
-                            x: { ticks: { maxRotation: 45 } }
-                        }
-                    }
-                });
-                if (insightEl) insightEl.textContent = '';
-            }
-
-            function setBusiestInsight(summary) {
-                var el = document.getElementById('busiestInsight');
-                if (!el) return;
-                el.textContent = summary.busiest_insight || '';
-            }
-
-            var queriesTotal = 0;
-            function renderQueryList(queries, append) {
-                var list = document.getElementById('queryList');
-                if (!list) return;
-                if (!append) list.innerHTML = '';
-                if (queries.length === 0 && !append) {
-                    list.innerHTML = '<div class="query-empty"><p>No customer questions yet.</p><p>Once the widget is installed on your website, you\'ll see every question customers ask here.</p></div>';
-                    document.getElementById('showMoreWrap').style.display = 'none';
-                    return;
-                }
-                queries.forEach(function (q) {
-                    var card = document.createElement('div');
-                    card.className = 'query-card ' + (q.answered ? 'answered' : 'unanswered');
-                    var matchText = q.matched_to ? ('Matched: ' + q.matched_to) : 'No match found';
-                    var statusIcon = q.answered ? '✅' : '❌';
-                    var countBadge = '';
-                    if (q.answered && q.matched_to && matchCounts[q.matched_to] >= 5)
-                        countBadge = '<span class="badge">🔥 Asked ' + matchCounts[q.matched_to] + ' times</span>';
-                    var answerHtml = '';
-                    var answer = (q.answer || '').trim();
-                    if (answer) {
-                        var truncated = answer.length > 200 || (answer.match(/\n/g) || []).length >= 3;
-                        var displayAnswer = truncated ? (answer.slice(0, 200) + (answer.length > 200 ? '...' : '')) : answer;
-                        if (truncated) {
-                            var id = 'ans-' + q.id + '-' + Math.random().toString(36).slice(2, 8);
-                            answerHtml = '<div class="answer-block">' +
-                                '<div class="answer-label">Answer:</div>' +
-                                '<div class="answer-text truncated" id="' + id + '">' + escapeHtml(displayAnswer) + '</div>' +
-                                '<div class="answer-full" style="display:none"></div>' +
-                                '<button type="button" class="show-full-btn" data-target="' + id + '">Show full answer</button>' +
-                                '</div>';
-                        } else {
-                            answerHtml = '<div class="answer-block">' +
-                                '<div class="answer-label">Answer:</div>' +
-                                '<div class="answer-text">' + escapeHtml(answer) + '</div>' +
-                                '</div>';
-                        }
-                    }
-                    var addFaqHtml = q.answered ? '' : '<button type="button" class="add-faq-btn" data-question="' + escapeHtml(q.question).replace(/"/g, '&quot;') + '">Add FAQ</button>';
-                    card.innerHTML =
-                        '<div class="q-text">' + escapeHtml(q.question) + '</div>' +
-                        answerHtml +
-                        '<div class="match-line">→ ' + escapeHtml(matchText) + ' <span class="status">' + statusIcon + '</span> ' + countBadge + '</div>' +
-                        '<div class="time">' + formatTimestamp(q.timestamp) + '</div>' +
-                        addFaqHtml;
-                    if (answer && truncated) {
-                        var fullEl = card.querySelector('.answer-full');
-                        if (fullEl) fullEl.textContent = answer;
-                    }
-                    list.appendChild(card);
-                });
-                var showMoreWrap = document.getElementById('showMoreWrap');
-                showMoreWrap.style.display = (queryOffset < queriesTotal) ? 'block' : 'none';
-            }
-
-            function bindAddFaqButtons() {
-                document.querySelectorAll('.add-faq-btn').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        var q = this.getAttribute('data-question');
-                        if (q) {
-                            document.getElementById('suggestQuestion').value = q;
-                            document.getElementById('suggestAnswer').focus();
-                            document.getElementById('suggestSection').scrollIntoView({ behavior: 'smooth' });
-                        }
-                    });
-                });
-                document.querySelectorAll('.show-full-btn').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        var targetId = this.getAttribute('data-target');
-                        var textEl = targetId ? document.getElementById(targetId) : null;
-                        var block = this.closest('.answer-block');
-                        var fullEl = block ? block.querySelector('.answer-full') : null;
-                        if (textEl && fullEl && fullEl.textContent) {
-                            textEl.textContent = fullEl.textContent;
-                            textEl.classList.remove('truncated');
-                            this.style.display = 'none';
-                        }
-                    });
-                });
-            }
-
-            function refreshQueries(append) {
-                var offset = append ? queryOffset : 0;
-                loadQueries(offset, append).then(function (data) {
-                    queriesTotal = data.total || 0;
-                    if (!append) queryOffset = data.queries.length; else queryOffset += data.queries.length;
-                    renderQueryList(data.queries || [], append);
-                    bindAddFaqButtons();
-                });
-            }
-
-            function refresh() {
-                hideError();
-                document.body.classList.add('loading');
-                document.getElementById('spinnerWrap').classList.add('visible');
-                Promise.all([loadSummary(), loadDaily(currentPeriod), loadMatchCounts()])
-                    .then(function (arr) {
-                        var summary = arr[0];
-                        var daily = arr[1];
-                        matchCounts = arr[2] || {};
-                        renderStats(summary);
-                        renderChart(daily);
-                        setBusiestInsight(summary);
-                        queryOffset = 0;
-                        periodDaysForQueries = currentPeriod === '7d' ? 7 : currentPeriod === '30d' ? 30 : 90;
-                        return loadQueries(0, false);
-                    })
-                    .then(function (data) {
-                        queriesTotal = data.total || 0;
-                        queryOffset = (data.queries || []).length;
-                        renderQueryList(data.queries || [], false);
-                        bindAddFaqButtons();
-                        var showMoreWrap = document.getElementById('showMoreWrap');
-                        if (queriesTotal > queryLimit)
-                            showMoreWrap.style.display = 'block';
-                        else
-                            showMoreWrap.style.display = 'none';
-                    })
-                    .catch(function (err) { showError(err.message || 'Could not load dashboard'); })
-                    .finally(function () {
-                        document.body.classList.remove('loading');
-                        document.getElementById('spinnerWrap').classList.remove('visible');
-                    });
-            }
-
-            loadMe()
-                .then(function (me) {
-                    var name = (me.display_name || me.email || 'there').trim() || 'there';
-                    tenantName = (me.tenant_name || me.tenant_id || '').trim();
-                    tenantId = (me.tenant_id || '').trim();
-                    document.getElementById('greeting').textContent = "G'day, " + name + ' 👋';
-                    document.getElementById('tenantName').textContent = tenantName || '–';
-                    return loadSummary();
-                })
-                .then(function (summary) {
-                    var hasData = (summary.this_week || 0) > 0;
-                    if (hasData) {
-                        document.getElementById('emptyState').style.display = 'none';
-                        document.getElementById('mainDashboard').style.display = 'block';
-                        refresh();
-                    } else {
-                        document.getElementById('emptyState').style.display = 'block';
-                        document.getElementById('mainDashboard').style.display = 'none';
-                    }
-                })
-                .catch(function (err) {
-                    showError(err.message || 'Could not load');
-                    document.getElementById('emptyState').style.display = 'block';
-                    document.getElementById('mainDashboard').style.display = 'none';
-                });
-
-            document.querySelectorAll('.period-tabs button').forEach(function (btn) {
+        function bindAddFaqButtons() {
+            document.querySelectorAll('.add-faq-btn').forEach(function (btn) {
                 btn.addEventListener('click', function () {
-                    currentPeriod = this.getAttribute('data-period');
-                    document.querySelectorAll('.period-tabs button').forEach(function (b) { b.classList.remove('active'); });
-                    this.classList.add('active');
-                    refresh();
+                    var q = this.getAttribute('data-question');
+                    if (q) { document.getElementById('suggestQuestion').value = q; document.getElementById('suggestAnswer').focus(); document.getElementById('suggestSection').scrollIntoView({ behavior: 'smooth' }); }
                 });
             });
-
-            document.getElementById('cardUnanswered').addEventListener('click', function () {
-                fallbacksOnly = true;
-                document.getElementById('tabAll').classList.remove('active');
-                document.getElementById('tabUnanswered').classList.add('active');
-                queryOffset = 0;
-                refreshQueries(false);
+            document.querySelectorAll('.show-full-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var tid = this.getAttribute('data-target');
+                    var textEl = tid ? document.getElementById(tid) : null;
+                    var block = this.closest('.answer-block');
+                    var fullEl = block ? block.querySelector('.answer-full') : null;
+                    if (textEl && fullEl && fullEl.textContent) { textEl.textContent = fullEl.textContent; textEl.classList.remove('truncated'); this.style.display = 'none'; }
+                });
             });
+        }
 
-            document.getElementById('tabAll').addEventListener('click', function () {
-                fallbacksOnly = false;
+        function refreshQueries(append) {
+            var offset = append ? queryOffset : 0;
+            loadQueries(offset).then(function (data) {
+                queriesTotal = data.total || 0;
+                if (!append) queryOffset = data.queries.length; else queryOffset += data.queries.length;
+                renderQueryList(data.queries || [], append);
+                bindAddFaqButtons();
+            });
+        }
+
+        /* FAQ management */
+        function loadFaqs() {
+            apiFetch('/owner/faqs', { headers: authHeaders() }).then(function (r) { return r.json(); }).then(function (data) {
+                faqsCache = data.faqs || [];
+                document.getElementById('faqCount').textContent = faqsCache.length + ' items';
+                renderFaqList();
+            });
+        }
+
+        function renderFaqList() {
+            var container = document.getElementById('faqListContainer');
+            if (!faqsCache.length) { container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:14px;">No FAQs yet. Add one below.</div>'; return; }
+            container.innerHTML = faqsCache.map(function (f) {
+                var isEnabled = f.enabled !== false;
+                return '<div class="faq-item-card" data-faq-id="' + f.id + '">' +
+                    '<button type="button" class="faq-toggle ' + (isEnabled ? 'on' : 'off') + '" data-faq-id="' + f.id + '" data-enabled="' + (isEnabled ? '1' : '0') + '"></button>' +
+                    '<div class="faq-content"><div class="faq-q">' + escapeHtml(f.question) + '</div><div class="faq-a">' + escapeHtml(f.answer) + '</div></div>' +
+                    '<div class="faq-actions"><button type="button" class="faq-action-btn edit" data-faq-id="' + f.id + '">Edit</button><button type="button" class="faq-action-btn delete" data-faq-id="' + f.id + '">Delete</button></div></div>';
+            }).join('');
+            bindFaqHandlers();
+        }
+
+        function bindFaqHandlers() {
+            document.querySelectorAll('.faq-toggle').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var id = this.getAttribute('data-faq-id');
+                    var newEnabled = this.getAttribute('data-enabled') === '1' ? false : true;
+                    apiFetch('/owner/faqs/' + id, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify({ enabled: newEnabled }) })
+                        .then(function () { loadFaqs(); });
+                });
+            });
+            document.querySelectorAll('.faq-action-btn.edit').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var id = parseInt(this.getAttribute('data-faq-id'), 10);
+                    var faq = faqsCache.find(function (f) { return f.id === id; });
+                    if (!faq) return;
+                    document.getElementById('editFaqQ').value = faq.question;
+                    document.getElementById('editFaqA').value = faq.answer;
+                    document.getElementById('editFaqModal').classList.remove('hidden');
+                    document.getElementById('editFaqModal').setAttribute('data-faq-id', id);
+                });
+            });
+            document.querySelectorAll('.faq-action-btn.delete').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var id = this.getAttribute('data-faq-id');
+                    if (!confirm('Delete this FAQ?')) return;
+                    apiFetch('/owner/faqs/' + id, { method: 'DELETE', headers: authHeaders() })
+                        .then(function () { loadFaqs(); });
+                });
+            });
+        }
+
+        document.getElementById('editFaqCancel').addEventListener('click', function () { document.getElementById('editFaqModal').classList.add('hidden'); });
+        document.getElementById('editFaqSave').addEventListener('click', function () {
+            var modal = document.getElementById('editFaqModal');
+            var id = modal.getAttribute('data-faq-id');
+            var q = document.getElementById('editFaqQ').value.trim();
+            var a = document.getElementById('editFaqA').value.trim();
+            if (!q || !a) return;
+            apiFetch('/owner/faqs/' + id, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify({ question: q, answer: a }) })
+                .then(function () { modal.classList.add('hidden'); loadFaqs(); });
+        });
+        document.getElementById('editFaqModal').addEventListener('click', function (e) { if (e.target === this) this.classList.add('hidden'); });
+
+        document.getElementById('addFaqBtn').addEventListener('click', function () {
+            var q = document.getElementById('newFaqQ').value.trim();
+            var a = document.getElementById('newFaqA').value.trim();
+            var msg = document.getElementById('addFaqMsg');
+            if (!q || !a) { msg.textContent = 'Both fields required'; msg.style.color = 'var(--red)'; return; }
+            this.disabled = true;
+            apiFetch('/owner/faqs', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ question: q, answer: a }) })
+                .then(function (r) { return r.json(); })
+                .then(function () {
+                    document.getElementById('newFaqQ').value = '';
+                    document.getElementById('newFaqA').value = '';
+                    msg.textContent = 'Added!';
+                    msg.style.color = 'var(--green)';
+                    loadFaqs();
+                })
+                .catch(function () { msg.textContent = 'Failed'; msg.style.color = 'var(--red)'; })
+                .finally(function () { document.getElementById('addFaqBtn').disabled = false; setTimeout(function () { msg.textContent = ''; }, 3000); });
+        });
+
+        /* Notification prefs (localStorage only for now) */
+        function loadPrefs() {
+            var unanswered = localStorage.getItem('pref_unanswered_alerts');
+            var daily = localStorage.getItem('pref_daily_summary');
+            if (unanswered === 'off') { var el = document.getElementById('prefUnanswered'); el.classList.remove('on'); el.classList.add('off'); }
+            if (daily === 'off') { var el2 = document.getElementById('prefDaily'); el2.classList.remove('on'); el2.classList.add('off'); }
+        }
+        document.getElementById('prefUnanswered').addEventListener('click', function () {
+            var isOn = this.classList.contains('on');
+            this.classList.toggle('on', !isOn); this.classList.toggle('off', isOn);
+            localStorage.setItem('pref_unanswered_alerts', isOn ? 'off' : 'on');
+        });
+        document.getElementById('prefDaily').addEventListener('click', function () {
+            var isOn = this.classList.contains('on');
+            this.classList.toggle('on', !isOn); this.classList.toggle('off', isOn);
+            localStorage.setItem('pref_daily_summary', isOn ? 'off' : 'on');
+        });
+        loadPrefs();
+
+        /* Main refresh */
+        function refresh() {
+            hideError();
+            document.body.classList.add('loading');
+            document.getElementById('spinnerWrap').classList.add('visible');
+            Promise.all([loadSummary(), loadDaily(currentPeriod), loadMatchCounts(), loadHourly()])
+                .then(function (arr) {
+                    var summary = arr[0]; var daily = arr[1]; matchCounts = arr[2] || {};
+                    renderStats(summary);
+                    renderDailyChart(daily);
+                    renderAnswerRate(summary);
+                    renderHourlyChart(arr[3]);
+                    if (summary.busiest_insight) document.getElementById('busiestInsight').textContent = summary.busiest_insight;
+                    periodDaysForQueries = currentPeriod === '7d' ? 7 : currentPeriod === '30d' ? 30 : 90;
+                    return loadQueries(0);
+                })
+                .then(function (data) {
+                    queriesTotal = data.total || 0;
+                    queryOffset = (data.queries || []).length;
+                    renderQueryList(data.queries || [], false);
+                    bindAddFaqButtons();
+                    document.getElementById('showMoreWrap').style.display = (queriesTotal > queryLimit) ? 'block' : 'none';
+                })
+                .catch(function (err) { showError(err.message || 'Could not load dashboard'); })
+                .finally(function () { document.body.classList.remove('loading'); document.getElementById('spinnerWrap').classList.remove('visible'); });
+        }
+
+        /* Init */
+        loadMe().then(function (me) {
+            var displayName = (me.display_name || me.email || 'there').trim() || 'there';
+            tenantName = (me.tenant_name || me.tenant_id || '').trim();
+            tenantId = (me.tenant_id || '').trim();
+            tenantPhone = (me.contact_phone || '').trim();
+            document.getElementById('greeting').textContent = "G'day, " + displayName;
+            document.getElementById('tenantName').textContent = tenantName;
+            var embedCode = '<script src="https://motionmade-fastapi.onrender.com/widget.js"\n  data-tenant="' + escapeHtml(tenantId) + '"\n  data-name="' + escapeHtml(tenantName) + '"' + (tenantPhone ? '\n  data-phone="' + escapeHtml(tenantPhone) + '"' : '') + '\n  data-color="#2563EB"\n  data-api="https://motionmade-fastapi.onrender.com"><\/script>';
+            document.getElementById('embedSnippet').textContent = embedCode;
+            return loadSummary();
+        }).then(function (summary) {
+            var hasData = (summary.this_week || 0) > 0;
+            if (hasData) {
+                document.getElementById('emptyState').style.display = 'none';
+                document.getElementById('mainDashboard').style.display = 'block';
+                refresh();
+            } else {
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('mainDashboard').style.display = 'none';
+            }
+        }).catch(function (err) {
+            showError(err.message || 'Could not load');
+            document.getElementById('emptyState').style.display = 'block';
+        });
+
+        /* Period tabs */
+        document.querySelectorAll('.period-tab').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                currentPeriod = this.getAttribute('data-period');
+                document.querySelectorAll('.period-tab').forEach(function (b) { b.classList.remove('active'); });
                 this.classList.add('active');
-                document.getElementById('tabUnanswered').classList.remove('active');
-                queryOffset = 0;
-                refreshQueries(false);
+                refresh();
             });
-            document.getElementById('tabUnanswered').addEventListener('click', function () {
-                fallbacksOnly = true;
-                this.classList.add('active');
-                document.getElementById('tabAll').classList.remove('active');
-                queryOffset = 0;
-                refreshQueries(false);
-            });
+        });
 
-            document.getElementById('showMoreBtn').addEventListener('click', function () {
-                refreshQueries(true);
-            });
+        /* Unanswered card click */
+        document.getElementById('cardUnanswered').addEventListener('click', function () {
+            document.querySelectorAll('.nav-tab').forEach(function (b) { b.classList.remove('active'); });
+            document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
+            document.querySelector('[data-tab="questions"]').classList.add('active');
+            document.getElementById('tab-questions').classList.add('active');
+            fallbacksOnly = true;
+            document.getElementById('tabAll').classList.remove('active');
+            document.getElementById('tabUnanswered').classList.add('active');
+            queryOffset = 0;
+            refreshQueries(false);
+        });
 
-            document.getElementById('exportCsv').addEventListener('click', function (e) {
-                e.preventDefault();
-                var days = currentPeriod === '7d' ? 7 : currentPeriod === '30d' ? 30 : 90;
-                fetch('/owner/queries/export?days=' + days, { headers: authHeaders() })
-                    .then(function (res) {
-                        if (!res.ok) throw new Error('Export failed');
-                        return res.text();
-                    })
-                    .then(function (csv) {
-                        var blob = new Blob([csv], { type: 'text/csv' });
-                        var a = document.createElement('a');
-                        a.href = URL.createObjectURL(blob);
-                        a.download = 'queries_' + days + 'd.csv';
-                        a.click();
-                        URL.revokeObjectURL(a.href);
-                    })
-                    .catch(function () { showError('Could not export CSV'); });
-            });
+        document.getElementById('tabAll').addEventListener('click', function () { fallbacksOnly = false; this.classList.add('active'); document.getElementById('tabUnanswered').classList.remove('active'); queryOffset = 0; refreshQueries(false); });
+        document.getElementById('tabUnanswered').addEventListener('click', function () { fallbacksOnly = true; this.classList.add('active'); document.getElementById('tabAll').classList.remove('active'); queryOffset = 0; refreshQueries(false); });
+        document.getElementById('showMoreBtn').addEventListener('click', function () { refreshQueries(true); });
 
-            document.getElementById('logoutBtn').addEventListener('click', function () {
-                localStorage.removeItem('owner_token');
-                window.location.href = '/dashboard/login';
-            });
+        /* Export */
+        document.getElementById('exportCsv').addEventListener('click', function (e) {
+            e.preventDefault();
+            var days = currentPeriod === '7d' ? 7 : currentPeriod === '30d' ? 30 : 90;
+            fetch('/owner/queries/export?days=' + days, { headers: authHeaders() })
+                .then(function (r) { if (!r.ok) throw new Error('Export failed'); return r.text(); })
+                .then(function (csv) { var b = new Blob([csv], { type: 'text/csv' }); var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'queries_' + days + 'd.csv'; a.click(); })
+                .catch(function () { showError('Could not export CSV'); });
+        });
 
-            document.getElementById('submitSuggestionBtn').addEventListener('click', function () {
-                var q = document.getElementById('suggestQuestion').value.trim();
-                var a = document.getElementById('suggestAnswer').value.trim();
-                var errEl = document.getElementById('suggestError');
-                var okEl = document.getElementById('suggestSuccess');
-                errEl.style.display = 'none';
-                okEl.style.display = 'none';
-                if (!q) { errEl.textContent = 'Please enter a question.'; errEl.style.display = 'block'; return; }
-                var btn = this;
-                btn.disabled = true;
-                fetch('/owner/faqs/suggest', {
-                    method: 'POST',
-                    headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
-                    body: JSON.stringify({ question: q, answer: a || null })
-                }).then(function (res) {
-                    if (res.status === 401) { window.location.href = '/dashboard/login'; return; }
-                    return res.json().then(function (data) {
-                        if (!res.ok) throw new Error(data.detail || 'Failed to submit');
-                        document.getElementById('suggestQuestion').value = '';
-                        document.getElementById('suggestAnswer').value = '';
-                        okEl.textContent = 'Suggestion submitted. We\'ll review it soon.';
-                        okEl.style.display = 'block';
-                    });
-                }).catch(function (e) {
-                    errEl.textContent = e.message || 'Something went wrong.';
-                    errEl.style.display = 'block';
-                }).finally(function () { btn.disabled = false; });
-            });
-        })();
+        document.getElementById('logoutBtn').addEventListener('click', function () { localStorage.removeItem('owner_token'); window.location.href = '/dashboard/login'; });
+
+        /* Suggest FAQ */
+        document.getElementById('submitSuggestionBtn').addEventListener('click', function () {
+            var q = document.getElementById('suggestQuestion').value.trim();
+            var a = document.getElementById('suggestAnswer').value.trim();
+            var errEl = document.getElementById('suggestError');
+            var okEl = document.getElementById('suggestSuccess');
+            errEl.style.display = 'none'; okEl.style.display = 'none';
+            if (!q) { errEl.textContent = 'Please enter a question.'; errEl.style.display = 'block'; return; }
+            var btn = this; btn.disabled = true;
+            fetch('/owner/faqs/suggest', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ question: q, answer: a || null }) })
+                .then(function (r) { if (r.status === 401) { window.location.href = '/dashboard/login'; return; } return r.json().then(function (data) { if (!r.ok) throw new Error(data.detail || 'Failed'); document.getElementById('suggestQuestion').value = ''; document.getElementById('suggestAnswer').value = ''; okEl.textContent = 'Submitted! We\'ll review it soon.'; okEl.style.display = 'block'; }); })
+                .catch(function (e) { errEl.textContent = e.message || 'Something went wrong.'; errEl.style.display = 'block'; })
+                .finally(function () { btn.disabled = false; });
+        });
+
+        /* Copy embed */
+        document.getElementById('copyEmbedBtn').addEventListener('click', function () {
+            var text = document.getElementById('embedSnippet').textContent;
+            navigator.clipboard.writeText(text).then(function () { document.getElementById('copyEmbedBtn').textContent = 'Copied!'; setTimeout(function () { document.getElementById('copyEmbedBtn').textContent = 'Copy to clipboard'; }, 2000); }).catch(function () {});
+        });
+    })();
     </script>
 </body>
 </html>
