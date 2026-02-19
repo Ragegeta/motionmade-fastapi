@@ -156,5 +156,295 @@
       "afterpay": ", and Afterpay",
       "smoke_alarm_price": "$180"
     }
+  },
+  "dentist": {
+    "display_name": "Dental Practice",
+    "faqs": [
+      {
+        "question": "How much is a checkup and clean?",
+        "answer": "A standard checkup and clean starts at ${checkup_price}. If you have private health insurance, you may have no out of pocket cost depending on your fund and level of cover."
+      },
+      {
+        "question": "Do you bulk bill?",
+        "answer": "${bulk_bill_answer}"
+      },
+      {
+        "question": "What health funds do you accept?",
+        "answer": "We accept all major health funds including ${health_funds}. We have HICAPS on site so you can claim on the spot."
+      },
+      {
+        "question": "Do you take emergency appointments?",
+        "answer": "Yes, we keep emergency slots available each day for urgent cases like toothaches, broken teeth, and swelling. Call us on ${phone} and we'll get you in as soon as possible."
+      },
+      {
+        "question": "What are your opening hours?",
+        "answer": "We're open ${hours}. We also offer ${extended_hours}."
+      },
+      {
+        "question": "Do you do teeth whitening?",
+        "answer": "Yes, we offer both in chair whitening from ${whitening_price} and take home whitening kits from ${whitening_kit_price}. Book a consult and we'll recommend the best option for you."
+      },
+      {
+        "question": "How do I book an appointment?",
+        "answer": "Call us on ${phone}, book online through our website, or message us here. We'll confirm your appointment by SMS."
+      },
+      {
+        "question": "Do you treat children?",
+        "answer": "Yes, we welcome patients of all ages. Children aged 2 to 17 may be eligible for up to ${cdbs_amount} in benefits under the Child Dental Benefits Schedule."
+      },
+      {
+        "question": "What services do you offer?",
+        "answer": "We offer general dentistry, cosmetic dentistry, teeth whitening, crowns, bridges, implants, root canals, extractions, and emergency dental care."
+      },
+      {
+        "question": "Where are you located?",
+        "answer": "We're located at ${address}. There is ${parking} available nearby."
+      }
+    ],
+    "variables": {
+      "checkup_price": "$199",
+      "bulk_bill_answer": "We don't bulk bill Medicare for general patients, but children aged 2 to 17 may be eligible under the Child Dental Benefits Schedule. We accept all private health funds.",
+      "health_funds": "Bupa, Medibank, HCF, NIB, HBF, and more",
+      "phone": "0437 037 584",
+      "hours": "Monday to Friday 8am to 5pm, Saturday 8am to 1pm",
+      "extended_hours": "early morning and late evening appointments by arrangement",
+      "whitening_price": "$450",
+      "whitening_kit_price": "$250",
+      "cdbs_amount": "$1,095 over two years",
+      "address": "[Your Address]",
+      "parking": "free street parking"
+    }
+  },
+  "physiotherapist": {
+    "display_name": "Physiotherapy Clinic",
+    "faqs": [
+      {
+        "question": "How much is a physio session?",
+        "answer": "An initial consultation is ${initial_price} and follow up sessions are ${followup_price}. If you have private health insurance you can claim on the spot with our HICAPS terminal."
+      },
+      {
+        "question": "Do I need a referral?",
+        "answer": "No referral is needed to see a physiotherapist. You can book directly. If you're claiming through a GP management plan (EPC), your doctor will need to provide a referral for Medicare rebates."
+      },
+      {
+        "question": "What health funds do you accept?",
+        "answer": "We accept all major health funds including ${health_funds}. We have HICAPS on site for instant claiming."
+      },
+      {
+        "question": "What conditions do you treat?",
+        "answer": "We treat ${conditions}. We also offer ${special_services}."
+      },
+      {
+        "question": "How do I book an appointment?",
+        "answer": "Call us on ${phone}, book online through our website, or message us here."
+      },
+      {
+        "question": "What are your opening hours?",
+        "answer": "We're open ${hours}."
+      },
+      {
+        "question": "How long is a session?",
+        "answer": "Initial consultations are ${initial_duration} and follow up sessions are ${followup_duration}."
+      },
+      {
+        "question": "Can I claim on Medicare?",
+        "answer": "If your GP has set up an Enhanced Primary Care (EPC) plan, you can receive a Medicare rebate for up to 5 allied health visits per year. Ask your GP about eligibility."
+      },
+      {
+        "question": "Do you do home visits?",
+        "answer": "${home_visits_answer}"
+      },
+      {
+        "question": "Where are you located?",
+        "answer": "We're located at ${address}. There is ${parking} available nearby."
+      }
+    ],
+    "variables": {
+      "initial_price": "$95",
+      "followup_price": "$75",
+      "health_funds": "Bupa, Medibank, HCF, NIB, HBF, and more",
+      "conditions": "back pain, neck pain, sports injuries, post surgery rehab, shoulder injuries, knee injuries, headaches, and workplace injuries",
+      "special_services": "dry needling, clinical pilates, and exercise rehabilitation",
+      "phone": "0437 037 584",
+      "hours": "Monday to Friday 7am to 7pm, Saturday 8am to 12pm",
+      "initial_duration": "45 to 60 minutes",
+      "followup_duration": "30 minutes",
+      "home_visits_answer": "Yes, we offer home visits within a 15km radius for an additional $30 travel fee. Call us to arrange.",
+      "address": "[Your Address]",
+      "parking": "free parking"
+    }
+  },
+  "accountant": {
+    "display_name": "Accounting Firm",
+    "faqs": [
+      {
+        "question": "How much does a tax return cost?",
+        "answer": "Individual tax returns start from ${individual_return_price}. Sole trader and small business returns start from ${business_return_price}. We'll give you a fixed quote before we start so there are no surprises."
+      },
+      {
+        "question": "Do you do BAS?",
+        "answer": "Yes, we prepare and lodge BAS for sole traders, partnerships, companies, and trusts. BAS preparation starts from ${bas_price} per quarter."
+      },
+      {
+        "question": "What documents do I need to bring?",
+        "answer": "For an individual return: your income summary (from myGov), receipts for work related expenses, private health insurance statement, and any investment income statements. We'll send you a checklist before your appointment."
+      },
+      {
+        "question": "Can I claim working from home expenses?",
+        "answer": "Yes, you can claim working from home expenses. The ATO allows a fixed rate of 67 cents per hour, or you can calculate your actual costs. We'll help you work out which method gives you the best deduction."
+      },
+      {
+        "question": "Do you offer virtual appointments?",
+        "answer": "${virtual_answer}"
+      },
+      {
+        "question": "What services do you offer?",
+        "answer": "We offer ${services}."
+      },
+      {
+        "question": "How do I book an appointment?",
+        "answer": "Call us on ${phone}, book online through our website, or message us here."
+      },
+      {
+        "question": "What are your opening hours?",
+        "answer": "We're open ${hours}. Extended hours available during tax season (July to October)."
+      },
+      {
+        "question": "Do you help with company setup?",
+        "answer": "Yes, we can help you set up a company, trust, or partnership structure. We'll advise on the best structure for your situation including tax implications and asset protection."
+      },
+      {
+        "question": "Where are you located?",
+        "answer": "We're located at ${address}. There is ${parking} available nearby."
+      }
+    ],
+    "variables": {
+      "individual_return_price": "$150",
+      "business_return_price": "$350",
+      "bas_price": "$150",
+      "virtual_answer": "Yes, we offer phone and video appointments. We can handle everything remotely if that's easier for you.",
+      "services": "individual tax returns, business tax returns, BAS preparation, bookkeeping, business advisory, company and trust setup, and SMSF administration",
+      "phone": "0437 037 584",
+      "hours": "Monday to Friday 9am to 5pm",
+      "address": "[Your Address]",
+      "parking": "free parking"
+    }
+  },
+  "lawyer": {
+    "display_name": "Law Firm",
+    "faqs": [
+      {
+        "question": "Do you offer a free initial consultation?",
+        "answer": "${free_consult_answer}"
+      },
+      {
+        "question": "What areas of law do you practice?",
+        "answer": "We practice in ${practice_areas}."
+      },
+      {
+        "question": "How much do you charge?",
+        "answer": "Our fees depend on the type of matter. ${fee_structure} We always provide a cost estimate before starting work so you know what to expect."
+      },
+      {
+        "question": "Do you do legal aid?",
+        "answer": "${legal_aid_answer}"
+      },
+      {
+        "question": "How do I book an appointment?",
+        "answer": "Call us on ${phone}, book online through our website, or message us here. We'll get back to you within one business day."
+      },
+      {
+        "question": "What are your opening hours?",
+        "answer": "We're open ${hours}. After hours appointments available by arrangement."
+      },
+      {
+        "question": "How long will my matter take?",
+        "answer": "Timeframes vary depending on the complexity of your matter and whether the other party cooperates. We'll give you a realistic timeline at your first appointment and keep you updated throughout."
+      },
+      {
+        "question": "Do you offer payment plans?",
+        "answer": "${payment_plan_answer}"
+      },
+      {
+        "question": "Can you help with an urgent matter?",
+        "answer": "Yes, we handle urgent matters including AVOs, bail applications, and urgent family law matters. Call us on ${phone} and let us know it's urgent."
+      },
+      {
+        "question": "Where are you located?",
+        "answer": "We're located at ${address}. There is ${parking} available nearby."
+      }
+    ],
+    "variables": {
+      "free_consult_answer": "We offer a free 15 minute phone consultation so we can understand your situation and let you know how we can help. No obligation.",
+      "practice_areas": "family law, criminal law, property and conveyancing, wills and estates, commercial law, and employment law",
+      "fee_structure": "Simple matters like wills start from $350. Conveyancing from $990. Hourly rates for litigation matters are $350 to $500 plus GST.",
+      "legal_aid_answer": "We accept legal aid referrals for eligible matters. Contact Legal Aid Queensland to check your eligibility, or ask us and we can help you find out.",
+      "phone": "0437 037 584",
+      "hours": "Monday to Friday 8:30am to 5:30pm",
+      "payment_plan_answer": "Yes, we offer flexible payment plans for larger matters. We'll discuss options at your first appointment.",
+      "address": "[Your Address]",
+      "parking": "free parking"
+    }
+  },
+  "vet": {
+    "display_name": "Veterinary Clinic",
+    "faqs": [
+      {
+        "question": "How much is a consultation?",
+        "answer": "A standard consultation is ${consult_price}. Emergency and after hours consultations are ${emergency_price}. We'll always discuss costs with you before proceeding with any treatment."
+      },
+      {
+        "question": "Do you have emergency hours?",
+        "answer": "${emergency_hours_answer}"
+      },
+      {
+        "question": "How much do vaccinations cost?",
+        "answer": "Puppy and kitten vaccination courses start from ${vacc_price}. Annual boosters are ${booster_price}. We'll set up a vaccination schedule for your pet at their first visit."
+      },
+      {
+        "question": "What animals do you treat?",
+        "answer": "We treat ${animals}."
+      },
+      {
+        "question": "How do I book an appointment?",
+        "answer": "Call us on ${phone}, book online through our website, or message us here. For emergencies, call us directly."
+      },
+      {
+        "question": "What are your opening hours?",
+        "answer": "We're open ${hours}."
+      },
+      {
+        "question": "Do you offer payment plans?",
+        "answer": "${payment_plan_answer}"
+      },
+      {
+        "question": "How much does desexing cost?",
+        "answer": "Desexing costs depend on the size and species of your pet. Dog desexing starts from ${desex_dog_price} and cat desexing from ${desex_cat_price}. This includes the surgery, anaesthetic, pain relief, and a post op check."
+      },
+      {
+        "question": "Do you do dental work on pets?",
+        "answer": "Yes, we offer dental checkups, cleaning, and extractions under general anaesthetic. Dental cleaning starts from ${dental_price}. We'll assess your pet's teeth during their regular checkup."
+      },
+      {
+        "question": "Where are you located?",
+        "answer": "We're located at ${address}. There is ${parking} available nearby."
+      }
+    ],
+    "variables": {
+      "consult_price": "$75",
+      "emergency_price": "$150 to $250",
+      "emergency_hours_answer": "Yes, we offer after hours emergency care. Call us on our emergency line and our on call vet will advise you. If we can't see your pet immediately, we'll direct you to the nearest emergency centre.",
+      "vacc_price": "$85",
+      "booster_price": "$65",
+      "animals": "dogs, cats, rabbits, guinea pigs, birds, and reptiles",
+      "phone": "0437 037 584",
+      "hours": "Monday to Friday 8am to 6pm, Saturday 8am to 12pm",
+      "payment_plan_answer": "We accept payment via VetPay and Zip for larger treatment costs. Ask our team at reception for details.",
+      "desex_dog_price": "$350",
+      "desex_cat_price": "$250",
+      "dental_price": "$400",
+      "address": "[Your Address]",
+      "parking": "free parking"
+    }
   }
 }

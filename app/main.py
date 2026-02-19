@@ -4170,6 +4170,16 @@ def _discovery_query_variations(trade: str, suburb: str) -> list[str]:
         return [f"house cleaning {s}", f"home cleaning {s}", f"domestic cleaning {s}"]
     if "plumb" in t:
         return [f"plumber {s}", f"emergency plumber {s}", f"plumbing services {s}"]
+    if "dentist" in t or "dental" in t:
+        return [f"dentist {s}", f"dental clinic {s}", f"dental practice {s}"]
+    if "physio" in t:
+        return [f"physiotherapist {s}", f"physio clinic {s}", f"physiotherapy {s}"]
+    if "accountant" in t or "accounting" in t:
+        return [f"accountant {s}", f"accounting firm {s}", f"tax accountant {s}"]
+    if "lawyer" in t or "law" in t or "solicitor" in t:
+        return [f"lawyer {s}", f"law firm {s}", f"solicitor {s}"]
+    if "vet" in t or "veterinar" in t:
+        return [f"veterinarian {s}", f"vet clinic {s}", f"animal hospital {s}"]
     return [f"{trade} {s}"]
 
 
@@ -4628,39 +4638,122 @@ def _build_leads_email_prompt(
 ) -> str:
     """Build the email-writing prompt for one lead."""
     trade_lower = (trade_type or "").lower()
+
+    # Tradie trades: $49/month
     if "bond" in trade_lower:
         trade_angle = "Bond cleaning: customers google at 9pm when moving out; if the site can't answer instantly they call someone else. Time sensitive, instant answers mean more bookings."
+        pain_points = "how much a bond clean costs, what's included, do you guarantee the bond back, how far in advance to book"
+        price_line = "$49/month after the trial"
+        subject_examples = [
+            "AI front desk for [Business Name]",
+            "stop losing after hours leads [Business Name]",
+            "[Business Name] is missing jobs after hours",
+            "built something for Brisbane bond cleaners",
+        ]
     elif "house" in trade_lower or "home" in trade_lower or "domestic" in trade_lower:
         trade_angle = "House cleaning: most people compare 3 or 4 cleaners; the one that answers fastest wins. Repeat business, one lost lead is months of lost income."
-    else:
+        pain_points = "how much a regular clean costs, what areas you cover, do you bring your own supplies, how to book"
+        price_line = "$49/month after the trial"
+        subject_examples = [
+            "AI front desk for [Business Name]",
+            "stop losing after hours leads [Business Name]",
+            "[Business Name] is missing jobs after hours",
+            "built something for Brisbane cleaning businesses",
+        ]
+    elif "plumb" in trade_lower:
         trade_angle = "Plumbing: someone with a burst pipe at 11pm won't wait for a call back. If the website says you service their area and gives a rough price they'll book on the spot."
+        pain_points = "callout fees, do you do emergencies, what areas you service, how quickly you can come out"
+        price_line = "$49/month after the trial"
+        subject_examples = [
+            "AI front desk for [Business Name]",
+            "stop losing after hours leads [Business Name]",
+            "[Business Name] is missing jobs after hours",
+            "built something for Brisbane plumbers",
+        ]
+    # Professional services: $149/month
+    elif "dentist" in trade_lower or "dental" in trade_lower:
+        trade_angle = "Dental practices: your receptionist answers the same 5 questions all day. Patients always asking about bulk billing, checkup cost, health funds accepted, emergency appointments, opening hours. This handles it 24/7 so they can focus on patients actually in the chair."
+        pain_points = "bulk billing, checkup cost, health funds accepted, emergency appointments, opening hours"
+        price_line = "$149/month after the trial"
+        subject_examples = [
+            "AI receptionist for [Business Name]",
+            "[Business Name] is missing after hours patient enquiries",
+            "built something for Brisbane dental practices",
+        ]
+    elif "physio" in trade_lower:
+        trade_angle = "Physio clinics: half the calls your front desk gets are the same questions. Patients asking if they need a referral, what health funds you take, how much a session costs, what conditions you treat. This answers them on your site 24/7 so your phone stops ringing with stuff that doesn't need a human."
+        pain_points = "do I need a referral, what health funds you accept, session costs, what conditions you treat"
+        price_line = "$149/month after the trial"
+        subject_examples = [
+            "AI front desk for [Business Name]",
+            "stop losing after hours physio bookings",
+            "built something for Brisbane physio clinics",
+        ]
+    elif "accountant" in trade_lower or "accounting" in trade_lower:
+        trade_angle = "Accounting firms: tax season your phone doesn't stop. Clients asking how much a tax return costs, do you do BAS, what documents to bring, can they claim X. This answers the simple stuff on your website so your team can focus on actual client work."
+        pain_points = "how much a tax return costs, do you do BAS, what documents to bring, can I claim X"
+        price_line = "$149/month after the trial"
+        subject_examples = [
+            "AI assistant for [Business Name]",
+            "[Business Name] could handle more client enquiries",
+            "built something for Brisbane accounting firms",
+        ]
+    elif "lawyer" in trade_lower or "law" in trade_lower or "solicitor" in trade_lower:
+        trade_angle = "Law firms: most people looking for a lawyer google at night when something's gone wrong. If your site can't answer their basic questions, they call the next firm on the list. People asking if you offer free consultations, what areas of law you practice, how much you charge, do you do legal aid."
+        pain_points = "free consultations, areas of law, how much you charge, do you do legal aid"
+        price_line = "$149/month after the trial"
+        subject_examples = [
+            "AI front desk for [Business Name]",
+            "[Business Name] is losing enquiries after hours",
+            "built something for Brisbane law firms",
+        ]
+    elif "vet" in trade_lower or "veterinar" in trade_lower:
+        trade_angle = "Vet clinics: a panicking pet owner at 10pm isn't going to wait until morning. If your website can answer their question, they book with you instead of driving to the emergency vet. Pet owners asking about emergency hours, vaccination costs, do you treat their animal type, how to book."
+        pain_points = "emergency hours, vaccination costs, do you treat my pet, how to book"
+        price_line = "$149/month after the trial"
+        subject_examples = [
+            "AI front desk for [Business Name]",
+            "stop losing after hours pet emergencies",
+            "built something for Brisbane vet clinics",
+        ]
+    else:
+        trade_angle = "Customers search online after hours when they need help. If the website can't answer their basic questions, they move on to the next business."
+        pain_points = "pricing, services offered, areas covered, how to book"
+        price_line = "$149/month after the trial"
+        subject_examples = [
+            "AI front desk for [Business Name]",
+            "[Business Name] is missing enquiries after hours",
+            "built something for Brisbane businesses",
+        ]
+
     suburb_br = suburb or "Brisbane"
     used_instruction = ""
     if used_subjects:
         used_instruction = '\n\nSubject lines already used in this batch (use a DIFFERENT pattern, do not repeat):\n' + "\n".join(f"- {s}" for s in used_subjects[-15:])
+
+    subject_examples_str = "\n".join(f'- "{s}"' for s in subject_examples)
+
     prompt = f"""Write a cold email to this business lead. Match this exact tone and structure.
 
 Business: {name}. Suburb: {suburb_br}. Their email: {email}.
 Trade: {trade_type or 'plumber'}. Trade context: {trade_angle}
+Common questions their customers ask: {pain_points}
 """
     if audit_summary:
         prompt += f"What we know about their website: {audit_summary}\n"
     if preview_url:
         prompt += f"Optional: they have a preview link (no signup): {preview_url}\n"
-    prompt += """
+    prompt += f"""
 SUBJECT LINE: Direct, mentions AI, specific to their business. Examples (vary the pattern):
-- "AI front desk for [Business Name]"
-- "stop losing after hours leads [Business Name]"
-- "[Business Name] is missing jobs after hours"
-- "built something for Brisbane [trade] businesses"
+{subject_examples_str}
 
 BODY STRUCTURE (every email MUST follow this pattern):
 
 1. Opening: "Hey," or "Hey mate," (never "Hey there," or "Hi [name],")
 2. First line: Reference their specific website or business. "Checked out your site earlier." or "Had a look at [Business Name]'s site."
-3. The problem: One or two sentences about what's missing. Be specific to their trade.
+3. The problem: One or two sentences about what's missing. Be specific to their trade. Reference the common questions their customers ask.
 4. What I built: "I built something called MotionMade that fixes this." Always say "I built" — own it, don't distance from it. Explain it sits on their website, answers customer questions 24/7, based on their actual business info (pricing, services, areas). Say "Not generic chatbot stuff, it actually knows your business."
-5. Free trial: "I'm offering a free trial for Brisbane [trade] businesses at the moment so you can see if it works for you with zero risk." Always mention free trial. Always say "at the moment" to create soft urgency.
+5. Free trial and pricing: "I'm offering a free trial at the moment so you can see if it works for you with zero risk. After that it's {price_line}." Always mention free trial. Always say "at the moment" to create soft urgency.
 6. Link: "Have a look here: https://motionmadebne.com.au"
 7. CTA: "Happy to chat if you've got any questions. Flick me a reply or give me a call on 0437 037 584."
 8. Sign off: "Abbed" (nothing else, no title, no company)

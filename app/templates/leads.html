@@ -52,6 +52,13 @@
         .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-run-all-trades { background: #7c3aed; }
         .btn-run-all-trades:hover:not(:disabled) { background: #6d28d9; }
+        .btn-run-all-pro { background: #6d28d9; }
+        .btn-run-all-pro:hover:not(:disabled) { background: #5b21b6; }
+        .trade-group { margin-bottom: 8px; }
+        .trade-group-label { font-size: 10px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+        .btn-trade.professional { border-color: #c4b5fd; }
+        .btn-trade.professional:hover { background: #ede9fe; }
+        .btn-trade.professional.selected { background: #7c3aed; color: white; border-color: #7c3aed; }
 
         /* Log */
         .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; color: #6b7280; }
@@ -108,6 +115,11 @@
         .badge-bond { background: #dbeafe; color: #1e40af; }
         .badge-house { background: #fef3c7; color: #92400e; }
         .badge-plumber { background: #ede9fe; color: #5b21b6; }
+        .badge-dentist { background: #fce7f3; color: #9d174d; }
+        .badge-physio { background: #d1fae5; color: #065f46; }
+        .badge-accountant { background: #e0e7ff; color: #3730a3; }
+        .badge-lawyer { background: #fef9c3; color: #854d0e; }
+        .badge-vet { background: #ffe4e6; color: #9f1239; }
         .score-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
         .score-high { background: #dcfce7; color: #166534; }
         .score-mid { background: #fef3c7; color: #92400e; }
@@ -203,10 +215,25 @@
             <div class="controls">
                 <div class="control-group">
                     <label>Trade</label>
-                    <div class="trade-buttons">
-                        <button type="button" class="btn-trade selected" data-trade="Bond Cleaning">Bond Cleaning</button>
-                        <button type="button" class="btn-trade" data-trade="House Cleaning">House Cleaning</button>
-                        <button type="button" class="btn-trade" data-trade="Plumber">Plumber</button>
+                    <div>
+                        <div class="trade-group">
+                            <div class="trade-group-label">Trades</div>
+                            <div class="trade-buttons">
+                                <button type="button" class="btn-trade selected" data-trade="Bond Cleaning">Bond Cleaning</button>
+                                <button type="button" class="btn-trade" data-trade="House Cleaning">House Cleaning</button>
+                                <button type="button" class="btn-trade" data-trade="Plumber">Plumber</button>
+                            </div>
+                        </div>
+                        <div class="trade-group">
+                            <div class="trade-group-label">Professional Services</div>
+                            <div class="trade-buttons">
+                                <button type="button" class="btn-trade professional" data-trade="Dentist">Dentist</button>
+                                <button type="button" class="btn-trade professional" data-trade="Physiotherapist">Physio</button>
+                                <button type="button" class="btn-trade professional" data-trade="Accountant">Accountant</button>
+                                <button type="button" class="btn-trade professional" data-trade="Lawyer">Lawyer</button>
+                                <button type="button" class="btn-trade professional" data-trade="Vet">Vet</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="control-group">
@@ -226,6 +253,7 @@
                 </div>
                 <button type="button" id="runSingle" class="btn-run action-btn">🔍 Find Leads</button>
                 <button type="button" id="runAllTrades" class="btn-run btn-run-all-trades action-btn">🔄 Find All Trades</button>
+                <button type="button" id="runAllPro" class="btn-run btn-run-all-pro action-btn">🔄 Find All Professional</button>
             </div>
 
             <!-- Log -->
@@ -267,6 +295,11 @@
                     <option value="Bond Cleaning">Bond Cleaning</option>
                     <option value="House Cleaning">House Cleaning</option>
                     <option value="Plumber">Plumber</option>
+                    <option value="Dentist">Dentist</option>
+                    <option value="Physiotherapist">Physiotherapist</option>
+                    <option value="Accountant">Accountant</option>
+                    <option value="Lawyer">Lawyer</option>
+                    <option value="Vet">Vet</option>
                 </select>
             </div>
 
@@ -341,6 +374,8 @@
         var sentPage = 1;
         var PAGE_SIZE = 25;
         var TRADES = ['Bond Cleaning', 'House Cleaning', 'Plumber'];
+        var PRO_TRADES = ['Dentist', 'Physiotherapist', 'Accountant', 'Lawyer', 'Vet'];
+        var ALL_TRADES = TRADES.concat(PRO_TRADES);
         var dailyLimitResetTimerInterval = null;
 
         function h() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken }; }
@@ -442,8 +477,15 @@
 
         function tradeBadge(t) {
             var cls = 'badge-trade ';
-            if ((t||'').indexOf('Bond') >= 0) cls += 'badge-bond';
-            else if ((t||'').indexOf('House') >= 0) cls += 'badge-house';
+            var tl = (t||'').toLowerCase();
+            if (tl.indexOf('bond') >= 0) cls += 'badge-bond';
+            else if (tl.indexOf('house') >= 0) cls += 'badge-house';
+            else if (tl.indexOf('plumb') >= 0) cls += 'badge-plumber';
+            else if (tl.indexOf('dentist') >= 0 || tl.indexOf('dental') >= 0) cls += 'badge-dentist';
+            else if (tl.indexOf('physio') >= 0) cls += 'badge-physio';
+            else if (tl.indexOf('accountant') >= 0 || tl.indexOf('accounting') >= 0) cls += 'badge-accountant';
+            else if (tl.indexOf('lawyer') >= 0 || tl.indexOf('law') >= 0 || tl.indexOf('solicitor') >= 0) cls += 'badge-lawyer';
+            else if (tl.indexOf('vet') >= 0) cls += 'badge-vet';
             else cls += 'badge-plumber';
             return '<span class="' + cls + '">' + esc(t) + '</span>';
         }
@@ -634,6 +676,27 @@
             flashSuccess('✅ All trades done! ' + results.join(', ') + '. Total: ' + totalInserted + ' new leads.');
         };
 
+        $('runAllPro').onclick = async function() {
+            setOperationState(true);
+            var city = getCity();
+            var target = getTarget();
+            var btn = $('runAllPro');
+            btn.textContent = '🔄 Running...';
+            var totalInserted = 0;
+            var results = [];
+            for (var i = 0; i < PRO_TRADES.length; i++) {
+                setBanner('busy', '⏳ Finding ' + PRO_TRADES[i] + ' (' + (i+1) + '/' + PRO_TRADES.length + ')...');
+                setProgress((i / PRO_TRADES.length) * 100);
+                var ins = await runPipeline(PRO_TRADES[i], city, target);
+                totalInserted += ins;
+                results.push(PRO_TRADES[i] + ': ' + ins);
+                await loadLeads();
+            }
+            btn.textContent = '🔄 Find All Professional';
+            setOperationState(false);
+            flashSuccess('✅ All professional services done! ' + results.join(', ') + '. Total: ' + totalInserted + ' new leads.');
+        };
+
         $('dailyBatchBtn').onclick = async function() {
             setOperationState(true);
             var city = getCity();
@@ -641,12 +704,12 @@
             btn.textContent = '⏳ Running...';
             var totalInserted = 0;
             var results = [];
-            for (var i = 0; i < TRADES.length; i++) {
-                setBanner('busy', '⏳ Running ' + TRADES[i] + '... (' + (i+1) + '/' + TRADES.length + ')');
-                setProgress((i / TRADES.length) * 100);
-                var ins = await runPipeline(TRADES[i], city, 10);
+            for (var i = 0; i < ALL_TRADES.length; i++) {
+                setBanner('busy', '⏳ Running ' + ALL_TRADES[i] + '... (' + (i+1) + '/' + ALL_TRADES.length + ')');
+                setProgress((i / ALL_TRADES.length) * 100);
+                var ins = await runPipeline(ALL_TRADES[i], city, 10);
                 totalInserted += ins;
-                results.push(TRADES[i] + ': found ' + ins);
+                results.push(ALL_TRADES[i] + ': found ' + ins);
                 await loadLeads();
             }
             btn.textContent = '🚀 Run Daily Batch';
