@@ -4,114 +4,173 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MotionMade – Leads</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9fafb; color: #111827; font-size: 16px; line-height: 1.5; }
-        .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
-        header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 14px 24px; }
-        .logo { font-size: 18px; font-weight: 700; color: #2563EB; }
-        .auth-section { background: #fff; padding: 24px; border-radius: 12px; margin-bottom: 24px; border: 1px solid #e5e7eb; }
-        .auth-section input { padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; width: 260px; margin-right: 10px; }
-        .auth-section button { padding: 10px 18px; background: #2563EB; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; }
-        .error { color: #dc2626; margin-top: 10px; font-size: 14px; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
         .hidden { display: none !important; }
 
+        /* Header */
+        header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 16px 24px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 40; backdrop-filter: blur(8px); background: rgba(255,255,255,0.92); }
+        .logo { font-size: 17px; font-weight: 700; color: #1e40af; letter-spacing: -0.02em; }
+        .logo-dot { color: #3b82f6; }
+        .header-subtitle { font-size: 13px; color: #94a3b8; font-weight: 400; }
+
+        .container { max-width: 1080px; margin: 0 auto; padding: 28px 24px 48px; }
+
+        /* Auth */
+        .auth-section { max-width: 400px; margin: 80px auto; background: #fff; padding: 40px 36px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04); text-align: center; }
+        .auth-section h3 { font-size: 18px; font-weight: 600; margin-bottom: 4px; color: #0f172a; }
+        .auth-section .auth-hint { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+        .auth-section input { padding: 11px 14px; border: 1px solid #e2e8f0; border-radius: 10px; width: 100%; font-size: 14px; background: #f8fafc; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
+        .auth-section input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); background: #fff; }
+        .auth-section button { padding: 11px 24px; background: #1e40af; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; width: 100%; margin-top: 12px; transition: background 0.15s, transform 0.1s; font-family: inherit; }
+        .auth-section button:hover { background: #1e3a8a; }
+        .auth-section button:active { transform: scale(0.98); }
+        .error { color: #dc2626; margin-top: 12px; font-size: 13px; font-weight: 500; }
+
         /* Activity banner */
-        .activity-banner { border-radius: 12px; padding: 14px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 500; }
-        .activity-banner.idle { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
-        .activity-banner.busy { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
-        .activity-banner.success { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
-        .pulse { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .activity-banner { border-radius: 10px; padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; transition: all 0.3s ease; }
+        .activity-banner.idle { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+        .activity-banner.busy { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+        .activity-banner.success { background: #f0fdf4; border: 1px solid #86efac; color: #15803d; }
+        .pulse { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         .idle .pulse { background: #22c55e; }
-        .busy .pulse { background: #3b82f6; animation: pulse 1.2s ease-in-out infinite; }
+        .busy .pulse { background: #3b82f6; animation: pulse 1.4s ease-in-out infinite; }
         .success .pulse { background: #22c55e; }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
-        .progress-track { height: 6px; background: #e5e7eb; border-radius: 3px; width: 100%; margin-top: 8px; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb); border-radius: 3px; transition: width 0.4s ease; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.7); } }
+        .progress-track { height: 4px; background: #e2e8f0; border-radius: 2px; width: 100%; margin-top: 6px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #6366f1); border-radius: 2px; transition: width 0.5s ease; }
 
-        /* Daily batch button */
-        .daily-batch-wrap { background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%); border-radius: 14px; padding: 24px; margin-bottom: 20px; text-align: center; color: white; }
-        .daily-batch-wrap h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-        .daily-batch-wrap p { font-size: 14px; opacity: 0.8; margin-bottom: 16px; }
-        .btn-daily-batch { padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 18px; cursor: pointer; border: none; background: white; color: #1e40af; transition: all 0.2s; }
-        .btn-daily-batch:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .btn-daily-batch:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* Daily batch hero */
+        .daily-batch-wrap { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%); border-radius: 16px; padding: 32px 28px; margin-bottom: 24px; text-align: center; color: white; position: relative; overflow: hidden; }
+        .daily-batch-wrap::before { content: ''; position: absolute; top: -40%; right: -20%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%); border-radius: 50%; }
+        .daily-batch-wrap h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.02em; position: relative; }
+        .daily-batch-wrap p { font-size: 14px; opacity: 0.75; margin-bottom: 20px; position: relative; }
+        .btn-daily-batch { padding: 14px 44px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; border: none; background: white; color: #1e3a8a; transition: all 0.2s; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.12); font-family: inherit; letter-spacing: -0.01em; }
+        .btn-daily-batch:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
+        .btn-daily-batch:active:not(:disabled) { transform: translateY(0); }
+        .btn-daily-batch:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        .controls { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
-        .control-group { display: flex; flex-direction: column; gap: 4px; }
-        .control-group label { font-size: 11px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.02em; }
-        .control-group input, .control-group select { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; min-width: 120px; font-size: 15px; }
-        .control-group input[type="number"] { width: 80px; }
-        .trade-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-        .btn-trade { padding: 10px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; background: #f3f4f6; color: #374151; border: 2px solid #e5e7eb; font-weight: 500; transition: all 0.15s; }
-        .btn-trade:hover { background: #e5e7eb; }
-        .btn-trade.selected { background: #2563EB; color: white; border-color: #2563EB; }
-        .btn-trade:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-run { padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; background: #2563EB; color: white; white-space: nowrap; transition: all 0.15s; }
-        .btn-run:hover:not(:disabled) { background: #1d4ed8; }
-        .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* Card base */
+        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px 22px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+
+        /* Controls */
+        .controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+        .control-group { display: flex; flex-direction: column; gap: 6px; }
+        .control-group label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .control-group input, .control-group select { padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; min-width: 120px; font-size: 14px; background: #f8fafc; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; color: #0f172a; }
+        .control-group input:focus, .control-group select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.08); background: #fff; }
+        .control-group input[type="number"] { width: 76px; }
+
+        /* Trade buttons */
+        .trade-group { margin-bottom: 10px; }
+        .trade-group:last-child { margin-bottom: 0; }
+        .trade-group-label { font-size: 10px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+        .trade-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-trade { padding: 7px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; background: #f8fafc; color: #475569; border: 1.5px solid #e2e8f0; font-weight: 500; transition: all 0.15s; font-family: inherit; }
+        .btn-trade:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        .btn-trade.selected { background: #1e40af; color: white; border-color: #1e40af; box-shadow: 0 1px 4px rgba(30,64,175,0.3); }
+        .btn-trade:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-trade.professional { border-color: #ddd6fe; }
+        .btn-trade.professional:hover { background: #f5f3ff; border-color: #c4b5fd; }
+        .btn-trade.professional.selected { background: #6d28d9; color: white; border-color: #6d28d9; box-shadow: 0 1px 4px rgba(109,40,217,0.3); }
+
+        /* Action buttons */
+        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-left: auto; }
+        .btn-run { padding: 9px 18px; border-radius: 9px; font-weight: 600; font-size: 13px; cursor: pointer; border: none; color: white; white-space: nowrap; transition: all 0.15s; font-family: inherit; }
+        .btn-run:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .btn-run:active:not(:disabled) { transform: translateY(0); }
+        .btn-run:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-run.primary { background: #1e40af; }
+        .btn-run.primary:hover:not(:disabled) { background: #1e3a8a; }
         .btn-run-all-trades { background: #7c3aed; }
         .btn-run-all-trades:hover:not(:disabled) { background: #6d28d9; }
         .btn-run-all-pro { background: #6d28d9; }
         .btn-run-all-pro:hover:not(:disabled) { background: #5b21b6; }
-        .trade-group { margin-bottom: 8px; }
-        .trade-group-label { font-size: 10px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
-        .btn-trade.professional { border-color: #c4b5fd; }
-        .btn-trade.professional:hover { background: #ede9fe; }
-        .btn-trade.professional.selected { background: #7c3aed; color: white; border-color: #7c3aed; }
 
         /* Log */
-        .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; color: #6b7280; }
-        .log-header a { color: #2563EB; cursor: pointer; text-decoration: none; }
-        .log-panel { background: #1f2937; color: #e5e7eb; border-radius: 8px; padding: 14px 16px; font-family: ui-monospace, monospace; font-size: 12px; max-height: 200px; overflow-y: auto; margin-bottom: 20px; }
-        .log-panel .log-entry { margin-bottom: 4px; }
-        .log-panel .log-phase { color: #93c5fd; }
-        .log-panel .log-time { color: #9ca3af; margin-right: 8px; font-size: 11px; }
+        .log-section { margin-bottom: 20px; }
+        .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .log-header span { font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .log-header a { color: #3b82f6; cursor: pointer; text-decoration: none; font-size: 12px; font-weight: 500; }
+        .log-header a:hover { color: #1d4ed8; }
+        .log-panel { background: #0f172a; color: #cbd5e1; border-radius: 10px; padding: 14px 16px; font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace; font-size: 11.5px; max-height: 180px; overflow-y: auto; line-height: 1.7; scrollbar-width: thin; scrollbar-color: #334155 #0f172a; }
+        .log-panel::-webkit-scrollbar { width: 6px; }
+        .log-panel::-webkit-scrollbar-track { background: #0f172a; }
+        .log-panel::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .log-panel .log-entry { margin-bottom: 2px; }
+        .log-panel .log-phase { color: #7dd3fc; font-weight: 500; }
+        .log-panel .log-time { color: #64748b; margin-right: 8px; font-size: 10.5px; }
 
-        /* Stats bar */
-        .stats-bar { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
-        .stats-main { font-size: 15px; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; margin-bottom: 8px; }
-        .stats-main .ready { color: #059669; font-weight: 700; }
-        .stats-main .sent { color: #2563EB; font-weight: 600; }
-        .stats-main .sent.at-limit { color: #dc2626; }
-        .stats-main .total { color: #6b7280; }
-        .stats-breakdown { font-size: 13px; color: #6b7280; display: flex; flex-wrap: wrap; gap: 6px 18px; }
-        .stats-breakdown .trade-stat { padding: 3px 10px; background: #f3f4f6; border-radius: 6px; }
+        /* Stats */
+        .stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+        .stat-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .stat-card .stat-label { font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+        .stat-card .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; }
+        .stat-card .stat-value.ready { color: #059669; }
+        .stat-card .stat-value.sent { color: #2563eb; }
+        .stat-card .stat-value.sent.at-limit { color: #dc2626; }
+        .stat-card .stat-value.total { color: #475569; }
+        .stat-card .stat-detail { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+        .stats-breakdown { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+        .stats-breakdown .trade-stat { padding: 5px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; color: #64748b; font-weight: 500; }
+        .stats-actions { display: flex; gap: 8px; align-items: center; }
+        .limit-wrap { position: relative; }
+        .btn-limit-gear { background: none; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; padding: 6px 10px; color: #64748b; font-size: 14px; transition: all 0.15s; }
+        .btn-limit-gear:hover { background: #f1f5f9; color: #475569; }
+        .limit-dropdown { position: absolute; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); padding: 4px; z-index: 50; min-width: 110px; right: 0; top: 100%; margin-top: 6px; }
+        .limit-dropdown button { display: block; width: 100%; padding: 8px 14px; text-align: left; border: none; background: none; cursor: pointer; font-size: 13px; border-radius: 6px; font-family: inherit; color: #475569; transition: background 0.1s; }
+        .limit-dropdown button:hover { background: #f1f5f9; }
+        .btn-refresh { padding: 6px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; font-weight: 500; transition: all 0.15s; font-family: inherit; }
+        .btn-refresh:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        .daily-limit-warning { font-size: 13px; color: #d97706; margin-bottom: 12px; padding: 10px 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; font-weight: 500; }
+        .daily-limit-block { font-size: 13px; color: #dc2626; margin-bottom: 12px; font-weight: 500; padding: 10px 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; }
+        .daily-limit-reset-timer { margin-left: 4px; color: #94a3b8; font-weight: 400; }
 
-        /* Pipeline filter/search */
-        .pipeline-toolbar { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
-        .pipeline-search { padding: 9px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-width: 220px; flex: 1; max-width: 360px; }
-        .pipeline-search:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
-        .pipeline-filter-select { padding: 9px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+        /* Pipeline toolbar */
+        .pipeline-toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+        .pipeline-search { padding: 9px 14px; border: 1px solid #e2e8f0; border-radius: 9px; font-size: 13px; min-width: 200px; flex: 1; max-width: 340px; background: #fff; font-family: inherit; color: #0f172a; transition: border-color 0.15s, box-shadow 0.15s; }
+        .pipeline-search::placeholder { color: #94a3b8; }
+        .pipeline-search:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.08); }
+        .pipeline-filter-select { padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 9px; font-size: 13px; background: #fff; font-family: inherit; color: #0f172a; cursor: pointer; }
+        .pipeline-filter-select:focus { outline: none; border-color: #3b82f6; }
 
         /* Pipeline sections */
-        .pipeline-section { margin-bottom: 20px; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb; }
-        .pipeline-section.ready-section { border-color: #bbf7d0; }
-        .pipeline-section.sent-section { background: #f9fafb; border-color: #e5e7eb; }
-        .pipeline-section-header { padding: 14px 18px; font-weight: 600; font-size: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-        .pipeline-section.ready-section .pipeline-section-header { background: #dcfce7; color: #166534; }
-        .pipeline-section.sent-section .pipeline-section-header { background: #f3f4f6; color: #374151; cursor: pointer; }
-        .pipeline-section.sent-section .pipeline-section-header:hover { background: #e5e7eb; }
-        .pipeline-section-header summary { list-style: none; }
+        .pipeline-section { margin-bottom: 20px; border-radius: 14px; overflow: hidden; border: 1px solid #e2e8f0; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .pipeline-section.ready-section { border-color: #a7f3d0; }
+        .pipeline-section.sent-section { border-color: #e2e8f0; }
+        .pipeline-section-header { padding: 14px 20px; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .pipeline-section.ready-section .pipeline-section-header { background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #065f46; }
+        .pipeline-section.sent-section .pipeline-section-header { background: #f8fafc; color: #475569; cursor: pointer; transition: background 0.15s; }
+        .pipeline-section.sent-section .pipeline-section-header:hover { background: #f1f5f9; }
+        .pipeline-section-header summary { list-style: none; display: flex; align-items: center; justify-content: space-between; width: 100%; }
         .pipeline-section-header summary::-webkit-details-marker { display: none; }
 
         .send-all-wrap { display: flex; align-items: center; gap: 10px; }
-        .btn-send-all { padding: 12px 22px; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer; border: none; background: #059669; color: white; transition: all 0.15s; }
-        .btn-send-all:hover:not(:disabled) { background: #047857; }
-        .btn-send-all:disabled { opacity: 0.5; cursor: not-allowed; }
-        .send-progress-bar-wrap { height: 6px; background: #e5e7eb; border-radius: 3px; width: 160px; overflow: hidden; }
-        .send-progress-bar-fill { height: 100%; background: #2563EB; border-radius: 3px; transition: width 0.2s; }
+        .btn-send-all { padding: 10px 22px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; background: #059669; color: white; transition: all 0.15s; font-family: inherit; }
+        .btn-send-all:hover:not(:disabled) { background: #047857; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(5,150,105,0.3); }
+        .btn-send-all:active:not(:disabled) { transform: translateY(0); }
+        .btn-send-all:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+        .send-progress-bar-wrap { height: 4px; background: #e2e8f0; border-radius: 2px; width: 160px; overflow: hidden; }
+        .send-progress-bar-fill { height: 100%; background: #2563EB; border-radius: 2px; transition: width 0.2s; }
 
+        /* Tables */
         .pipeline-table-wrap { overflow-x: auto; }
         table.pipeline-table { width: 100%; border-collapse: collapse; }
-        .pipeline-table th, .pipeline-table td { padding: 11px 14px; text-align: left; border-bottom: 1px solid rgba(0,0,0,0.06); vertical-align: middle; font-size: 14px; }
-        .pipeline-table th { font-weight: 600; font-size: 11px; text-transform: uppercase; color: #6b7280; letter-spacing: 0.02em; }
-        .pipeline-section.ready-section .pipeline-table tbody tr { background: #f0fdf4; }
-        .pipeline-section.ready-section .pipeline-table tbody tr:hover { background: #dcfce7; }
-        .pipeline-section.sent-section .pipeline-table tbody tr { background: #f9fafb; color: #6b7280; }
-        .pipeline-table .subject-preview { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
-        .pipeline-table .sent-at { font-size: 12px; color: #6b7280; }
-        .badge-trade { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+        .pipeline-table th, .pipeline-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #f1f5f9; vertical-align: middle; font-size: 13px; }
+        .pipeline-table th { font-weight: 600; font-size: 10px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.06em; background: #fafbfc; }
+        .pipeline-section.ready-section .pipeline-table tbody tr { background: #fff; transition: background 0.1s; }
+        .pipeline-section.ready-section .pipeline-table tbody tr:hover { background: #f0fdf4; }
+        .pipeline-section.sent-section .pipeline-table tbody tr { background: #fff; color: #94a3b8; transition: background 0.1s; }
+        .pipeline-section.sent-section .pipeline-table tbody tr:hover { background: #f8fafc; }
+        .pipeline-table .subject-preview { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: #64748b; }
+        .pipeline-table .sent-at { font-size: 12px; color: #94a3b8; }
+
+        /* Badges */
+        .badge-trade { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.04em; display: inline-block; }
         .badge-bond { background: #dbeafe; color: #1e40af; }
         .badge-house { background: #fef3c7; color: #92400e; }
         .badge-plumber { background: #ede9fe; color: #5b21b6; }
@@ -119,82 +178,90 @@
         .badge-physio { background: #d1fae5; color: #065f46; }
         .badge-accountant { background: #e0e7ff; color: #3730a3; }
         .badge-vet { background: #ffe4e6; color: #9f1239; }
-        .score-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+
+        .score-pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
         .score-high { background: #dcfce7; color: #166534; }
         .score-mid { background: #fef3c7; color: #92400e; }
         .score-low { background: #fee2e2; color: #991b1b; }
-        .btn-sm { padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid #e5e7eb; background: #f3f4f6; color: #374151; transition: all 0.15s; }
-        .btn-sm:hover { background: #e5e7eb; }
-        .btn-sm:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-skip { color: #dc2626; border-color: #fecaca; }
-        .btn-skip:hover { background: #fee2e2; }
-        .btn-gmail { background: #ea4335; color: white; border-color: #ea4335; }
-        .btn-gmail:hover:not(:disabled) { background: #d33426; }
-        .btn-gmail:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .expand-row-pipeline { background: #fff; }
-        .expand-row-pipeline td { padding: 16px 14px; border-bottom: 1px solid #e5e7eb; vertical-align: top; font-size: 13px; }
-        .expand-row-pipeline .label { font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 4px; }
-        .expand-row-pipeline .value { white-space: pre-wrap; word-break: break-word; }
-        .expand-row-pipeline .value.body { background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #e5e7eb; }
+        /* Small buttons */
+        .btn-sm { padding: 5px 11px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #475569; transition: all 0.12s; font-family: inherit; font-weight: 500; }
+        .btn-sm:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        .btn-sm:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-skip { color: #ef4444; border-color: #fecaca; background: #fff; }
+        .btn-skip:hover { background: #fef2f2; border-color: #fca5a5; }
+        .btn-gmail { background: #dc2626; color: white; border-color: #dc2626; }
+        .btn-gmail:hover:not(:disabled) { background: #b91c1c; }
+        .btn-gmail:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        .pagination { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 12px; font-size: 13px; }
-        .pagination button { padding: 6px 12px; border-radius: 6px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 13px; }
-        .pagination button:hover:not(:disabled) { background: #f3f4f6; }
-        .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
-        .pagination .current { font-weight: 600; color: #2563eb; }
+        /* Expand row */
+        .expand-row-pipeline { background: #fafbfc; }
+        .expand-row-pipeline td { padding: 20px 16px; border-bottom: 1px solid #e2e8f0; vertical-align: top; font-size: 13px; }
+        .expand-row-pipeline .label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 4px; }
+        .expand-row-pipeline .value { white-space: pre-wrap; word-break: break-word; color: #334155; }
+        .expand-row-pipeline .value.body { background: #fff; padding: 16px; border-radius: 10px; border: 1px solid #e2e8f0; line-height: 1.7; font-size: 13px; }
 
-        .no-email-section { margin-top: 16px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; }
-        .no-email-section summary { padding: 10px 14px; cursor: pointer; font-size: 13px; color: #6b7280; }
+        /* Pagination */
+        .pagination { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 14px; font-size: 13px; }
+        .pagination button { padding: 7px 14px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-size: 13px; font-family: inherit; color: #475569; transition: all 0.12s; }
+        .pagination button:hover:not(:disabled) { background: #f1f5f9; border-color: #cbd5e1; }
+        .pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
+        .pagination .current { font-weight: 600; color: #1e40af; }
 
-        .daily-counter-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 14px; color: #374151; }
-        .daily-counter-wrap .daily-sent { font-weight: 500; }
-        .btn-limit-gear { background: none; border: none; cursor: pointer; padding: 4px; color: #6b7280; font-size: 16px; }
-        .btn-limit-gear:hover { color: #374151; }
-        .limit-dropdown { position: absolute; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 6px 0; z-index: 50; min-width: 100px; left: 0; top: 100%; margin-top: 4px; }
-        .limit-dropdown button { display: block; width: 100%; padding: 8px 14px; text-align: left; border: none; background: none; cursor: pointer; font-size: 13px; }
-        .limit-dropdown button:hover { background: #f3f4f6; }
-        .daily-limit-warning { font-size: 13px; color: #b45309; margin-bottom: 8px; }
-        .daily-limit-block { font-size: 13px; color: #dc2626; margin-bottom: 8px; font-weight: 500; }
-        .daily-limit-reset-timer { margin-left: 6px; color: #6b7280; font-weight: 400; }
+        /* No email section */
+        .no-email-section { margin-top: 8px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fafbfc; }
+        .no-email-section summary { padding: 12px 16px; cursor: pointer; font-size: 13px; color: #94a3b8; font-weight: 500; }
+        .no-email-section summary:hover { color: #64748b; }
 
-        .btn-backup-csv { padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
-        .btn-backup-csv:hover { background: #e5e7eb; }
-        .btn-refresh { padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
-        .btn-refresh:hover { background: #e5e7eb; }
+        /* Footer */
+        .footer-actions { text-align: center; padding: 24px 0 8px; }
+        .btn-export { padding: 8px 18px; font-size: 13px; border-radius: 8px; cursor: pointer; background: #fff; color: #64748b; border: 1px solid #e2e8f0; font-family: inherit; font-weight: 500; transition: all 0.15s; }
+        .btn-export:hover { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
+        .btn-backup-csv { padding: 6px 14px; font-size: 12px; border-radius: 8px; cursor: pointer; background: #fff; color: #64748b; border: 1px solid #e2e8f0; font-family: inherit; font-weight: 500; transition: all 0.15s; }
+        .btn-backup-csv:hover { background: #f1f5f9; }
 
-        .footer-actions { text-align: center; padding: 20px 0; }
-        .footer-actions .btn-export { padding: 8px 16px; font-size: 13px; border-radius: 8px; cursor: pointer; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
-        .footer-actions .btn-export:hover { background: #e5e7eb; }
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-box { background: #fff; border-radius: 16px; max-width: 560px; width: 90%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+        .modal-header { padding: 18px 22px; border-bottom: 1px solid #f1f5f9; font-weight: 600; font-size: 16px; color: #0f172a; }
+        .modal-body { padding: 22px; overflow-y: auto; font-size: 14px; line-height: 1.7; color: #475569; }
+        .modal-body pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 10px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 14px 0; text-align: left; }
+        .modal-footer { padding: 16px 22px; border-top: 1px solid #f1f5f9; display: flex; gap: 10px; justify-content: flex-end; }
+        .btn-copy-script { padding: 9px 18px; border-radius: 9px; font-size: 13px; cursor: pointer; background: #1e40af; color: white; border: none; font-family: inherit; font-weight: 600; transition: background 0.15s; }
+        .btn-copy-script:hover { background: #1e3a8a; }
+        .btn-modal-close { padding: 9px 18px; border-radius: 9px; font-size: 13px; cursor: pointer; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; font-family: inherit; font-weight: 500; transition: all 0.15s; }
+        .btn-modal-close:hover { background: #f1f5f9; }
 
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-box { background: #fff; border-radius: 12px; max-width: 560px; width: 90%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        .modal-header { padding: 16px 20px; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 16px; }
-        .modal-body { padding: 20px; overflow-y: auto; font-size: 14px; line-height: 1.6; color: #374151; }
-        .modal-body pre { background: #1f2937; color: #e5e7eb; padding: 14px; border-radius: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 12px 0; text-align: left; }
-        .modal-footer { padding: 14px 20px; border-top: 1px solid #e5e7eb; display: flex; gap: 10px; justify-content: flex-end; }
-        .btn-copy-script { padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; background: #2563EB; color: white; border: none; }
-        .btn-modal-close { padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
-
-        @media (max-width: 640px) {
-            .container { padding: 12px; }
-            .controls { padding: 14px; gap: 12px; }
-            .daily-batch-wrap { padding: 16px; }
-            .btn-daily-batch { padding: 14px 24px; font-size: 16px; }
-            .pipeline-table th, .pipeline-table td { padding: 8px 10px; font-size: 13px; }
-            .stats-main { font-size: 14px; }
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 16px 14px 40px; }
+            .controls { gap: 12px; }
+            .daily-batch-wrap { padding: 24px 18px; }
+            .btn-daily-batch { padding: 12px 28px; font-size: 15px; }
+            .stats-bar { grid-template-columns: 1fr; gap: 10px; }
+            .stat-card .stat-value { font-size: 22px; }
+            .pipeline-table th, .pipeline-table td { padding: 10px 12px; font-size: 12px; }
+            .action-buttons { margin-left: 0; width: 100%; }
+            .auth-section { margin: 40px auto; padding: 28px 22px; }
+            header { padding: 12px 16px; }
+        }
+        @media (max-width: 480px) {
+            .stat-card { padding: 12px 14px; }
+            .btn-run { padding: 8px 14px; font-size: 12px; }
         }
     </style>
 </head>
 <body>
     <header>
-        <span class="logo">MotionMade Leads</span>
-        <p style="font-size:13px;color:#6b7280;margin-top:2px;">Find local businesses, write personalised emails, and send them automatically.</p>
+        <span class="logo">Motion<span class="logo-dot">Made</span></span>
+        <span class="header-subtitle">Find local businesses, write personalised emails, and send them automatically.</span>
     </header>
     <div class="container">
         <div class="auth-section" id="authSection">
-            <input type="password" id="adminToken" placeholder="Admin token" />
-            <button id="loginBtn">Login</button>
+            <h3>Welcome back</h3>
+            <p class="auth-hint">Enter your admin token to continue</p>
+            <input type="password" id="adminToken" placeholder="Paste token here..." />
+            <button id="loginBtn">Sign in</button>
             <div id="authError" class="error"></div>
         </div>
 
@@ -206,15 +273,15 @@
             </div>
             <div id="progressTrack" class="progress-track hidden"><div id="progressFill" class="progress-fill" style="width:0%"></div></div>
 
-            <!-- Daily batch -->
+            <!-- Daily batch hero -->
             <div class="daily-batch-wrap">
                 <h2>Daily Lead Generation</h2>
-                <p>Discover leads across all trades, audit websites, and write emails in one click.</p>
-                <button type="button" id="dailyBatchBtn" class="btn-daily-batch">🚀 Run Daily Batch</button>
+                <p>Discover, audit, and write emails across all 7 trades in one click.</p>
+                <button type="button" id="dailyBatchBtn" class="btn-daily-batch">Run Daily Batch</button>
             </div>
 
             <!-- Controls -->
-            <div class="controls">
+            <div class="card controls">
                 <div class="control-group">
                     <label>Trade</label>
                     <div>
@@ -252,45 +319,55 @@
                     <label>Target</label>
                     <input type="number" id="targetCount" min="5" max="50" value="10" />
                 </div>
-                <button type="button" id="runSingle" class="btn-run action-btn">🔍 Find Leads</button>
-                <button type="button" id="runAllTrades" class="btn-run btn-run-all-trades action-btn">🔄 Find All Trades</button>
-                <button type="button" id="runAllPro" class="btn-run btn-run-all-pro action-btn">🔄 Find All Professional</button>
+                <div class="action-buttons">
+                    <button type="button" id="runSingle" class="btn-run primary action-btn">Find Leads</button>
+                    <button type="button" id="runAllTrades" class="btn-run btn-run-all-trades action-btn">All Trades</button>
+                    <button type="button" id="runAllPro" class="btn-run btn-run-all-pro action-btn">All Professional</button>
+                </div>
             </div>
 
             <!-- Log -->
-            <div class="log-header"><span>Live log</span><a id="clearLog" href="#">Clear</a></div>
-            <div class="log-panel" id="logPanel"></div>
+            <div class="log-section">
+                <div class="log-header"><span>Activity Log</span><a id="clearLog" href="#">Clear</a></div>
+                <div class="log-panel" id="logPanel"></div>
+            </div>
 
             <!-- Stats -->
             <div id="statsBar" class="stats-bar hidden">
-                <div class="stats-main">
-                    <span><span id="statReady" class="ready">0</span> ready to send</span>
-                    <span>|</span>
-                    <span><span id="statSentToday" class="sent">0</span> sent today / <span id="statLimit">20</span> limit</span>
-                    <span>|</span>
-                    <span><span id="statTotalAll" class="total">0</span> total leads</span>
-                    <span style="margin-left:auto;display:flex;gap:8px;align-items:center;">
-                        <div style="position:relative;">
-                            <button type="button" id="dailyLimitGear" class="btn-limit-gear" title="Daily limit">⚙</button>
+                <div class="stat-card">
+                    <div class="stat-label">Ready to send</div>
+                    <div class="stat-value ready" id="statReady">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Sent today</div>
+                    <div class="stat-value sent" id="statSentToday">0</div>
+                    <div class="stat-detail">of <span id="statLimit">20</span> daily limit</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total leads</div>
+                    <div class="stat-value total" id="statTotalAll">0</div>
+                    <div class="stat-detail stats-actions">
+                        <div class="limit-wrap">
+                            <button type="button" id="dailyLimitGear" class="btn-limit-gear" title="Change daily limit">&#9881;</button>
                             <div id="limitDropdown" class="limit-dropdown hidden">
-                                <button type="button" data-limit="10">10/day</button>
-                                <button type="button" data-limit="15">15/day</button>
-                                <button type="button" data-limit="20">20/day</button>
-                                <button type="button" data-limit="30">30/day</button>
-                                <button type="button" data-limit="50">50/day</button>
+                                <button type="button" data-limit="10">10 / day</button>
+                                <button type="button" data-limit="15">15 / day</button>
+                                <button type="button" data-limit="20">20 / day</button>
+                                <button type="button" data-limit="30">30 / day</button>
+                                <button type="button" data-limit="50">50 / day</button>
                             </div>
                         </div>
                         <button type="button" id="refreshLeads" class="btn-refresh">Refresh</button>
-                    </span>
+                    </div>
                 </div>
-                <div id="statsBreakdown" class="stats-breakdown"></div>
             </div>
-            <div id="dailyLimitWarning" class="daily-limit-warning hidden">Almost at daily limit.</div>
-            <div id="dailyLimitBlock" class="daily-limit-block hidden">Daily limit reached. <span id="dailyLimitResetTimer" class="daily-limit-reset-timer"></span></div>
+            <div id="statsBreakdown" class="stats-breakdown"></div>
+            <div id="dailyLimitWarning" class="daily-limit-warning hidden">You're approaching today's send limit.</div>
+            <div id="dailyLimitBlock" class="daily-limit-block hidden">Daily limit reached. Resets at midnight AEST. <span id="dailyLimitResetTimer" class="daily-limit-reset-timer"></span></div>
 
             <!-- Pipeline toolbar -->
             <div class="pipeline-toolbar">
-                <input type="text" id="pipelineSearch" class="pipeline-search" placeholder="Search by name or trade..." />
+                <input type="text" id="pipelineSearch" class="pipeline-search" placeholder="Search businesses..." />
                 <select id="pipelineTradeFilter" class="pipeline-filter-select">
                     <option value="">All trades</option>
                     <option value="Bond Cleaning">Bond Cleaning</option>
@@ -306,7 +383,7 @@
             <!-- Ready section -->
             <div id="pipelineReadySection" class="pipeline-section ready-section hidden">
                 <div class="pipeline-section-header">
-                    <span>📬 Ready to Send (<span id="readyCount">0</span>)</span>
+                    <span>Ready to Send (<span id="readyCount">0</span>)</span>
                     <div class="send-all-wrap">
                         <button type="button" id="sendAllNowBtn" class="btn-send-all action-btn hidden">Send 0 Emails Now</button>
                         <button type="button" id="prepareSendGmail" class="btn-backup-csv hidden">CSV backup</button>
@@ -323,7 +400,7 @@
 
             <!-- Sent section -->
             <details id="pipelineSentSection" class="pipeline-section sent-section hidden">
-                <summary class="pipeline-section-header"><span>✅ Sent (<span id="sentCount">0</span>)</span></summary>
+                <summary class="pipeline-section-header"><span>Sent (<span id="sentCount">0</span>)</span></summary>
                 <div class="pipeline-table-wrap">
                     <table class="pipeline-table">
                         <thead><tr><th>Business</th><th>Trade</th><th>Subject</th><th>When</th></tr></thead>
@@ -335,7 +412,7 @@
 
             <details id="noEmailSection" class="no-email-section hidden">
                 <summary id="noEmailSummary">0 leads without email</summary>
-                <div id="noEmailList" style="padding:8px 14px 12px;font-size:13px;color:#6b7280;"></div>
+                <div id="noEmailList" style="padding:10px 16px 14px;font-size:13px;color:#94a3b8;line-height:1.6;"></div>
             </details>
 
             <div class="footer-actions">
@@ -346,10 +423,10 @@
 
     <div id="gmailScriptModal" class="modal-overlay hidden">
         <div class="modal-box">
-            <div class="modal-header">Download &amp; Send via Gmail</div>
+            <div class="modal-header">Send via Gmail</div>
             <div class="modal-body">
-                <p><strong>1.</strong> CSV downloaded. Open Google Sheets → File → Import → Upload <code>leads_gmail.csv</code>.</p>
-                <p><strong>2.</strong> In Sheets: Extensions → Apps Script. Paste the script below, save, run <code>sendEmails</code>.</p>
+                <p><strong>1.</strong> CSV downloaded. Open Google Sheets, then File, Import, Upload <code>leads_gmail.csv</code>.</p>
+                <p><strong>2.</strong> In Sheets: Extensions, Apps Script. Paste the script below, save, run <code>sendEmails</code>.</p>
                 <pre id="gmailScriptPre"></pre>
             </div>
             <div class="modal-footer">
@@ -420,8 +497,8 @@
         }
         function updateIdleBanner() {
             var ready = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; }).length;
-            if (ready > 0) setBanner('idle', '✅ Ready. ' + ready + ' emails queued to send.');
-            else setBanner('idle', '✅ All caught up. Run Daily Batch to find more leads.');
+            if (ready > 0) setBanner('idle', ready + ' emails queued and ready to send.');
+            else setBanner('idle', 'All caught up. Run Daily Batch to find more leads.');
             setProgress(-1);
         }
 
@@ -451,7 +528,7 @@
                 dailyLimit = d.limit || dailyLimit;
                 $('statReady').textContent = d.total_ready || 0;
                 $('statSentToday').textContent = dailySentCount;
-                $('statSentToday').className = 'sent' + (dailySentCount >= dailyLimit ? ' at-limit' : '');
+                $('statSentToday').className = 'stat-value sent' + (dailySentCount >= dailyLimit ? ' at-limit' : '');
                 $('statLimit').textContent = dailyLimit;
                 $('statTotalAll').textContent = d.total_all || 0;
                 var bd = $('statsBreakdown');
@@ -492,7 +569,7 @@
             return '<span class="' + cls + '">' + esc(t) + '</span>';
         }
         function scorePill(s) {
-            if (s == null) return '–';
+            if (s == null) return '<span style="color:#cbd5e1;">—</span>';
             var cls = s >= 7 ? 'score-high' : s >= 4 ? 'score-mid' : 'score-low';
             return '<span class="score-pill ' + cls + '">' + s + '</span>';
         }
@@ -539,18 +616,18 @@
             var start = (readyPage - 1) * PAGE_SIZE;
             var page = leads.slice(start, start + PAGE_SIZE);
             var body = $('leadsReadyBody');
-            if (!page.length) { body.innerHTML = '<tr><td colspan="5" style="padding:16px;color:#6b7280;">No ready leads. Run discovery first.</td></tr>'; }
+            if (!page.length) { body.innerHTML = '<tr><td colspan="5" style="padding:20px;color:#94a3b8;font-size:13px;">No ready leads. Run discovery to get started.</td></tr>'; }
             else {
                 body.innerHTML = page.map(function(l) {
                     var subj = (l.email_subject || '').substring(0, 50);
                     return '<tr data-id="' + l.id + '">' +
-                        '<td>' + esc(l.business_name) + '</td>' +
+                        '<td style="font-weight:500;color:#0f172a;">' + esc(l.business_name) + '</td>' +
                         '<td>' + tradeBadge(l.trade_type) + '</td>' +
                         '<td>' + scorePill(l.audit_score) + '</td>' +
-                        '<td class="subject-preview" title="' + esc(l.email_subject) + '">' + esc(subj || '–') + '</td>' +
-                        '<td><button class="btn-sm btn-preview" data-id="' + l.id + '">Preview</button> <button class="btn-sm btn-gmail" data-id="' + l.id + '">Gmail</button> <button class="btn-sm btn-skip" data-id="' + l.id + '" title="Skip this lead">✕</button></td>' +
+                        '<td class="subject-preview" title="' + esc(l.email_subject) + '">' + esc(subj || '—') + '</td>' +
+                        '<td><button class="btn-sm btn-preview" data-id="' + l.id + '">Preview</button> <button class="btn-sm btn-gmail" data-id="' + l.id + '">Gmail</button> <button class="btn-sm btn-skip" data-id="' + l.id + '" title="Skip this lead">&#10005;</button></td>' +
                         '</tr>' +
-                        '<tr class="expand-row-pipeline expand-' + l.id + '" style="display:none"><td colspan="5"><div class="label">To</div><div class="value">' + esc(l.email) + '</div><div class="label" style="margin-top:8px">Subject</div><div class="value">' + esc(l.email_subject) + '</div><div class="label" style="margin-top:8px">Body</div><div class="value body">' + esc(l.email_body) + '</div></td></tr>';
+                        '<tr class="expand-row-pipeline expand-' + l.id + '" style="display:none"><td colspan="5"><div class="label">To</div><div class="value">' + esc(l.email) + '</div><div class="label" style="margin-top:12px">Subject</div><div class="value">' + esc(l.email_subject) + '</div><div class="label" style="margin-top:12px">Body</div><div class="value body">' + esc(l.email_body) + '</div></td></tr>';
                 }).join('');
             }
             renderPagination($('readyPagination'), readyPage, totalPages, function(p) { readyPage = p; renderReadyTable(leads); });
@@ -563,7 +640,7 @@
             var start = (sentPage - 1) * PAGE_SIZE;
             var page = leads.slice(start, start + PAGE_SIZE);
             var body = $('leadsSentBody');
-            if (!page.length) body.innerHTML = '<tr><td colspan="4" style="padding:16px;color:#6b7280;">No sent emails yet.</td></tr>';
+            if (!page.length) body.innerHTML = '<tr><td colspan="4" style="padding:20px;color:#94a3b8;font-size:13px;">No sent emails yet.</td></tr>';
             else body.innerHTML = page.map(function(l) {
                 return '<tr><td>' + esc(l.business_name) + '</td><td>' + tradeBadge(l.trade_type) + '</td><td class="subject-preview">' + esc((l.email_subject||'').substring(0,45)) + '</td><td class="sent-at">' + fmtSent(l.updated_at) + '</td></tr>';
             }).join('');
@@ -573,9 +650,9 @@
         function renderPagination(el, current, total, cb) {
             if (total <= 1) { el.classList.add('hidden'); return; }
             el.classList.remove('hidden');
-            var html = '<button ' + (current <= 1 ? 'disabled' : '') + ' data-p="' + (current-1) + '">‹ Prev</button>';
+            var html = '<button ' + (current <= 1 ? 'disabled' : '') + ' data-p="' + (current-1) + '">Prev</button>';
             html += '<span class="current">Page ' + current + ' of ' + total + '</span>';
-            html += '<button ' + (current >= total ? 'disabled' : '') + ' data-p="' + (current+1) + '">Next ›</button>';
+            html += '<button ' + (current >= total ? 'disabled' : '') + ' data-p="' + (current+1) + '">Next</button>';
             el.innerHTML = html;
             el.querySelectorAll('button').forEach(function(b) { b.onclick = function() { cb(parseInt(this.getAttribute('data-p'),10)); }; });
         }
@@ -626,7 +703,7 @@
         /* Run single trade discovery + audit + email */
         async function runPipeline(trade, city, target) {
             var inserted = 0;
-            setBanner('busy', '⏳ Finding ' + trade + ' businesses in ' + city + '...');
+            setBanner('busy', 'Finding ' + trade + ' businesses in ' + city + '...');
             setProgress(5);
             try {
                 var r = await fetch(API + '/api/leads/autopilot/discovery', { method: 'POST', headers: h(), body: JSON.stringify({ trade_type: trade, suburb: '', city: city, target_count: target }) });
@@ -634,10 +711,10 @@
                 inserted = d.inserted || 0;
             } catch (e) {}
             setProgress(33);
-            setBanner('busy', '⏳ Auditing websites...');
+            setBanner('busy', 'Auditing websites...');
             try { await fetch(API + '/api/leads/autopilot/audit', { method: 'POST', headers: h(), body: JSON.stringify({}) }); } catch (e) {}
             setProgress(66);
-            setBanner('busy', '⏳ Writing emails...');
+            setBanner('busy', 'Writing emails...');
             try { await fetch(API + '/api/leads/autopilot/email-writing', { method: 'POST', headers: h(), body: JSON.stringify({}) }); } catch (e) {}
             setProgress(100);
             return inserted;
@@ -649,12 +726,12 @@
             var city = getCity();
             var target = getTarget();
             var btn = $('runSingle');
-            btn.textContent = '🔍 Finding...';
+            btn.textContent = 'Finding...';
             var inserted = await runPipeline(trade, city, target);
-            btn.textContent = '🔍 Find Leads';
+            btn.textContent = 'Find Leads';
             await loadLeads();
             setOperationState(false);
-            flashSuccess('✅ Done! Found ' + inserted + ' new ' + trade + ' leads.');
+            flashSuccess('Done! Found ' + inserted + ' new ' + trade + ' leads.');
         };
 
         $('runAllTrades').onclick = async function() {
@@ -662,20 +739,20 @@
             var city = getCity();
             var target = getTarget();
             var btn = $('runAllTrades');
-            btn.textContent = '🔄 Running...';
+            btn.textContent = 'Running...';
             var totalInserted = 0;
             var results = [];
             for (var i = 0; i < TRADES.length; i++) {
-                setBanner('busy', '⏳ Finding ' + TRADES[i] + ' (' + (i+1) + '/' + TRADES.length + ')...');
+                setBanner('busy', 'Finding ' + TRADES[i] + ' (' + (i+1) + '/' + TRADES.length + ')...');
                 setProgress((i / TRADES.length) * 100);
                 var ins = await runPipeline(TRADES[i], city, target);
                 totalInserted += ins;
                 results.push(TRADES[i] + ': ' + ins);
                 await loadLeads();
             }
-            btn.textContent = '🔄 Find All Trades';
+            btn.textContent = 'All Trades';
             setOperationState(false);
-            flashSuccess('✅ All trades done! ' + results.join(', ') + '. Total: ' + totalInserted + ' new leads.');
+            flashSuccess('All trades done! ' + results.join(', ') + '. Total: ' + totalInserted + ' new leads.');
         };
 
         $('runAllPro').onclick = async function() {
@@ -683,42 +760,42 @@
             var city = getCity();
             var target = getTarget();
             var btn = $('runAllPro');
-            btn.textContent = '🔄 Running...';
+            btn.textContent = 'Running...';
             var totalInserted = 0;
             var results = [];
             for (var i = 0; i < PRO_TRADES.length; i++) {
-                setBanner('busy', '⏳ Finding ' + PRO_TRADES[i] + ' (' + (i+1) + '/' + PRO_TRADES.length + ')...');
+                setBanner('busy', 'Finding ' + PRO_TRADES[i] + ' (' + (i+1) + '/' + PRO_TRADES.length + ')...');
                 setProgress((i / PRO_TRADES.length) * 100);
                 var ins = await runPipeline(PRO_TRADES[i], city, target);
                 totalInserted += ins;
                 results.push(PRO_TRADES[i] + ': ' + ins);
                 await loadLeads();
             }
-            btn.textContent = '🔄 Find All Professional';
+            btn.textContent = 'All Professional';
             setOperationState(false);
-            flashSuccess('✅ All professional services done! ' + results.join(', ') + '. Total: ' + totalInserted + ' new leads.');
+            flashSuccess('All professional services done! ' + results.join(', ') + '. Total: ' + totalInserted + ' new leads.');
         };
 
         $('dailyBatchBtn').onclick = async function() {
             setOperationState(true);
             var city = getCity();
             var btn = $('dailyBatchBtn');
-            btn.textContent = '⏳ Running...';
+            btn.textContent = 'Running...';
             var totalInserted = 0;
             var results = [];
             for (var i = 0; i < ALL_TRADES.length; i++) {
-                setBanner('busy', '⏳ Running ' + ALL_TRADES[i] + '... (' + (i+1) + '/' + ALL_TRADES.length + ')');
+                setBanner('busy', 'Running ' + ALL_TRADES[i] + '... (' + (i+1) + '/' + ALL_TRADES.length + ')');
                 setProgress((i / ALL_TRADES.length) * 100);
                 var ins = await runPipeline(ALL_TRADES[i], city, 10);
                 totalInserted += ins;
                 results.push(ALL_TRADES[i] + ': found ' + ins);
                 await loadLeads();
             }
-            btn.textContent = '🚀 Run Daily Batch';
+            btn.textContent = 'Run Daily Batch';
             await loadLeads();
             setOperationState(false);
             var readyN = leadsCache.filter(function(l) { return l.status === 'ready' && l.email; }).length;
-            flashSuccess('✅ Done! ' + results.join('. ') + '. Total: ' + totalInserted + ' new leads, ' + readyN + ' emails ready to send.');
+            flashSuccess('Done! ' + results.join('. ') + '. Total: ' + totalInserted + ' new leads, ' + readyN + ' emails ready to send.');
         };
 
         /* Send */
@@ -730,7 +807,7 @@
             setOperationState(true);
             var btn = $('sendAllNowBtn');
             btn.textContent = 'Sending... 0 of ?';
-            setBanner('busy', '⏳ Sending emails...');
+            setBanner('busy', 'Sending emails...');
             setProgress(0);
             try {
                 var r = await fetch(API + '/api/leads/autopilot/send-ready', { method: 'POST', headers: h() });
@@ -758,13 +835,13 @@
                             }
                         });
                         btn.textContent = 'Sending... ' + sentSoFar + ' of ' + totalToSend;
-                        setBanner('busy', '⏳ Sending emails (' + sentSoFar + '/' + totalToSend + ')...');
+                        setBanner('busy', 'Sending emails (' + sentSoFar + '/' + totalToSend + ')...');
                         setProgress(totalToSend ? (sentSoFar / totalToSend) * 100 : 0);
                         if (completed) {
                             clearInterval(sendProgressInterval); sendProgressInterval = null;
                             await loadLeads();
                             setOperationState(false);
-                            flashSuccess('✅ Sent ' + sentSoFar + ' emails!');
+                            flashSuccess('Sent ' + sentSoFar + ' emails!');
                         }
                     } catch (e) {}
                 }, 2000);
