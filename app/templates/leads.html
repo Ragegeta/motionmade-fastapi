@@ -379,6 +379,7 @@
         var dailyLimitResetTimerInterval = null;
 
         function h() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken }; }
+        function check401(r) { if (r.status === 401) { logout(); return true; } return false; }
         function esc(s) { if (s == null) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function $(id) { return document.getElementById(id); }
 
@@ -443,6 +444,7 @@
             dailyLimit = getDailyLimit();
             try {
                 var r = await fetch(API + '/api/leads/pipeline-stats', { headers: h() });
+                if (check401(r)) return;
                 if (!r.ok) return;
                 var d = await r.json();
                 dailySentCount = d.total_sent_today || 0;
@@ -466,6 +468,7 @@
         async function loadLeads() {
             try {
                 var r = await fetch(API + '/api/leads', { headers: h() });
+                if (check401(r)) return;
                 if (!r.ok) return;
                 var d = await r.json();
                 leadsCache = d.leads || [];
@@ -827,6 +830,24 @@
         $('refreshLeads').onclick = function() { loadLeads(); };
         $('city').onchange = function() {};
 
+        function logout() {
+            adminToken = '';
+            try { localStorage.removeItem('leads_admin_token'); } catch (z) {}
+            $('authSection').classList.remove('hidden');
+            $('mainContent').classList.add('hidden');
+            $('adminToken').value = '';
+            $('authError').textContent = 'Session expired. Please log in again.';
+        }
+
+        function enterApp() {
+            try { localStorage.setItem('leads_admin_token', adminToken); } catch (z) {}
+            $('authSection').classList.add('hidden');
+            $('mainContent').classList.remove('hidden');
+            loadLeads();
+            setInterval(pollLog, 2500);
+            pollLog();
+        }
+
         /* Login */
         $('loginBtn').onclick = async function() {
             var token = $('adminToken').value.trim();
@@ -835,15 +856,25 @@
             $('authError').textContent = '';
             try {
                 var r = await fetch(API + '/api/leads', { headers: h() });
-                if (r.status === 401) { $('authError').textContent = 'Invalid token'; return; }
+                if (r.status === 401) { $('authError').textContent = 'Invalid token'; adminToken = ''; return; }
                 if (!r.ok) throw new Error('HTTP ' + r.status);
-                $('authSection').classList.add('hidden');
-                $('mainContent').classList.remove('hidden');
-                loadLeads();
-                setInterval(pollLog, 2500);
-                pollLog();
+                enterApp();
             } catch (e) { $('authError').textContent = e.message || 'Login failed'; }
         };
+
+        /* Auto-login from saved token */
+        (async function() {
+            var saved;
+            try { saved = localStorage.getItem('leads_admin_token'); } catch (z) {}
+            if (!saved) return;
+            adminToken = saved;
+            try {
+                var r = await fetch(API + '/api/leads', { headers: h() });
+                if (r.status === 401) { adminToken = ''; try { localStorage.removeItem('leads_admin_token'); } catch (z) {} return; }
+                if (!r.ok) return;
+                enterApp();
+            } catch (e) {}
+        })();
     })();
     </script>
 </body>
