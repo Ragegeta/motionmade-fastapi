@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReviewMate – Google Reviews | MotionMade</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --surface-cool: #F0F3F8;
+            --card-border: #D8DFE9;
+            --accent: #2563EB;
+            --text-primary: #0B1222;
+            --text-muted: #6B7A94;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--surface-cool);
+            color: var(--text-primary);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 720px; margin: 0 auto; padding: 24px; }
+        .dash-header {
+            background: var(--surface-cool);
+            border-bottom: 1px solid var(--card-border);
+            padding: 16px 0 24px;
+            margin-bottom: 24px;
+        }
+        .dash-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .dash-logo { font-size: 16px; font-weight: 600; color: var(--accent); }
+        .back-link {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--accent); }
+        .logout-btn {
+            padding: 10px 18px;
+            min-height: 44px;
+            background: #fff;
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .logout-btn:hover { border-color: var(--accent); color: var(--accent); }
+        h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+        .sub { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .card h2 { font-size: 18px; margin-bottom: 16px; color: var(--text-primary); }
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .status-badge.connected { color: #059669; }
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .btn {
+            padding: 10px 20px;
+            min-height: 44px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-secondary {
+            background: #fff;
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+        }
+        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-danger { background: #fff; color: #dc2626; border: 1px solid #dc2626; }
+        .btn-danger:hover { background: #fef2f2; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .error-banner {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .success-banner {
+            background: #f0fdf4;
+            color: #059669;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .location-picker .loc-item {
+            padding: 14px 16px;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .location-picker .loc-item:hover { border-color: var(--accent); }
+        .location-picker .loc-name { font-weight: 500; color: var(--text-primary); }
+        .location-picker .loc-id { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+        .stats-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+        .stat-box {
+            background: #fff;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            min-width: 100px;
+        }
+        .stat-box .label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px; }
+        .stat-box .value { font-size: 28px; font-weight: 700; color: var(--text-primary); }
+        .actions-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: center; }
+        .draft-card {
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            background: #fff;
+        }
+        .draft-card .review-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .draft-card .stars { color: #f59e0b; font-size: 14px; }
+        .draft-card .reviewer { font-weight: 600; color: var(--text-primary); }
+        .draft-card .review-date { font-size: 13px; color: var(--text-muted); }
+        .draft-card .review-text { font-size: 14px; color: var(--text-primary); margin-bottom: 16px; line-height: 1.5; }
+        .draft-card .draft-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+        .draft-card .draft-text { font-size: 14px; background: var(--surface-cool); padding: 12px; border-radius: 6px; margin-bottom: 16px; white-space: pre-wrap; }
+        .draft-card .draft-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .draft-card .edit-area { display: none; margin-bottom: 12px; }
+        .draft-card .edit-area textarea { width: 100%; min-height: 100px; padding: 12px; border: 1px solid var(--card-border); border-radius: 6px; font-family: inherit; font-size: 14px; }
+        .draft-card.failed .draft-text { border: 1px solid #fecaca; background: #fef2f2; }
+        .draft-card .error-msg { font-size: 13px; color: #dc2626; margin-bottom: 8px; }
+
+        #reviewsError { display: none; }
+        .loading { opacity: 0.7; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="reviewsError" class="error-banner"></div>
+        <div id="reviewsSuccess" class="success-banner" style="display: none;"></div>
+
+        <header class="dash-header">
+            <div class="dash-header-top">
+                <span class="dash-logo">ReviewMate by MotionMade</span>
+                <div>
+                    <a href="/dashboard" class="back-link">← Dashboard</a>
+                    <button type="button" class="logout-btn" id="logoutBtn" style="margin-left: 12px;">Log out</button>
+                </div>
+            </div>
+            <h1>Google Review Auto-Responder</h1>
+            <p class="sub">Connect your Google Business Profile to see and respond to reviews in one place.</p>
+        </header>
+
+        <div id="mainContent">
+            <div class="card">
+                <h2>Connection</h2>
+                <div class="status-row">
+                    <span id="connectionStatus" class="status-badge">Loading…</span>
+                    <div id="connectionActions"></div>
+                </div>
+                <p id="connectionNote" class="sub" style="margin-bottom: 0;"></p>
+            </div>
+
+            <div id="dashboardSection" style="display: none;">
+                <div class="stats-row" id="statsRow">
+                    <div class="stat-box"><div class="label">Pending</div><div class="value" id="statPending">0</div></div>
+                    <div class="stat-box"><div class="label">Posted</div><div class="value" id="statPosted">0</div></div>
+                    <div class="stat-box"><div class="label">Rejected</div><div class="value" id="statRejected">0</div></div>
+                </div>
+                <div class="actions-row">
+                    <button type="button" class="btn btn-secondary" id="syncBtn">Sync Now</button>
+                    <button type="button" class="btn btn-primary" id="generateBtn">Generate draft responses</button>
+                </div>
+                <div class="card">
+                    <h2>Pending drafts</h2>
+                    <p class="sub" style="margin-bottom: 16px;">Review and approve to post to Google, or edit/reject.</p>
+                    <div id="pendingDraftsList"></div>
+                    <div id="pendingEmpty" class="sub" style="display: none;">No pending drafts. Sync reviews and click “Generate draft responses” to create some.</div>
+                </div>
+            </div>
+
+            <div id="locationPickerCard" class="card" style="display: none;">
+                <h2>Select a location</h2>
+                <p class="sub" style="margin-bottom: 16px;">You have multiple locations. Choose one to connect.</p>
+                <div id="locationList" class="location-picker"></div>
+            </div>
+
+            <div id="settingsCard" class="card" style="display: none;">
+                <h2>Settings</h2>
+                <p class="sub" style="margin-bottom: 16px;">Configure how ReviewMate writes your responses.</p>
+                <p class="sub" style="margin: 0;">Tone, business type, and custom instructions can be set here once connected.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var token = localStorage.getItem('owner_token');
+            function authHeaders() { return { 'Authorization': 'Bearer ' + token }; }
+
+            function showError(msg) {
+                var el = document.getElementById('reviewsError');
+                el.textContent = msg;
+                el.style.display = 'block';
+            }
+            function hideError() {
+                document.getElementById('reviewsError').style.display = 'none';
+            }
+            function showSuccess(msg) {
+                var el = document.getElementById('reviewsSuccess');
+                el.textContent = msg;
+                el.style.display = 'block';
+                setTimeout(function () { el.style.display = 'none'; }, 5000);
+            }
+
+            function checkAuth() {
+                if (!token) {
+                    window.location.href = '/dashboard/login?next=/reviews';
+                    return false;
+                }
+                return true;
+            }
+
+            function loadConnection() {
+                if (!checkAuth()) return;
+                fetch('/api/reviews/connection', { headers: authHeaders() })
+                    .then(function (res) {
+                        if (res.status === 401) {
+                            localStorage.removeItem('owner_token');
+                            window.location.href = '/dashboard/login?next=/reviews';
+                            return;
+                        }
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (!data) return;
+                        var statusEl = document.getElementById('connectionStatus');
+                        var actionsEl = document.getElementById('connectionActions');
+                        var noteEl = document.getElementById('connectionNote');
+                        if (data.connected) {
+                            statusEl.innerHTML = '<span class="dot"></span> Connected: ' + (data.location_name || 'Google Business');
+                            statusEl.className = 'status-badge connected';
+                            actionsEl.innerHTML = '<button type="button" class="btn btn-danger" id="disconnectBtn">Disconnect</button>';
+                            noteEl.textContent = 'ReviewMate can pull reviews and suggest responses for this location.';
+                            document.getElementById('settingsCard').style.display = 'block';
+                            document.getElementById('dashboardSection').style.display = 'block';
+                            loadStats();
+                            loadPendingDrafts();
+                            var db = document.getElementById('disconnectBtn');
+                            if (db) db.addEventListener('click', disconnect);
+                            document.getElementById('syncBtn').addEventListener('click', syncNow);
+                            document.getElementById('generateBtn').addEventListener('click', generateDrafts);
+                        } else {
+                            statusEl.textContent = 'Not connected';
+                            statusEl.className = 'status-badge';
+                            actionsEl.innerHTML = '<button type="button" class="btn btn-primary" id="connectBtn">Connect Google Business Profile</button>';
+                            noteEl.textContent = 'Connect to sync reviews and get AI draft responses.';
+                            var cb = document.getElementById('connectBtn');
+                            if (cb) cb.addEventListener('click', startConnect);
+                        }
+                    })
+                    .catch(function () { showError('Could not load connection status.'); });
+            }
+
+            function startConnect() {
+                if (!checkAuth()) return;
+                var btn = document.getElementById('connectBtn');
+                if (btn) { btn.disabled = true; btn.textContent = 'Redirecting…'; }
+                fetch('/api/reviews/auth/google/url', { headers: authHeaders() })
+                    .then(function (res) {
+                        if (res.status === 401) {
+                            localStorage.removeItem('owner_token');
+                            window.location.href = '/dashboard/login?next=/reviews';
+                            return null;
+                        }
+                        if (!res.ok) return res.json().then(function (d) { throw new Error(d.detail || 'Failed'); });
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (data && data.url) window.location.href = data.url;
+                    })
+                    .catch(function (e) {
+                        showError(e.message || 'Could not start Google sign-in.');
+                        if (btn) { btn.disabled = false; btn.textContent = 'Connect Google Business Profile'; }
+                    });
+            }
+
+            function disconnect() {
+                if (!checkAuth()) return;
+                fetch('/api/reviews/disconnect', { method: 'POST', headers: authHeaders() })
+                    .then(function (res) {
+                        if (res.status === 401) {
+                            localStorage.removeItem('owner_token');
+                            window.location.href = '/dashboard/login?next=/reviews';
+                            return;
+                        }
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (data && data.ok) {
+                            showSuccess('Disconnected.');
+                            loadConnection();
+                        }
+                    })
+                    .catch(function () { showError('Could not disconnect.'); });
+            }
+
+            function loadLocationPicker(state) {
+                if (!state || !checkAuth()) return;
+                fetch('/api/reviews/locations?state=' + encodeURIComponent(state), { headers: authHeaders() })
+                    .then(function (res) {
+                        if (res.status === 401) {
+                            localStorage.removeItem('owner_token');
+                            window.location.href = '/dashboard/login?next=/reviews';
+                            return null;
+                        }
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (!data || !data.locations || !data.locations.length) return;
+                        var card = document.getElementById('locationPickerCard');
+                        var list = document.getElementById('locationList');
+                        list.innerHTML = '';
+                        data.locations.forEach(function (loc) {
+                            var div = document.createElement('div');
+                            div.className = 'loc-item';
+                            div.innerHTML = '<div class="loc-name">' + (loc.name || loc.location_id) + '</div><div class="loc-id">' + loc.account_id + ' / ' + loc.location_id + '</div>';
+                            div.addEventListener('click', function () {
+                                selectLocation(state, loc.account_id, loc.location_id, loc.name || '');
+                            });
+                            list.appendChild(div);
+                        });
+                        card.style.display = 'block';
+                    });
+            }
+
+            function selectLocation(state, accountId, locationId, name) {
+                if (!checkAuth()) return;
+                fetch('/api/reviews/locations/select?state=' + encodeURIComponent(state), {
+                    method: 'POST',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+                    body: JSON.stringify({ account_id: accountId, location_id: locationId, name: name })
+                })
+                    .then(function (res) {
+                        if (res.status === 401) {
+                            localStorage.removeItem('owner_token');
+                            window.location.href = '/dashboard/login?next=/reviews';
+                            return null;
+                        }
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (data && data.redirect) {
+                            window.location.href = data.redirect;
+                        } else if (data && data.ok) {
+                            showSuccess('Location selected.');
+                            window.location.href = '/reviews';
+                        }
+                    })
+                    .catch(function () { showError('Could not select location.'); });
+            }
+
+            function loadStats() {
+                if (!checkAuth()) return;
+                fetch('/api/reviews/stats', { headers: authHeaders() })
+                    .then(function (res) { return res.status === 401 ? null : res.json(); })
+                    .then(function (data) {
+                        if (!data) return;
+                        document.getElementById('statPending').textContent = data.pending || 0;
+                        document.getElementById('statPosted').textContent = data.posted || 0;
+                        document.getElementById('statRejected').textContent = data.rejected || 0;
+                    });
+            }
+
+            function loadPendingDrafts() {
+                if (!checkAuth()) return;
+                fetch('/api/reviews/drafts?status=pending', { headers: authHeaders() })
+                    .then(function (res) { return res.status === 401 ? null : res.json(); })
+                    .then(function (data) {
+                        if (!data) return;
+                        var list = document.getElementById('pendingDraftsList');
+                        var empty = document.getElementById('pendingEmpty');
+                        list.innerHTML = '';
+                        if (!data.drafts || !data.drafts.length) {
+                            empty.style.display = 'block';
+                            return;
+                        }
+                        empty.style.display = 'none';
+                        data.drafts.forEach(function (d) {
+                            var r = d.review || {};
+                            var stars = (r.star_rating || 0);
+                            var starsStr = '';
+                            for (var i = 0; i < 5; i++) starsStr += i < stars ? '★' : '☆';
+                            var draftDisplay = (d.edited_text || d.draft_text || '').trim() || '(empty)';
+                            var card = document.createElement('div');
+                            card.className = 'draft-card' + (d.error_message ? ' failed' : '');
+                            card.dataset.draftId = d.id;
+                            card.innerHTML =
+                                '<div class="review-header">' +
+                                '<span class="stars">' + starsStr + '</span>' +
+                                '<span class="reviewer">' + (r.reviewer_name || 'Anonymous') + '</span>' +
+                                '<span class="review-date">' + (r.review_created_at ? r.review_created_at.slice(0, 10) : '') + '</span>' +
+                                '</div>' +
+                                '<div class="review-text">' + (r.review_text || '(No text)').replace(/</g, '&lt;') + '</div>' +
+                                (d.error_message ? '<div class="error-msg">' + d.error_message.replace(/</g, '&lt;') + '</div>' : '') +
+                                '<div class="draft-label">Draft response</div>' +
+                                '<div class="draft-text" id="draftText-' + d.id + '">' + draftDisplay.replace(/</g, '&lt;').replace(/\n/g, '<br>') + '</div>' +
+                                '<div class="edit-area" id="editArea-' + d.id + '"><textarea id="editText-' + d.id + '" placeholder="Edit response...">' + (d.edited_text || d.draft_text || '').replace(/</g, '&lt;') + '</textarea><button type="button" class="btn btn-primary draft-save" style="margin-top:8px">Save</button></div>' +
+                                '<div class="draft-actions">' +
+                                '<button type="button" class="btn btn-primary draft-approve">Approve &amp; Post</button>' +
+                                '<button type="button" class="btn btn-secondary draft-edit">Edit</button>' +
+                                '<button type="button" class="btn btn-danger draft-reject">Reject</button>' +
+                                '</div>';
+                            list.appendChild(card);
+                            card.querySelector('.draft-approve').addEventListener('click', function () { approveDraft(d.id); });
+                            card.querySelector('.draft-edit').addEventListener('click', function () {
+                                var area = document.getElementById('editArea-' + d.id);
+                                var textEl = document.getElementById('editText-' + d.id);
+                                area.style.display = area.style.display === 'block' ? 'none' : 'block';
+                                if (area.style.display === 'block') textEl.value = (d.edited_text || d.draft_text || '').trim();
+                            });
+                            var saveBtn = card.querySelector('.draft-save');
+                            if (saveBtn) saveBtn.addEventListener('click', function () { saveEdit(d.id, document.getElementById('editText-' + d.id).value.trim()); });
+                            card.querySelector('.draft-reject').addEventListener('click', function () { rejectDraft(d.id); });
+                        });
+                    });
+            }
+
+            function syncNow() {
+                if (!checkAuth()) return;
+                var btn = document.getElementById('syncBtn');
+                btn.disabled = true;
+                fetch('/api/reviews/pull', { method: 'POST', headers: authHeaders() })
+                    .then(function (res) {
+                        if (res.status === 401) { localStorage.removeItem('owner_token'); window.location.href = '/dashboard/login?next=/reviews'; return null; }
+                        if (!res.ok) return res.json().then(function (d) { throw new Error(d.detail || 'Sync failed'); });
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (data) showSuccess('Synced ' + data.total_reviews + ' reviews. ' + data.unresponded_count + ' without a reply.');
+                        loadStats();
+                    })
+                    .catch(function (e) { showError(e.message || 'Sync failed'); })
+                    .finally(function () { btn.disabled = false; });
+            }
+
+            function generateDrafts() {
+                if (!checkAuth()) return;
+                var btn = document.getElementById('generateBtn');
+                btn.disabled = true;
+                fetch('/api/reviews/generate', { method: 'POST', headers: authHeaders() })
+                    .then(function (res) {
+                        if (res.status === 401) { localStorage.removeItem('owner_token'); window.location.href = '/dashboard/login?next=/reviews'; return null; }
+                        if (!res.ok) return res.json().then(function (d) { throw new Error(d.detail || 'Generate failed'); });
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (data) showSuccess('Created ' + (data.drafts_created || 0) + ' draft(s).');
+                        loadStats();
+                        loadPendingDrafts();
+                    })
+                    .catch(function (e) { showError(e.message || 'Generate failed'); })
+                    .finally(function () { btn.disabled = false; });
+            }
+
+            function approveDraft(id) {
+                if (!checkAuth()) return;
+                fetch('/api/reviews/drafts/' + id + '/approve', { method: 'POST', headers: authHeaders() })
+                    .then(function (res) {
+                        if (res.status === 401) { localStorage.removeItem('owner_token'); window.location.href = '/dashboard/login?next=/reviews'; return null; }
+                        if (!res.ok) return res.json().then(function (d) { throw new Error(d.detail || 'Post failed'); });
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (data) { showSuccess('Posted to Google.'); loadStats(); loadPendingDrafts(); }
+                    })
+                    .catch(function (e) { showError(e.message || 'Post failed'); });
+            }
+
+            function saveEdit(id, text) {
+                if (!checkAuth() || !text) return;
+                fetch('/api/reviews/drafts/' + id + '/edit', {
+                    method: 'PUT',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+                    body: JSON.stringify({ edited_text: text })
+                })
+                    .then(function (res) {
+                        if (res.status === 401) { localStorage.removeItem('owner_token'); window.location.href = '/dashboard/login?next=/reviews'; return null; }
+                        if (!res.ok) return res.json().then(function (d) { throw new Error(d.detail || 'Save failed'); });
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (data) {
+                            showSuccess('Draft updated.');
+                            var textEl = document.getElementById('draftText-' + id);
+                            if (textEl) textEl.innerHTML = text.replace(/</g, '&lt;').replace(/\n/g, '<br>');
+                            var area = document.getElementById('editArea-' + id);
+                            if (area) area.style.display = 'none';
+                        }
+                    })
+                    .catch(function (e) { showError(e.message || 'Save failed'); });
+            }
+
+            function rejectDraft(id) {
+                if (!checkAuth()) return;
+                fetch('/api/reviews/drafts/' + id + '/reject', { method: 'POST', headers: authHeaders() })
+                    .then(function (res) {
+                        if (res.status === 401) { localStorage.removeItem('owner_token'); window.location.href = '/dashboard/login?next=/reviews'; return null; }
+                        if (!res.ok) return res.json().then(function (d) { throw new Error(d.detail || 'Reject failed'); });
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (data) { showSuccess('Draft rejected.'); loadStats(); loadPendingDrafts(); }
+                    })
+                    .catch(function (e) { showError(e.message || 'Reject failed'); });
+            }
+
+            function parseQuery() {
+                var q = window.location.search.slice(1).split('&');
+                var out = {};
+                q.forEach(function (p) {
+                    var i = p.indexOf('=');
+                    if (i >= 0) out[decodeURIComponent(p.slice(0, i))] = decodeURIComponent(p.slice(i + 1));
+                });
+                return out;
+            }
+
+            document.getElementById('logoutBtn').addEventListener('click', function () {
+                localStorage.removeItem('owner_token');
+                window.location.href = '/dashboard/login';
+            });
+
+            var q = parseQuery();
+            if (q.error) {
+                hideError();
+                if (q.error === 'invalid_state') showError('Invalid or expired sign-in link. Please try connecting again.');
+                else if (q.error === 'no_locations') showError('No Google Business locations found for this account.');
+                else if (q.error === 'token_exchange_failed') showError('Could not complete Google sign-in. Try again.');
+                else showError('Something went wrong: ' + q.error);
+                history.replaceState({}, '', '/reviews');
+            }
+            if (q.connected === '1') {
+                showSuccess('Google Business Profile connected.');
+                history.replaceState({}, '', '/reviews');
+            }
+            if (q.pick_location === '1' && q.state) {
+                loadLocationPicker(q.state);
+            }
+
+            loadConnection();
+        })();
+    </script>
+</body>
+</html>

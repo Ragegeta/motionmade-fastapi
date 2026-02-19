@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 import os
@@ -14,6 +15,11 @@ class Settings(BaseSettings):
     CHAT_MODEL: str = "gpt-4o-mini"
     BUILD_ID: str = "local-dev"
     DEBUG: bool = False
+
+    # ReviewMate: Google Business Profile OAuth (optional; required only for /reviews)
+    REVIEW_GOOGLE_CLIENT_ID: Optional[str] = None
+    REVIEW_GOOGLE_CLIENT_SECRET: Optional[str] = None
+    REVIEW_GOOGLE_REDIRECT_URI: Optional[str] = None
 
     class Config:
         env_file = ".env"

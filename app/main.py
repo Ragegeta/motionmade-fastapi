@@ -27,6 +27,7 @@ from .openai_client import embed_text, chat_once
 from .retrieval import retrieve_faq_answer
 from .retriever import _invalidate_tenant_count_cache
 from .db import get_conn
+from .routers.reviews import router as reviews_router
 from .triage import triage_input
 from .normalize import normalize_message
 from .splitter import split_intents
@@ -200,6 +201,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(reviews_router)
 
 SCHEMA_SQL = """
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -1158,6 +1161,14 @@ def _startup():
                         conn.commit()
                 except Exception:
                     pass
+
+            # ReviewMate: create review_* tables (reversible; see app/review_tables.py REVIEW_SCHEMA_DOWN)
+            try:
+                from .review_tables import run_review_schema
+                run_review_schema(get_conn, _split_schema_statements)
+            except Exception as rev_err:
+                import logging
+                logging.warning("Review schema init failed (non-fatal): %s", rev_err)
                 
         except Exception as e:
             # Log but don't fail startup - app can still serve /ping and other endpoints
@@ -1168,6 +1179,17 @@ def _startup():
     # Start DB init in background thread (non-blocking)
     thread = threading.Thread(target=init_db, daemon=True)
     thread.start()
+
+    # ReviewMate: start daily cron (7:00 AM AEST) if APScheduler available
+    try:
+        from .jobs.review_cron import get_scheduler
+        _review_scheduler = get_scheduler()
+        if _review_scheduler is not None:
+            _review_scheduler.start()
+            print("[review_cron] Scheduler started (7:00 AM AEST)")
+    except Exception as _e:
+        import logging
+        logging.warning("Review cron scheduler failed to start: %s", _e)
 
 
 class FaqItem(BaseModel):
@@ -2165,6 +2187,16 @@ def dashboard_ui():
         html = html_path.read_text(encoding="utf-8")
         return HTMLResponse(content=html)
     return HTMLResponse(content="<h1>Dashboard not found</h1>", status_code=404)
+
+
+@app.get("/reviews", response_class=HTMLResponse)
+def reviews_ui():
+    """Serve ReviewMate page (Google Review Auto-Responder). Auth is client-side via owner JWT."""
+    html_path = Path(__file__).parent / "templates" / "reviews.html"
+    if html_path.exists():
+        html = html_path.read_text(encoding="utf-8")
+        return HTMLResponse(content=html)
+    return HTMLResponse(content="<h1>ReviewMate not found</h1>", status_code=404)
 
 
 @app.get("/admin", response_class=HTMLResponse)
